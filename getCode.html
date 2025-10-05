@@ -1,14 +1,49 @@
 <!doctype html>
-<meta charset="utf-8">
-<title>Fitbit OAuth</title>
-<script>
-  (function(){
-    const code = new URLSearchParams(location.search).get('code');
-    if (window.opener && code) {
-      window.opener.postMessage({ code }, '*');
-      document.body.innerHTML = 'Code empfangen. Du kannst dieses Fenster schließen.';
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Fitbit OAuth Redirect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    html,body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;padding:0;background:#fafafa;color:#222}
+    .wrap{max-width:680px;margin:12vh auto 0;padding:24px;background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,0.08)}
+    h1{margin:0 0 12px;font-size:22px}
+    p{margin:6px 0 0;line-height:1.5}
+    code{background:#f4f4f4;padding:2px 6px;border-radius:6px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Fitbit-Anmeldung</h1>
+    <p id="status">Verarbeite Antwort…</p>
+    <p id="hint" style="opacity:.75">Dieses Fenster schließt sich gleich automatisch.</p>
+  </div>
+
+  <script>
+  (function () {
+    var params = new URLSearchParams(window.location.search);
+    var code  = params.get('code');
+    var error = params.get('error');
+
+    // Sichere postMessage auf den Admin (Elternfenster)
+    try {
+      if (window.opener && typeof window.opener.postMessage === 'function') {
+        window.opener.postMessage({ code: code, error: error }, window.location.origin === "null" ? "*" : "*");
+      }
+    } catch (e) {}
+
+    var status = document.getElementById('status');
+    if (error) {
+      status.textContent = 'Anmeldung abgebrochen (' + error + '). Du kannst dieses Fenster schließen.';
+    } else if (code) {
+      status.textContent = 'Code empfangen. Du kannst dieses Fenster schließen.';
     } else {
-      document.body.innerHTML = 'Kein Code gefunden.';
+      status.textContent = 'Kein Code gefunden. Du kannst dieses Fenster schließen.';
     }
+
+    // Fenster kurz danach schließen (Parent schließt zur Sicherheit ebenfalls)
+    setTimeout(function(){ try { window.close(); } catch(e) {} }, 200);
   })();
-</script>
+  </script>
+</body>
+</html>
