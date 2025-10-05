@@ -1,5 +1,7 @@
 <html>
+
 <head>
+
   <!-- Load ioBroker scripts and styles-->
   <link rel="stylesheet" type="text/css" href="../../css/adapter.css" />
   <link rel="stylesheet" type="text/css" href="../../lib/css/materialize.css">
@@ -16,56 +18,55 @@
   <script type="text/javascript" src="words.js"></script>
 
   <script type="text/javascript">
-    // ▶ Deine Fitbit App-Creds (dieselben wie in main.js!)
+    // ► Deine Fitbit-App-Credentials (müssen zur App in dev.fitbit.com passen)
     var clientID = '23TLCT';
     var clientSecret = '9cedceef7feaafc636aa3d389171a6e9';
 
-    // Standard-Redirect (kann im UI geändert & gespeichert werden)
-    var DEFAULT_REDIRECT = 'https://Chris-656.github.io/fitbit.web/getCode.html';
+    // ► DEINE Redirect-URL (muss 1:1 in der Fitbit-App als Redirect URL stehen!)
+    var OAUTH_REDIRECT = 'https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html';
 
+    // This will be called by the admin adapter when the settings page loads
     function load(settings, onChange) {
       if (!settings) return;
 
-      // Standard-Felder laden
+      // Standard Felder laden/verdrahten
       $('.value').each(function () {
         var $key = $(this);
         var id = $key.attr('id');
         if ($key.attr('type') === 'checkbox') {
-          $key.prop('checked', settings[id])
-              .on('change', () => onChange());
+          $key.prop('checked', settings[id]).on('change', () => onChange());
         } else {
-          $key.val(settings[id])
-              .on('change', () => onChange())
-              .on('keyup', () => onChange());
+          $key.val(settings[id]).on('change', () => onChange()).on('keyup', () => onChange());
         }
       });
 
-      // Redirect-URL Feld initialisieren (persistiert als native.redirectUri)
-      var redirect = settings.redirectUri || DEFAULT_REDIRECT;
-      $('#redirectUri').val(redirect)
-        .on('change', () => onChange())
-        .on('keyup', () => onChange());
-
-      // Buttons & Sektionen
       $('.clientid').show();
       $('.clientsecret').show();
 
-      // Authorize-Button
-      $('.table-button-do').on('click', function () {
-        var redirectUri = ($('#redirectUri').val() || '').trim() || DEFAULT_REDIRECT;
+      $('.generate_selector').on('change', function () {
+        var id = $(this).attr('id');
+        if (id === 'yes_generate') {
+          $('#no_generate').prop('checked', false);
+        } else {
+          $('#yes_generate').prop('checked', false);
+        }
+      });
 
+      var ip = location.host; // (derzeit ungenutzt, kann bleiben)
+
+      // ► Authorize-Button öffnet den Fitbit-Login mit DEINER Redirect-URL
+      $('.table-button-do').on('click', function () {
         var url =
           'https://www.fitbit.com/oauth2/authorize'
           + '?response_type=code'
           + '&client_id=' + encodeURIComponent(clientID)
-          + '&redirect_uri=' + encodeURIComponent(redirectUri)
+          + '&redirect_uri=' + encodeURIComponent(OAUTH_REDIRECT)
           + '&scope=' + encodeURIComponent('activity heartrate location nutrition profile settings sleep social weight')
           + '&expires_in=2592000000';
-
-        window.open(url, "mywindow", "width=850, height=850");
+        var popup = window.open(url, "mywindow", "width=850, height=850");
       });
 
-      // postMessage Listener (Code aus Popup)
+      // postMessage Listener für den "code" aus dem Popup
       var eventMethod = window.addEventListener ? 'addEventListener' : 'attachEvent';
       var eventer = window[eventMethod];
       var messageEvent = eventMethod === 'attachEvent' ? 'onmessage' : 'message';
@@ -75,13 +76,11 @@
         $('.no-iframe').show();
 
         if (e.data && e.data.code) {
-          var redirectUri = ($('#redirectUri').val() || '').trim() || DEFAULT_REDIRECT;
-
-          // WICHTIG: client_id (mit Unterstrich) + identische redirect_uri
+          // ► Token-Austausch: gleiche redirect_uri + korrekter Parameter client_id
           var body =
             'grant_type=authorization_code'
             + '&client_id=' + encodeURIComponent(clientID)
-            + '&redirect_uri=' + encodeURIComponent(redirectUri)
+            + '&redirect_uri=' + encodeURIComponent(OAUTH_REDIRECT)
             + '&code=' + encodeURIComponent(e.data.code);
 
           $.ajax({
@@ -96,9 +95,9 @@
             var time = new Date();
             time.setSeconds(time.getSeconds() + data.expires_in);
 
-            socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.access',  data.access_token, true);
+            socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.access', data.access_token, true);
             socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.refresh', data.refresh_token, true);
-            socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.expire',  time.toISOString(), true);
+            socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.expire', time.toISOString(), true);
 
             $('#accessToken').val(data.access_token);
             $('#refreshToken').val(data.refresh_token);
@@ -111,7 +110,7 @@
         }
       }, false);
 
-      // Bestehende Token anzeigen (falls vorhanden)
+      // Vorhandene Token anzeigen (falls schon vorhanden)
       socket.emit('getState', 'fitbit-fitness.' + instance + '.tokens.access', function (err, state) {
         $('#accessToken').val(state ? state.val || '' : '');
       });
@@ -126,7 +125,7 @@
         setTimeout(function () { if (M) M.updateTextFields(); }, 500);
       });
 
-      // Sleep schedule Sichtbarkeit
+      // Sleep-Schedule Sichtbarkeit
       var $sleeprecords = $('#sleeprecords');
       $sleeprecords.on('change', function () {
         var val = $(this).prop('checked');
@@ -142,7 +141,7 @@
       if (M) M.updateTextFields();
     }
 
-    // Speichern der Settings (inkl. redirectUri)
+    // This will be called by the admin adapter when the user presses the save button
     function save(callback) {
       var obj = {};
       $('.value').each(function () {
@@ -155,15 +154,14 @@
           obj[$this.attr('id')] = $this.val();
         }
       });
-      // redirectUri hinzufügen (persistiert als native.redirectUri)
-      obj.redirectUri = ($('#redirectUri').val() || '').trim() || DEFAULT_REDIRECT;
-
       callback(obj);
     }
   </script>
+
 </head>
 
 <body>
+
   <div class="m adapter-container">
     <div class="row">
       <div class="col s12">
@@ -172,36 +170,22 @@
           <li class="tab col s2"><a href="#tab-services" class="translate">Services</a></li>
         </ul>
       </div>
-
       <div id="tab-main" class="col s12 page">
         <div class="row">
           <div class="col s6">
             <img src="fitbit-fitness.png" alt="logo" class="logo">
           </div>
         </div>
-
-        <!-- Redirect-URL Eingabe -->
-        <div class="row">
-          <div class="input-field col s12">
-            <i class="material-icons prefix">link</i>
-            <input id="redirectUri" type="text" placeholder="https://<user>.github.io/fitbit.web/getCode.html">
-            <label for="redirectUri">Redirect URL (muss exakt in deiner Fitbit-App hinterlegt sein)</label>
-          </div>
-        </div>
-
         <div class="row generate no-iframe">
           <a class="waves-effect waves-light btn blue table-button-do">
-            <i class="material-icons">add</i>
-            <span class="translate">Authorize</span>
+            <i class="material-icons">add</i><span class="translate">Authorize</span>
           </a>
         </div>
-
         <div class="row generate" id="iframe_div">
           <iframe id="iframe" name="iframe" src=""
             style="display: none; width: 100%; height: calc(100% - 50px); border: 0;">
           </iframe>
         </div>
-
         <div class="row tokens generate no-iframe">
           <div class="input-field col s22">
             <i class="material-icons prefix">account_circle</i>
@@ -231,7 +215,6 @@
             <img src="fitbit-fitness.png" alt="logo" class="logo">
           </div>
         </div>
-
         <div class="row no-iframe">
           <div class="input-field col s3">
             <i class="material-icons prefix">refresh</i>
@@ -239,7 +222,6 @@
             <label for="refresh" class="translate">refresh</label>
           </div>
         </div>
-
         <div class="row">
           <div class="input-field col s12 m6 l4">
             <input class="value" id="bodyrecords" type="checkbox">
@@ -277,6 +259,6 @@
       </div>
     </div>
   </div>
+
 </body>
 </html>
-
