@@ -1,7 +1,5 @@
 <html>
-
 <head>
-
   <!-- Load ioBroker scripts and styles-->
   <link rel="stylesheet" type="text/css" href="../../css/adapter.css" />
   <link rel="stylesheet" type="text/css" href="../../lib/css/materialize.css">
@@ -18,18 +16,36 @@
   <script type="text/javascript" src="words.js"></script>
 
   <script type="text/javascript">
-    // ► Deine Fitbit-App-Credentials (müssen zur App in dev.fitbit.com passen)
+    // ► Fitbit-App-Credentials
     var clientID = '23TLCT';
     var clientSecret = '9cedceef7feaafc636aa3d389171a6e9';
 
-    // ► DEINE Redirect-URL (muss 1:1 in der Fitbit-App als Redirect URL stehen!)
+    // ► Deine Redirect URL (muss exakt in der Fitbit-App stehen!)
     var OAUTH_REDIRECT = 'https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html';
 
-    // This will be called by the admin adapter when the settings page loads
+    // ► erlaubte postMessage-Ursprünge (sicherer als '*')
+    var ALLOWED_ORIGINS = [ new URL(OAUTH_REDIRECT).origin ]; // z.B. 'https://pocky2507.github.io'
+
+    // Popup-Handling
+    var oauthPopup = null;
+    function openAuthPopup(url) {
+      try { if (oauthPopup && !oauthPopup.closed) oauthPopup.close(); } catch(e) {}
+      oauthPopup = window.open(
+        url,
+        "fitbitAuth",
+        "width=850,height=850,menubar=no,toolbar=no,location=yes,status=no"
+      );
+    }
+    function closeAuthPopup(hintWin) {
+      try { if (hintWin && typeof hintWin.close === 'function') hintWin.close(); } catch(e){}
+      try { if (oauthPopup && !oauthPopup.closed) oauthPopup.close(); } catch(e){}
+      oauthPopup = null;
+    }
+
     function load(settings, onChange) {
       if (!settings) return;
 
-      // Standard Felder laden/verdrahten
+      // Standard-Felder binden
       $('.value').each(function () {
         var $key = $(this);
         var id = $key.attr('id');
@@ -40,21 +56,7 @@
         }
       });
 
-      $('.clientid').show();
-      $('.clientsecret').show();
-
-      $('.generate_selector').on('change', function () {
-        var id = $(this).attr('id');
-        if (id === 'yes_generate') {
-          $('#no_generate').prop('checked', false);
-        } else {
-          $('#yes_generate').prop('checked', false);
-        }
-      });
-
-      var ip = location.host; // (derzeit ungenutzt, kann bleiben)
-
-      // ► Authorize-Button öffnet den Fitbit-Login mit DEINER Redirect-URL
+      // Authorize-Button
       $('.table-button-do').on('click', function () {
         var url =
           'https://www.fitbit.com/oauth2/authorize'
@@ -63,54 +65,87 @@
           + '&redirect_uri=' + encodeURIComponent(OAUTH_REDIRECT)
           + '&scope=' + encodeURIComponent('activity heartrate location nutrition profile settings sleep social weight')
           + '&expires_in=2592000000';
-        var popup = window.open(url, "mywindow", "width=850, height=850");
+
+        // optional: debug
+        // console.log('Authorize URL:', url);
+
+        openAuthPopup(url);
       });
 
-      // postMessage Listener für den "code" aus dem Popup
+      // postMessage Listener: Code/Fehler aus getCode.html empfangen
       var eventMethod = window.addEventListener ? 'addEventListener' : 'attachEvent';
       var eventer = window[eventMethod];
       var messageEvent = eventMethod === 'attachEvent' ? 'onmessage' : 'message';
 
       eventer(messageEvent, function (e) {
-        $('.tokens').show();
-        $('.no-iframe').show();
+        try {
+          if (ALLOWED_ORIGINS.indexOf(e.origin) === -1) {
+            // console.warn('Blocked postMessage from origin:', e.origin);
+            return;
+          }
 
-        if (e.data && e.data.code) {
-          // ► Token-Austausch: gleiche redirect_uri + korrekter Parameter client_id
-          var body =
-            'grant_type=authorization_code'
-            + '&client_id=' + encodeURIComponent(clientID)
-            + '&redirect_uri=' + encodeURIComponent(OAUTH_REDIRECT)
-            + '&code=' + encodeURIComponent(e.data.code);
+          $('.tokens').show();
+          $('.no-iframe').show();
 
-          $.ajax({
-            url: 'https://api.fitbit.com/oauth2/token',
-            type: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-              'Authorization': 'Basic ' + btoa(clientID + ':' + clientSecret),
-            },
-            data: body
-          }).done(function (data) {
-            var time = new Date();
-            time.setSeconds(time.getSeconds() + data.expires_in);
+          if (!e.data) {
+            closeAuthPopup(e.source);
+            return;
+          }
 
-            socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.access', data.access_token, true);
-            socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.refresh', data.refresh_token, true);
-            socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.expire', time.toISOString(), true);
+          // User hat abgebrochen?
+          if (e.data.error) {
+            try { M && M.toast && M.toast({html: 'Fitbit-Anmeldung abgebrochen'}); } catch(_){}
+            closeAuthPopup(e.source);
+            return;
+          }
 
-            $('#accessToken').val(data.access_token);
-            $('#refreshToken').val(data.refresh_token);
-            $('#expireOn').val(time.toISOString());
+          // Erfolgsfall: Authorization Code → Token holen
+          if (e.data.code) {
+            var body =
+              'grant_type=authorization_code'
+              + '&client_id=' + encodeURIComponent(clientID)
+              + '&redirect_uri=' + encodeURIComponent(OAUTH_REDIRECT)
+              + '&code=' + encodeURIComponent(e.data.code);
 
-            if (M) M.updateTextFields();
-          }).fail(function (err) {
-            window.alert("Token exchange failed: " + (err && err.responseText ? err.responseText : err));
-          });
+            // optional: debug
+            // console.log('Token body:', body);
+
+            $.ajax({
+              url: 'https://api.fitbit.com/oauth2/token',
+              type: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': 'Basic ' + btoa(clientID + ':' + clientSecret),
+              },
+              data: body
+            }).done(function (data) {
+              var time = new Date();
+              time.setSeconds(time.getSeconds() + data.expires_in);
+
+              socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.access',  data.access_token,  true);
+              socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.refresh', data.refresh_token, true);
+              socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.expire',  time.toISOString(), true);
+
+              $('#accessToken').val(data.access_token);
+              $('#refreshToken').val(data.refresh_token);
+              $('#expireOn').val(time.toISOString());
+
+              try { M && M.updateTextFields && M.updateTextFields(); } catch(_){}
+              try { M && M.toast && M.toast({html: 'Token aktualisiert'}); } catch(_){}
+              closeAuthPopup(e.source);
+            }).fail(function (err) {
+              alert("Token exchange failed: " + (err && err.responseText ? err.responseText : err));
+              closeAuthPopup(e.source);
+            });
+          } else {
+            closeAuthPopup(e.source);
+          }
+        } catch (ex) {
+          closeAuthPopup(e && e.source);
         }
       }, false);
 
-      // Vorhandene Token anzeigen (falls schon vorhanden)
+      // vorhandene Token anzeigen
       socket.emit('getState', 'fitbit-fitness.' + instance + '.tokens.access', function (err, state) {
         $('#accessToken').val(state ? state.val || '' : '');
       });
@@ -141,7 +176,6 @@
       if (M) M.updateTextFields();
     }
 
-    // This will be called by the admin adapter when the user presses the save button
     function save(callback) {
       var obj = {};
       $('.value').each(function () {
@@ -157,11 +191,9 @@
       callback(obj);
     }
   </script>
-
 </head>
 
 <body>
-
   <div class="m adapter-container">
     <div class="row">
       <div class="col s12">
@@ -170,22 +202,18 @@
           <li class="tab col s2"><a href="#tab-services" class="translate">Services</a></li>
         </ul>
       </div>
+
       <div id="tab-main" class="col s12 page">
         <div class="row">
-          <div class="col s6">
-            <img src="fitbit-fitness.png" alt="logo" class="logo">
-          </div>
+          <div class="col s6"><img src="fitbit-fitness.png" alt="logo" class="logo"></div>
         </div>
+
         <div class="row generate no-iframe">
           <a class="waves-effect waves-light btn blue table-button-do">
             <i class="material-icons">add</i><span class="translate">Authorize</span>
           </a>
         </div>
-        <div class="row generate" id="iframe_div">
-          <iframe id="iframe" name="iframe" src=""
-            style="display: none; width: 100%; height: calc(100% - 50px); border: 0;">
-          </iframe>
-        </div>
+
         <div class="row tokens generate no-iframe">
           <div class="input-field col s22">
             <i class="material-icons prefix">account_circle</i>
@@ -211,10 +239,9 @@
 
       <div id="tab-services" class="col s12 page">
         <div class="row">
-          <div class="col s6">
-            <img src="fitbit-fitness.png" alt="logo" class="logo">
-          </div>
+          <div class="col s6"><img src="fitbit-fitness.png" alt="logo" class="logo"></div>
         </div>
+
         <div class="row no-iframe">
           <div class="input-field col s3">
             <i class="material-icons prefix">refresh</i>
@@ -222,6 +249,7 @@
             <label for="refresh" class="translate">refresh</label>
           </div>
         </div>
+
         <div class="row">
           <div class="input-field col s12 m6 l4">
             <input class="value" id="bodyrecords" type="checkbox">
@@ -259,6 +287,5 @@
       </div>
     </div>
   </div>
-
 </body>
 </html>
