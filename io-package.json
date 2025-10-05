@@ -179,7 +179,7 @@
         "name": "Device or service connected",
         "type": "boolean",
         "read": true,
-        "write": false,
+        "write": true,
         "def": false
       },
       "native": {}
@@ -200,7 +200,7 @@
         "name": "Full Name",
         "type": "string",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -212,7 +212,7 @@
         "name": "User Id on FitBit",
         "type": "string",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -232,7 +232,7 @@
         "name": "Access token",
         "type": "string",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -244,7 +244,7 @@
         "name": "Refresh token",
         "type": "string",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -256,7 +256,7 @@
         "name": "Expire on",
         "type": "string",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -276,7 +276,7 @@
         "name": "Steps",
         "type": "number",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -300,7 +300,7 @@
         "name": "Floors",
         "type": "number",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -312,7 +312,7 @@
         "name": "Calories",
         "type": "number",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -324,7 +324,7 @@
         "name": "Number of daily Activities",
         "type": "number",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -337,7 +337,7 @@
         "type": "number",
         "unit": "Minutes",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -350,7 +350,7 @@
         "type": "number",
         "unit": "bpm",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -383,7 +383,7 @@
         "name": "BMI",
         "type": "number",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -416,7 +416,7 @@
         "name": "Calories Consumed",
         "type": "number",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -428,7 +428,7 @@
         "name": "Carbs Consumed",
         "type": "number",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -440,7 +440,7 @@
         "name": "Fiber Consumed",
         "type": "number",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -452,7 +452,7 @@
         "name": "Sodium Consumed",
         "type": "number",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -465,7 +465,7 @@
         "type": "number",
         "unit": "%",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -477,7 +477,7 @@
         "name": "food.Protein",
         "type": "number",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -489,7 +489,7 @@
         "name": "food.Water",
         "type": "number",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -510,7 +510,7 @@
         "type": "number",
         "unit": "Minutes",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -523,7 +523,7 @@
         "type": "number",
         "unit": "Minutes",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -536,7 +536,7 @@
         "type": "number",
         "unit": "Minutes",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     },
@@ -549,7 +549,7 @@
         "type": "number",
         "unit": "Minutes",
         "read": true,
-        "write": false
+        "write": true
       },
       "native": {}
     }
