@@ -13,10 +13,6 @@ const axiosTimeout = 15000;
 // ▶️ Schalter: Intraday optional aktivieren (kein UI-Schalter)
 const DEFAULT_INTRADAY = false;
 
-// ▶️ Fitbit OAuth App-Credentials (wie im Original-Adapter hinterlegt/erwartet)
-const clientID = "23TLCT";
-const clientSecret = "9cedceef7feaafc636aa3d389171a6e9";
-
 // ▶️ Fitbit APIs
 const BASE_URL = "https://api.fitbit.com/1/user/";
 const BASE2_URL = "https://api.fitbit.com/1.2/user/";
@@ -659,44 +655,50 @@ class FitBit extends utils.Adapter {
     // Wir ändern daran NICHTS, damit der automatische Refresh wieder funktioniert.
     // ================================
     async renewToken() {
-        try {
-            const url = "https://api.fitbit.com/oauth2/token";
-            const refreshToken = this.fitbit.tokens.refresh_token;
+    try {
+        const clientID = this.config.clientId;
+        const clientSecret = this.config.clientSecret;
 
-            const response = await axios({
-                url,
-                method: "post",
-                headers: {
-                    "Authorization": `Basic ${Buffer.from(clientID + ":" + clientSecret).toString("base64")}`,
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                data: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(refreshToken),
-                timeout: axiosTimeout
-            });
-
-            this.fitbit.tokens = response.data;
-
-            if (response.status === 200) {
-                // ▶️ WICHTIG: Hier folgt bewusst das Original-Verhalten:
-                // Der Original-Adapter SCHREIBT tokens.access / tokens.refresh / tokens.expire.
-                // Wir lassen das EXAKT so, ohne zusätzliche eigene Schreibpfade drum herum.
-                const time = new Date();
-                time.setSeconds(time.getSeconds() + this.fitbit.tokens.expires_in);
-
-                await this.setStateAsync("tokens.access", this.fitbit.tokens.access_token, true);
-                await this.setStateAsync("tokens.refresh", this.fitbit.tokens.refresh_token, true);
-                await this.setStateAsync("tokens.expire",  time.toISOString(), true);
-
-                this.log.info(`Token renewed (original flow): ${time.toISOString()}`);
-                return true;
-            } else {
-                return false;
-            }
-        } catch (err) {
-            this.log.error(`Renew Token failed: ${err}`);
+        if (!clientID || !clientSecret) {
+            this.log.error('renewToken: clientId/clientSecret fehlen in der Adapter-Konfiguration.');
             return false;
         }
+
+        const url = "https://api.fitbit.com/oauth2/token";
+        const refreshToken = this.fitbit.tokens.refresh_token;
+
+        const response = await axios({
+            url,
+            method: "post",
+            headers: {
+                "Authorization": `Basic ${Buffer.from(clientID + ":" + clientSecret).toString("base64")}`,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            data: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(refreshToken),
+            timeout: axiosTimeout
+        });
+
+        this.fitbit.tokens = response.data;
+
+        if (response.status === 200) {
+            const time = new Date();
+            time.setSeconds(time.getSeconds() + this.fitbit.tokens.expires_in);
+
+            // Original-Flow: tokens.* schreiben (lassen)
+            await this.setStateAsync("tokens.access",  this.fitbit.tokens.access_token, true);
+            await this.setStateAsync("tokens.refresh", this.fitbit.tokens.refresh_token, true);
+            await this.setStateAsync("tokens.expire",  time.toISOString(), true);
+
+            this.log.info(`Token renewed (original flow): ${time.toISOString()}`);
+            return true;
+        } else {
+            return false;
+        }
+    } catch (err) {
+        this.log.error(`Renew Token failed: ${err}`);
+        return false;
     }
+}
 
     // ================================
     // ▶️ Original-Token-Check (unverändert)
