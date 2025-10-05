@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "fitbit-fitness",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "news": {
+        "0.5.1": {
+        "en": "Maintanance issues",
+        "de": "Wichtigste behandelte Fragen",
+        "ru": "Вопросы континента",
+        "pt": "Questões de manutenção",
+        "nl": "Maintanance problemen",
+        "fr": "Maintanance issues",
+        "it": "Questioni principali",
+        "es": "Cuestiones de mantenimiento",
+        "pl": "Zagadnienia administracyjne",
+        "uk": "Основні проблеми",
+        "zh-cn": "主要问题"
+      },
       "0.5.0": {
         "en": "Maintanance issues",
         "de": "Wichtigste behandelte Fragen",
@@ -147,7 +160,8 @@
       {
         "js-controller": ">=2.0.0"
       }
-    ]
+    ],
+    "installedFrom": "Pocky2507/ioBroker.fitbit-fitness#main"
   },
   "native": {
     "refresh": 5,
@@ -159,7 +173,10 @@
     "sleeprecords": false,
     "sleeprecordsschedule": true,
     "foodrecords": false,
-    "devicerecords": false
+    "devicerecords": false,
+    "clientId": "",
+    "clientSecret": "",
+    "redirectUri": ""
   },
   "objects": [],
   "instanceObjects": [
