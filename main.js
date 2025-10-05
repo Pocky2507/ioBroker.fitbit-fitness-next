@@ -334,50 +334,50 @@ class FitBit extends utils.Adapter {
     }
 
     async setHeartRateTimeSeries(data) {
-        if (!data["activities-heart"]) return false;
+    if (!data["activities-heart"]) return false;
 
-        // Zonen dynamisch anlegen (nur unsere neuen Objekte); write:true, ack:true
-        data["activities-heart"].forEach(entry => {
-            Object.keys(entry.value)
-                .filter(k => HEART_RATE_ZONE_RANGES.includes(k))
-                .forEach(zonesKey => {
-                    entry.value[zonesKey].forEach(zone => {
-                        const zoneName = String(zone.name || "Zone").replace(this.FORBIDDEN_CHARS, "_");
+    for (const entry of data["activities-heart"]) {
+        const val = entry.value || {};
 
-                        Object.keys(zone)
-                            .filter(key => key !== "name")
-                            .forEach(async (entryValue) => {
-                                const entryValueName = entryValue.replace(this.FORBIDDEN_CHARS, "_");
-                                const id = `activity.heartratezones.${zoneName}.${entryValueName}`;
-                                await this.setObjectNotExistsAsync(id, {
-                                    type: "state",
-                                    common: { name: `${entryValue} - ${zoneName}`, type: "number", read: true, write: true },
-                                    native: {}
-                                });
-                                await this.setStateAsync(id, { val: zone[entryValue] || 0, ack: true });
-                            });
+        // "customHeartRateZones" und/oder "heartRateZones"
+        for (const zonesKey of Object.keys(val).filter(k => HEART_RATE_ZONE_RANGES.includes(k))) {
+            const zonesArr = val[zonesKey] || [];
 
-                        // isCustom
-                        (async () => {
-                            const idCustom = `activity.heartratezones.${zoneName}.isCustom`;
-                            await this.setObjectNotExistsAsync(idCustom, {
-                                type: "state",
-                                common: { name: `custom heart rate zone`, type: "boolean", read: true, write: true },
-                                native: {}
-                            });
-                            await this.setStateAsync(idCustom, { val: zonesKey.includes("custom"), ack: true });
-                        })();
+            for (const zone of zonesArr) {
+                const zoneName = String(zone.name || "Zone").replace(this.FORBIDDEN_CHARS, "_");
+
+                // alle Werte der Zone außer dem Namen anlegen/schreiben
+                for (const entryValue of Object.keys(zone).filter(k => k !== "name")) {
+                    const entryValueName = entryValue.replace(this.FORBIDDEN_CHARS, "_");
+                    const id = `activity.heartratezones.${zoneName}.${entryValueName}`;
+
+                    await this.setObjectNotExistsAsync(id, {
+                        type: "state",
+                        common: { name: `${entryValue} - ${zoneName}`, type: "number", read: true, write: true },
+                        native: {}
                     });
+                    await this.setStateAsync(id, { val: zone[entryValue] ?? 0, ack: true });
+                }
+
+                // Flag: ist es eine Custom-Zone?
+                const idCustom = `activity.heartratezones.${zoneName}.isCustom`;
+                await this.setObjectNotExistsAsync(idCustom, {
+                    type: "state",
+                    common: { name: "custom heart rate zone", type: "boolean", read: true, write: true },
+                    native: {}
                 });
-
-            // Ruhepuls (Original hat auch RestingHeartRate-State → schreiben erlaubt)
-            if (entry.value && typeof entry.value.restingHeartRate === "number") {
-                this.setState("activity.RestingHeartRate", entry.value.restingHeartRate, true);
+                await this.setStateAsync(idCustom, { val: zonesKey.includes("custom"), ack: true });
             }
-        });
+        }
 
-        return true;
+        // optional: Ruhepuls (falls im Tagesobjekt vorhanden)
+        if (entry.value && typeof entry.value.restingHeartRate === "number") {
+            await this.setStateAsync("activity.RestingHeartRate", { val: entry.value.restingHeartRate, ack: true });
+        }
     }
+
+    return true;
+}
 
     // Intraday (optional per Konstante)
     async getIntradayHeartRate() {
