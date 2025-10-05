@@ -1,261 +1,282 @@
 <html>
-
 <head>
+  <!-- Load ioBroker scripts and styles-->
+  <link rel="stylesheet" type="text/css" href="../../css/adapter.css" />
+  <link rel="stylesheet" type="text/css" href="../../lib/css/materialize.css">
 
-	<!-- Load ioBroker scripts and styles-->
+  <script type="text/javascript" src="../../lib/js/jquery-3.2.1.min.js"></script>
+  <script type="text/javascript" src="../../socket.io/socket.io.js"></script>
 
-	<!-- ported from @germanbluefox thx-->
-	<link rel="stylesheet" type="text/css" href="../../css/adapter.css" />
-	<link rel="stylesheet" type="text/css" href="../../lib/css/materialize.css">
+  <script type="text/javascript" src="../../js/translate.js"></script>
+  <script type="text/javascript" src="../../lib/js/materialize.js"></script>
+  <script type="text/javascript" src="../../js/adapter-settings.js"></script>
 
-	<script type="text/javascript" src="../../lib/js/jquery-3.2.1.min.js"></script>
-	<script type="text/javascript" src="../../socket.io/socket.io.js"></script>
+  <!-- Load our own files -->
+  <link rel="stylesheet" type="text/css" href="style.css" />
+  <script type="text/javascript" src="words.js"></script>
 
-	<script type="text/javascript" src="../../js/translate.js"></script>
-	<script type="text/javascript" src="../../lib/js/materialize.js"></script>
-	<script type="text/javascript" src="../../js/adapter-settings.js"></script>
+  <script type="text/javascript">
+    // ▶ Deine Fitbit App-Creds (dieselben wie in main.js!)
+    var clientID = '23TLCT';
+    var clientSecret = '9cedceef7feaafc636aa3d389171a6e9';
 
-	<!-- Load our own files -->
-	<link rel="stylesheet" type="text/css" href="style.css" />
-	<script type="text/javascript" src="words.js"></script>
+    // Standard-Redirect (kann im UI geändert & gespeichert werden)
+    var DEFAULT_REDIRECT = 'https://Chris-656.github.io/fitbit.web/getCode.html';
 
-	<script type="text/javascript">
-		var clientID = '23TLCT';  //2387KZ
-		var clientSecret = '9cedceef7feaafc636aa3d389171a6e9';
-		// Original
-		// var clientID = '22BD68';
-		// var clientSecret = 'c4612114c93436901b6affb03a1e5ec8';
+    function load(settings, onChange) {
+      if (!settings) return;
 
-		// var clientID = '2387KZ';
-		// var clientSecret = '66f64352fbee230e076360245871bb09';
-		// This will be called by the admin adapter when the settings page loads
-		function load(settings, onChange) {
-			// example: select elements with id=key and class=value and insert value
-			if (!settings) return;
-			$('.value').each(function () {
-				var $key = $(this);
-				var id = $key.attr('id');
-				if ($key.attr('type') === 'checkbox') {
-					// do not call onChange direct, because onChange could expect some arguments
-					$key.prop('checked', settings[id])
-						.on('change', () => onChange())
-						;
-				} else {
-					// do not call onChange direct, because onChange could expect some arguments
-					$key.val(settings[id])
-						.on('change', () => onChange())
-						.on('keyup', () => onChange())
-						;
-				}
-			});
-			$('.clientid').show();
-			$('.clientsecret').show();
+      // Standard-Felder laden
+      $('.value').each(function () {
+        var $key = $(this);
+        var id = $key.attr('id');
+        if ($key.attr('type') === 'checkbox') {
+          $key.prop('checked', settings[id])
+              .on('change', () => onChange());
+        } else {
+          $key.val(settings[id])
+              .on('change', () => onChange())
+              .on('keyup', () => onChange());
+        }
+      });
 
-			$('.generate_selector').on('change', function () {
-				var id = $(this).attr('id');
-				if (id === 'yes_generate') {
-					$('#no_generate').prop('checked', false);
-				} else {
-					$('#yes_generate').prop('checked', false);
-				}
-			});
-			var ip = location.host;
+      // Redirect-URL Feld initialisieren (persistiert als native.redirectUri)
+      var redirect = settings.redirectUri || DEFAULT_REDIRECT;
+      $('#redirectUri').val(redirect)
+        .on('change', () => onChange())
+        .on('keyup', () => onChange());
 
-			$('.table-button-do').on('click', function () {
-				var url = `https://www.fitbit.com/oauth2/authorize?response_type=code&client_id=${clientID}&redirect_uri=https%3A%2F%2FChris-656.github.io%2Ffitbit.web%2FgetCode.html&scope=activity%20heartrate%20location%20nutrition%20profile%20settings%20sleep%20social%20weight&expires_in=2592000000`;
-				var popup = window.open(url, "mywindow", "width=850, height=850");
-			});
+      // Buttons & Sektionen
+      $('.clientid').show();
+      $('.clientsecret').show();
 
-			var eventMethod = window.addEventListener ? 'addEventListener' : 'attachEvent';
-			var eventer = window[eventMethod];
-			var messageEvent = eventMethod === 'attachEvent' ? 'onmessage' : 'message';
+      // Authorize-Button
+      $('.table-button-do').on('click', function () {
+        var redirectUri = ($('#redirectUri').val() || '').trim() || DEFAULT_REDIRECT;
 
-			eventer(messageEvent, function (e) {
+        var url =
+          'https://www.fitbit.com/oauth2/authorize'
+          + '?response_type=code'
+          + '&client_id=' + encodeURIComponent(clientID)
+          + '&redirect_uri=' + encodeURIComponent(redirectUri)
+          + '&scope=' + encodeURIComponent('activity heartrate location nutrition profile settings sleep social weight')
+          + '&expires_in=2592000000';
 
-				//$('#iframe_div').hide();
-				$('.tokens').show();
-				$('.no-iframe').show();
+        window.open(url, "mywindow", "width=850, height=850");
+      });
 
-				if (e.data.code) {
-					var urlGetAuth = `grant_type=authorization_code&clientId=${clientID}&redirect_uri=https%3A%2F%2FChris-656.github.io%2Ffitbit.web%2FgetCode.html&code=${e.data.code}`;
+      // postMessage Listener (Code aus Popup)
+      var eventMethod = window.addEventListener ? 'addEventListener' : 'attachEvent';
+      var eventer = window[eventMethod];
+      var messageEvent = eventMethod === 'attachEvent' ? 'onmessage' : 'message';
 
-					$.ajax({
-						url: 'https://api.fitbit.com/oauth2/token',
-						type: 'POST',
-						headers: {
-							'Content-Type': 'application/x-www-form-urlencoded',
-							'Authorization': 'Basic ' + btoa(clientID + ':' + clientSecret),
-						},
-						data: urlGetAuth
-					}).done(function (data) {
-						var time = new Date();
-						time.setSeconds(time.getSeconds() + data.expires_in);
+      eventer(messageEvent, function (e) {
+        $('.tokens').show();
+        $('.no-iframe').show();
 
-						socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.access', data.access_token, true);
-						socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.refresh', data.refresh_token, true);
-						socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.expire', time.toISOString(), true);
-						//window.alert(`AT:${data.access_token} RT:${data.refresh_token} ex:${time.toISOString()}`);
-						$('#accessToken').val(data.access_token);
-						$('#refreshToken').val(data.refresh_token);
-						$('#expireOn').val(time.toISOString());
+        if (e.data && e.data.code) {
+          var redirectUri = ($('#redirectUri').val() || '').trim() || DEFAULT_REDIRECT;
 
-						M.updateTextFields();
-					}).fail(function (err) {
-						window.alert("Error" + err);
-					});
-				}
-			}, false);
+          // WICHTIG: client_id (mit Unterstrich) + identische redirect_uri
+          var body =
+            'grant_type=authorization_code'
+            + '&client_id=' + encodeURIComponent(clientID)
+            + '&redirect_uri=' + encodeURIComponent(redirectUri)
+            + '&code=' + encodeURIComponent(e.data.code);
 
-			socket.emit('getState', 'fitbit-fitness.' + instance + '.tokens.access', function (err, state) {
-				$('#accessToken').val(state ? state.val || '' : '');
-			});
-			socket.emit('getState', 'fitbit-fitness.' + instance + '.tokens.refresh', function (err, state) {
-				$('#refreshToken').val(state ? state.val || '' : '');
-			});
-			socket.emit('getState', 'fitbit-fitness.' + instance + '.tokens.expire', function (err, state) {
-				$('#expireOn').val(state ? state.val || '' : '');
-				if (state && state.val) {
-					$('.table-button-do span').html(_('Update token'));
-				}
-				setTimeout(function () { M.updateTextFields() }, 500);
-			});
+          $.ajax({
+            url: 'https://api.fitbit.com/oauth2/token',
+            type: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Authorization': 'Basic ' + btoa(clientID + ':' + clientSecret),
+            },
+            data: body
+          }).done(function (data) {
+            var time = new Date();
+            time.setSeconds(time.getSeconds() + data.expires_in);
 
-			var $sleeprecords = $('#sleeprecords');
-			$sleeprecords.on('change', function () {
-				var val = $(this).prop('checked');
+            socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.access',  data.access_token, true);
+            socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.refresh', data.refresh_token, true);
+            socket.emit('setState', 'fitbit-fitness.' + instance + '.tokens.expire',  time.toISOString(), true);
 
-				if (val) {
-					$('.sleepschedule').show();
-				} else {
-					$('.sleepschedule').hide();
-					onChange();
-				}
-			});
+            $('#accessToken').val(data.access_token);
+            $('#refreshToken').val(data.refresh_token);
+            $('#expireOn').val(time.toISOString());
 
-			onChange(false);
-			// reinitialize all the Materialize labels on the page if you are dynamically adding inputs:
-			if (M) M.updateTextFields();
-		}
+            if (M) M.updateTextFields();
+          }).fail(function (err) {
+            window.alert("Token exchange failed: " + (err && err.responseText ? err.responseText : err));
+          });
+        }
+      }, false);
 
-		// This will be called by the admin adapter when the user presses the save button
-		function save(callback) {
-			// example: select elements with class=value and build settings object
-			var obj = {};
-			$('.value').each(function () {
-				var $this = $(this);
-				if ($this.attr('type') === 'checkbox') {
-					obj[$this.attr('id')] = $this.prop('checked');
-				} else if ($this.attr('type') === 'number') {
-					obj[$this.attr('id')] = parseFloat($this.val());
-				} else {
-					obj[$this.attr('id')] = $this.val();
-				}
-			});
-			callback(obj);
-		}
-	</script>
+      // Bestehende Token anzeigen (falls vorhanden)
+      socket.emit('getState', 'fitbit-fitness.' + instance + '.tokens.access', function (err, state) {
+        $('#accessToken').val(state ? state.val || '' : '');
+      });
+      socket.emit('getState', 'fitbit-fitness.' + instance + '.tokens.refresh', function (err, state) {
+        $('#refreshToken').val(state ? state.val || '' : '');
+      });
+      socket.emit('getState', 'fitbit-fitness.' + instance + '.tokens.expire', function (err, state) {
+        $('#expireOn').val(state ? state.val || '' : '');
+        if (state && state.val) {
+          $('.table-button-do span').html(_('Update token'));
+        }
+        setTimeout(function () { if (M) M.updateTextFields(); }, 500);
+      });
 
+      // Sleep schedule Sichtbarkeit
+      var $sleeprecords = $('#sleeprecords');
+      $sleeprecords.on('change', function () {
+        var val = $(this).prop('checked');
+        if (val) {
+          $('.sleepschedule').show();
+        } else {
+          $('.sleepschedule').hide();
+          onChange();
+        }
+      });
+
+      onChange(false);
+      if (M) M.updateTextFields();
+    }
+
+    // Speichern der Settings (inkl. redirectUri)
+    function save(callback) {
+      var obj = {};
+      $('.value').each(function () {
+        var $this = $(this);
+        if ($this.attr('type') === 'checkbox') {
+          obj[$this.attr('id')] = $this.prop('checked');
+        } else if ($this.attr('type') === 'number') {
+          obj[$this.attr('id')] = parseFloat($this.val());
+        } else {
+          obj[$this.attr('id')] = $this.val();
+        }
+      });
+      // redirectUri hinzufügen (persistiert als native.redirectUri)
+      obj.redirectUri = ($('#redirectUri').val() || '').trim() || DEFAULT_REDIRECT;
+
+      callback(obj);
+    }
+  </script>
 </head>
 
 <body>
+  <div class="m adapter-container">
+    <div class="row">
+      <div class="col s12">
+        <ul class="tabs">
+          <li class="tab col s2"><a href="#tab-main" class="translate active">Main settings</a></li>
+          <li class="tab col s2"><a href="#tab-services" class="translate">Services</a></li>
+        </ul>
+      </div>
 
-	<div class="m adapter-container">
-		<div class="row">
-			<div class="col s12">
-				<ul class="tabs">
-					<li class="tab col s2"><a href="#tab-main" class="translate active">Main settings</a></li>
-					<li class="tab col s2"><a href="#tab-services" class="translate">Services</a></li>
-				</ul>
-			</div>
-			<div id="tab-main" class="col s12 page">
-				<div class="row">
-					<div class="col s6">
-						<img src="fitbit-fitness.png" alt="logo" class="logo">
-					</div>
-				</div>
-				<div class="row generate no-iframe">
-					<a class="waves-effect waves-light btn blue table-button-do"><i class="material-icons">add</i><span
-							class="translate">Authorize</span></a>
-				</div>
-				<div class="row generate" id="iframe_div">
-					<iframe id="iframe" name="iframe" src=""
-						style="display: none; width: 100%; height: calc(100% - 50px); border: 0;">
-					</iframe>
-				</div>
-				<div class="row tokens generate no-iframe">
-					<div class="input-field col s22">
-						<i class="material-icons prefix">account_circle</i>
-						<input id="accessToken" type="text" readonly>
-						<label for="accessToken" class="translate">accessToken</label>
-					</div>
-				</div>
-				<div class="row tokens generate no-iframe">
-					<div class="input-field col s22">
-						<i class="material-icons prefix">account_circle</i>
-						<input id="refreshToken" type="text" readonly>
-						<label for="refreshToken" class="translate">Refresh token</label>
-					</div>
-				</div>
-				<div class="row tokens generate no-iframe">
-					<div class="input-field col s12 m6 24">
-						<i class="material-icons prefix">timelapse</i>
-						<input id="expireOn" type="text" readonly>
-						<label for="expireOn" class="translate">Expires on</label>
-					</div>
-				</div>
-			</div>
-			<div id="tab-services" class="col s12 page">
-				<div class="row">
-					<div class="col s6">
-						<img src="fitbit-fitness.png" alt="logo" class="logo">
-					</div>
-				</div>
-				<div class="row no-iframe">
-					<div class="input-field col s3">
-						<i class="material-icons prefix">refresh</i>
-						<input class="value" id="refresh" type="number" placeholder="10">
-						<label for="refresh" class="translate">refresh</label>
-					</div>
-				</div>
-				<div class="row">
-					<div class="input-field col s12 m6 l4">
-						<input class="value" id="bodyrecords" type="checkbox">
-						<span for="bodyrecords" class="translate">bodyrecords</span>
-					</div>
-				</div>
-				<div class="row">
-					<div class="input-field col s12 m6 l4">
-						<input class="value" id="activityrecords" type="checkbox">
-						<span for="activityrecords" class="translate">activityrecords</span>
-					</div>
-				</div>
-				<div class="row">
-					<div class="input-field col s3 m6 l4">
-						<input class="value" id="sleeprecords" type="checkbox">
-						<span for="sleeprecords" class="translate">sleeprecords</span>
-					</div>
-					<div class="input-field sleepschedule col s6">
-						<input class="value" id="sleeprecordsschedule" type="checkbox">
-						<span for="sleeprecordsschedule" class="translate">sleeprecordsschedule</span>
-					</div>
-				</div>
-				<div class="row">
-					<div class="input-field col s12 m6 l4">
-						<input class="value" id="foodrecords" type="checkbox">
-						<span for="foodrecords" class="translate">foodrecords</span>
-					</div>
-				</div>
-				<div class="row">
-					<div class="input-field col s12 m6 l4">
-						<input class="value" id="devicerecords" type="checkbox">
-						<span for="devicerecords" class="translate">devicerecords</span>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+      <div id="tab-main" class="col s12 page">
+        <div class="row">
+          <div class="col s6">
+            <img src="fitbit-fitness.png" alt="logo" class="logo">
+          </div>
+        </div>
 
+        <!-- Redirect-URL Eingabe -->
+        <div class="row">
+          <div class="input-field col s12">
+            <i class="material-icons prefix">link</i>
+            <input id="redirectUri" type="text" placeholder="https://<user>.github.io/fitbit.web/getCode.html">
+            <label for="redirectUri">Redirect URL (muss exakt in deiner Fitbit-App hinterlegt sein)</label>
+          </div>
+        </div>
 
+        <div class="row generate no-iframe">
+          <a class="waves-effect waves-light btn blue table-button-do">
+            <i class="material-icons">add</i>
+            <span class="translate">Authorize</span>
+          </a>
+        </div>
+
+        <div class="row generate" id="iframe_div">
+          <iframe id="iframe" name="iframe" src=""
+            style="display: none; width: 100%; height: calc(100% - 50px); border: 0;">
+          </iframe>
+        </div>
+
+        <div class="row tokens generate no-iframe">
+          <div class="input-field col s22">
+            <i class="material-icons prefix">account_circle</i>
+            <input id="accessToken" type="text" readonly>
+            <label for="accessToken" class="translate">accessToken</label>
+          </div>
+        </div>
+        <div class="row tokens generate no-iframe">
+          <div class="input-field col s22">
+            <i class="material-icons prefix">account_circle</i>
+            <input id="refreshToken" type="text" readonly>
+            <label for="refreshToken" class="translate">Refresh token</label>
+          </div>
+        </div>
+        <div class="row tokens generate no-iframe">
+          <div class="input-field col s12 m6 24">
+            <i class="material-icons prefix">timelapse</i>
+            <input id="expireOn" type="text" readonly>
+            <label for="expireOn" class="translate">Expires on</label>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-services" class="col s12 page">
+        <div class="row">
+          <div class="col s6">
+            <img src="fitbit-fitness.png" alt="logo" class="logo">
+          </div>
+        </div>
+
+        <div class="row no-iframe">
+          <div class="input-field col s3">
+            <i class="material-icons prefix">refresh</i>
+            <input class="value" id="refresh" type="number" placeholder="10">
+            <label for="refresh" class="translate">refresh</label>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="input-field col s12 m6 l4">
+            <input class="value" id="bodyrecords" type="checkbox">
+            <span for="bodyrecords" class="translate">bodyrecords</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12 m6 l4">
+            <input class="value" id="activityrecords" type="checkbox">
+            <span for="activityrecords" class="translate">activityrecords</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s3 m6 l4">
+            <input class="value" id="sleeprecords" type="checkbox">
+            <span for="sleeprecords" class="translate">sleeprecords</span>
+          </div>
+          <div class="input-field sleepschedule col s6">
+            <input class="value" id="sleeprecordsschedule" type="checkbox">
+            <span for="sleeprecordsschedule" class="translate">sleeprecordsschedule</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12 m6 l4">
+            <input class="value" id="foodrecords" type="checkbox">
+            <span for="foodrecords" class="translate">foodrecords</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12 m6 l4">
+            <input class="value" id="devicerecords" type="checkbox">
+            <span for="devicerecords" class="translate">devicerecords</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
-
 </html>
+
