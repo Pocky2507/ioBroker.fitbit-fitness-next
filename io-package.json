@@ -176,7 +176,7 @@
     "devicerecords": false,
     "clientId": "",
     "clientSecret": "",
-    "redirectUri": ""
+    "redirectUri": "https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html"
   },
   "objects": [],
   "instanceObjects": [
