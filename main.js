@@ -655,49 +655,68 @@ class FitBit extends utils.Adapter {
     // Wir ändern daran NICHTS, damit der automatische Refresh wieder funktioniert.
     // ================================
     async renewToken() {
-    try {
-        const clientID = this.config.clientId;
-        const clientSecret = this.config.clientSecret;
+  // Parallele Aufrufe verhindern
+  if (this._renewInProgress) {
+    this.log.debug("renewToken: already in progress");
+    return false;
+  }
+  this._renewInProgress = true;
 
-        if (!clientID || !clientSecret) {
-            this.log.error('renewToken: clientId/clientSecret fehlen in der Adapter-Konfiguration.');
-            return false;
-        }
-
-        const url = "https://api.fitbit.com/oauth2/token";
-        const refreshToken = this.fitbit.tokens.refresh_token;
-
-        const response = await axios({
-            url,
-            method: "post",
-            headers: {
-                "Authorization": `Basic ${Buffer.from(clientID + ":" + clientSecret).toString("base64")}`,
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            data: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(refreshToken),
-            timeout: axiosTimeout
-        });
-
-        this.fitbit.tokens = response.data;
-
-        if (response.status === 200) {
-            const time = new Date();
-            time.setSeconds(time.getSeconds() + this.fitbit.tokens.expires_in);
-
-            // Original-Flow: tokens.* schreiben (lassen)
-            await this.setStateAsync("tokens.access",  this.fitbit.tokens.access_token, true);
-            await this.setStateAsync("tokens.refresh", this.fitbit.tokens.refresh_token, true);
-            await this.setStateAsync("tokens.expire",  time.toISOString(), true);
-
-            this.log.info(`Token renewed (original flow): ${time.toISOString()}`);
-            return true;
-        } else {
-            return false;
-        }
-    } catch (err) {
-        this.log.error(`Renew Token failed: ${err}`);
-        return false;
+  try {
+    // 1) Immer den aktuellsten refresh_token aus dem State holen
+    const st = await this.getStateAsync("tokens.refresh");
+    const refreshToken = st && st.val ? String(st.val) : (this.fitbit.tokens && this.fitbit.tokens.refresh_token);
+    if (!refreshToken) {
+      throw new Error("No refresh_token available (state empty). Re-auth required.");
     }
+
+    // 2) App-Creds aus der UI verwenden; notfalls auf Konstanten fallen
+    const cid = this.config.clientId || clientID;
+    const csec = this.config.clientSecret || clientSecret;
+
+    // 3) Body als x-www-form-urlencoded; client_id zusätzlich mitsenden
+    const body = new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+      client_id: cid
+    }).toString();
+
+    const resp = await axios({
+      method: "post",
+      url: "https://api.fitbit.com/oauth2/token",
+      headers: {
+        "Authorization": `Basic ${Buffer.from(`${cid}:${csec}`).toString("base64")}`,
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      data: body,
+      timeout: axiosTimeout,
+      // Fehlerbody immer bekommen, auch bei 400
+      validateStatus: () => true
+    });
+
+    if (resp.status !== 200) {
+      this.log.error(`Renew Token failed ${resp.status}: ${JSON.stringify(resp.data)}`);
+      return false;
+    }
+
+    // 4) Neue Tokens übernehmen
+    this.fitbit.tokens = resp.data;
+
+    const expireAt = new Date(Date.now() + (this.fitbit.tokens.expires_in || 0) * 1000);
+    await this.setStateAsync("tokens.access", this.fitbit.tokens.access_token, true);
+    await this.setStateAsync("tokens.refresh", this.fitbit.tokens.refresh_token, true);
+    await this.setStateAsync("tokens.expire",  expireAt.toISOString(), true);
+
+    this.log.info(`Token renewed (original flow): ${expireAt.toISOString()}`);
+    return true;
+  } catch (e) {
+    // detaillierter Fehler
+    const msg = e && e.response && e.response.data ? JSON.stringify(e.response.data) : String(e);
+    this.log.error(`Renew Token error: ${msg}`);
+    return false;
+  } finally {
+    this._renewInProgress = false;
+  }
 }
 
     // ================================
