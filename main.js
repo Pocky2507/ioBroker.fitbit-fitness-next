@@ -93,9 +93,8 @@ class FitBit extends utils.Adapter {
     // Nur eigene, zusätzliche Sleep-States anlegen
     // ================================
     async initCustomSleepStates() {
-        // Original legt Deep/Light/Rem/Wake an – wir NICHT nochmal.
-        // Eigene Zusatzdaten:
-        const extraStates = [
+        // Minuten-/Zähler-States (number)
+        const minuteStates = [
             { id: "sleep.AsleepTotal", name: "Total minutes asleep (incl. naps)", unit: "min" },
             { id: "sleep.InBedTotal",  name: "Total minutes in bed (incl. naps)", unit: "min" },
             { id: "sleep.Naps.Asleep", name: "Minutes asleep in naps", unit: "min" },
@@ -103,7 +102,7 @@ class FitBit extends utils.Adapter {
             { id: "sleep.Naps.Count",  name: "Number of naps", unit: "" },
         ];
 
-        for (const s of extraStates) {
+        for (const s of minuteStates) {
             await this.setObjectNotExistsAsync(s.id, {
                 type: "state",
                 common: {
@@ -112,7 +111,36 @@ class FitBit extends utils.Adapter {
                     role: "value",
                     unit: s.unit,
                     read: true,
-                    write: true     // auf Wunsch: überschreibbar
+                    write: true
+                },
+                native: {},
+            });
+        }
+
+        // Zeitstempel-States (string)
+        const timeStates = [
+            // Hauptschlaf
+            { id: "sleep.Main.FellAsleepAt",      name: "Main sleep - fell asleep at (ISO)" },
+            { id: "sleep.Main.FellAsleepAtLocal", name: "Main sleep - fell asleep at (local de-DE)" },
+            { id: "sleep.Main.WokeUpAt",          name: "Main sleep - woke up at (ISO)" },
+            { id: "sleep.Main.WokeUpAtLocal",     name: "Main sleep - woke up at (local de-DE)" },
+
+            // Letztes Nickerchen
+            { id: "sleep.Naps.FellAsleepAt",      name: "Last nap - fell asleep at (ISO)" },
+            { id: "sleep.Naps.FellAsleepAtLocal", name: "Last nap - fell asleep at (local de-DE)" },
+            { id: "sleep.Naps.WokeUpAt",          name: "Last nap - woke up at (ISO)" },
+            { id: "sleep.Naps.WokeUpAtLocal",     name: "Last nap - woke up at (local de-DE)" },
+        ];
+
+        for (const s of timeStates) {
+            await this.setObjectNotExistsAsync(s.id, {
+                type: "state",
+                common: {
+                    name: s.name,
+                    type: "string",
+                    role: "text",
+                    read: true,
+                    write: true
                 },
                 native: {},
             });
@@ -330,50 +358,50 @@ class FitBit extends utils.Adapter {
     }
 
     async setHeartRateTimeSeries(data) {
-    if (!data["activities-heart"]) return false;
+        if (!data["activities-heart"]) return false;
 
-    for (const entry of data["activities-heart"]) {
-        const val = entry.value || {};
+        for (const entry of data["activities-heart"]) {
+            const val = entry.value || {};
 
-        // "customHeartRateZones" und/oder "heartRateZones"
-        for (const zonesKey of Object.keys(val).filter(k => HEART_RATE_ZONE_RANGES.includes(k))) {
-            const zonesArr = val[zonesKey] || [];
+            // "customHeartRateZones" und/oder "heartRateZones"
+            for (const zonesKey of Object.keys(val).filter(k => HEART_RATE_ZONE_RANGES.includes(k))) {
+                const zonesArr = val[zonesKey] || [];
 
-            for (const zone of zonesArr) {
-                const zoneName = String(zone.name || "Zone").replace(this.FORBIDDEN_CHARS, "_");
+                for (const zone of zonesArr) {
+                    const zoneName = String(zone.name || "Zone").replace(this.FORBIDDEN_CHARS, "_");
 
-                // alle Werte der Zone außer dem Namen anlegen/schreiben
-                for (const entryValue of Object.keys(zone).filter(k => k !== "name")) {
-                    const entryValueName = entryValue.replace(this.FORBIDDEN_CHARS, "_");
-                    const id = `activity.heartratezones.${zoneName}.${entryValueName}`;
+                    // alle Werte der Zone außer dem Namen anlegen/schreiben
+                    for (const entryValue of Object.keys(zone).filter(k => k !== "name")) {
+                        const entryValueName = entryValue.replace(this.FORBIDDEN_CHARS, "_");
+                        const id = `activity.heartratezones.${zoneName}.${entryValueName}`;
 
-                    await this.setObjectNotExistsAsync(id, {
+                        await this.setObjectNotExistsAsync(id, {
+                            type: "state",
+                            common: { name: `${entryValue} - ${zoneName}`, type: "number", read: true, write: true },
+                            native: {}
+                        });
+                        await this.setStateAsync(id, { val: zone[entryValue] ?? 0, ack: true });
+                    }
+
+                    // Flag: ist es eine Custom-Zone?
+                    const idCustom = `activity.heartratezones.${zoneName}.isCustom`;
+                    await this.setObjectNotExistsAsync(idCustom, {
                         type: "state",
-                        common: { name: `${entryValue} - ${zoneName}`, type: "number", read: true, write: true },
+                        common: { name: "custom heart rate zone", type: "boolean", read: true, write: true },
                         native: {}
                     });
-                    await this.setStateAsync(id, { val: zone[entryValue] ?? 0, ack: true });
+                    await this.setStateAsync(idCustom, { val: zonesKey.includes("custom"), ack: true });
                 }
+            }
 
-                // Flag: ist es eine Custom-Zone?
-                const idCustom = `activity.heartratezones.${zoneName}.isCustom`;
-                await this.setObjectNotExistsAsync(idCustom, {
-                    type: "state",
-                    common: { name: "custom heart rate zone", type: "boolean", read: true, write: true },
-                    native: {}
-                });
-                await this.setStateAsync(idCustom, { val: zonesKey.includes("custom"), ack: true });
+            // optional: Ruhepuls (falls im Tagesobjekt vorhanden)
+            if (entry.value && typeof entry.value.restingHeartRate === "number") {
+                await this.setStateAsync("activity.RestingHeartRate", { val: entry.value.restingHeartRate, ack: true });
             }
         }
 
-        // optional: Ruhepuls (falls im Tagesobjekt vorhanden)
-        if (entry.value && typeof entry.value.restingHeartRate === "number") {
-            await this.setStateAsync("activity.RestingHeartRate", { val: entry.value.restingHeartRate, ack: true });
-        }
+        return true;
     }
-
-    return true;
-}
 
     // Intraday (optional per Konstante)
     async getIntradayHeartRate() {
@@ -549,7 +577,7 @@ class FitBit extends utils.Adapter {
     }
 
     // ================================
-    // Schlaf
+    // Sleep – Abruf
     // ================================
     async getSleepRecords() {
         const url = `${BASE2_URL}-/sleep/date/${this.getDateTime().dateString}.json`;
@@ -571,6 +599,84 @@ class FitBit extends utils.Adapter {
         }
     }
 
+    // ================================
+    // Helpers für Sleep-Zeitpunkte
+    // ================================
+    formatDE_Short(dateObj) {
+        if (!(dateObj instanceof Date) || isNaN(dateObj)) return "";
+        const parts = new Intl.DateTimeFormat("de-DE", {
+            timeZone: "Europe/Berlin",
+            day: "2-digit",
+            month: "2-digit",
+            year: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+        }).formatToParts(dateObj);
+
+        const val = t => (parts.find(p => p.type === t) || {}).value || "";
+        const TT = val("day");
+        const MM = val("month");
+        const JJ = val("year");
+        const SS = val("hour");
+        const MI = val("minute");
+        return `${TT}.${MM}.${JJ} - ${SS}:${MI}`;
+    }
+
+    parseISO(d) {
+        if (!d) return null;
+        const dt = new Date(d);
+        return isNaN(dt) ? null : dt;
+    }
+
+    addSeconds(d, secs) {
+        if (!(d instanceof Date) || isNaN(d)) return null;
+        return new Date(d.getTime() + (secs || 0) * 1000);
+    }
+
+    // Liefert alle Level-Segmente (normal + short) aufsteigend sortiert
+    getLevelSegments(block) {
+        const a = (block && block.levels && Array.isArray(block.levels.data)) ? block.levels.data : [];
+        const b = (block && block.levels && Array.isArray(block.levels.shortData)) ? block.levels.shortData : [];
+        const segs = [...a, ...b].filter(s => s && s.dateTime && s.level);
+        segs.sort((x, y) => new Date(x.dateTime) - new Date(y.dateTime));
+        return segs;
+    }
+
+    // „Eingeschlafen um“: erstes Segment mit Schlaf-Stufe
+    computeFellAsleepAt(block) {
+        const segs = this.getLevelSegments(block);
+        const SLEEP_LEVELS = new Set(["asleep", "light", "deep", "rem"]);
+        const first = segs.find(s => SLEEP_LEVELS.has(s.level));
+        if (first) return this.parseISO(first.dateTime);
+        // Fallback: Start des Blocks
+        return this.parseISO(block && block.startTime);
+    }
+
+    // „Aufgewacht um“: Ende des letzten Segments mit Schlaf-Stufe
+    computeWokeUpAt(block) {
+        const segs = this.getLevelSegments(block);
+        const SLEEP_LEVELS = new Set(["asleep", "light", "deep", "rem"]);
+        // letztes Schlaf-Segment suchen
+        for (let i = segs.length - 1; i >= 0; i--) {
+            const s = segs[i];
+            if (SLEEP_LEVELS.has(s.level)) {
+                const start = this.parseISO(s.dateTime);
+                if (start) {
+                    if (typeof s.seconds === "number") {
+                        return this.addSeconds(start, s.seconds);
+                    }
+                    return this.parseISO(block && block.endTime) || start;
+                }
+            }
+        }
+        // Fallback komplett: Endzeit des Blocks
+        return this.parseISO(block && block.endTime);
+    }
+
+    // ================================
+    // Sleep – Schreiben
+    // ================================
     setSleepStates(data) {
         const blocks = data && data.sleep ? data.sleep : [];
         if (blocks.length === 0) return false;
@@ -617,6 +723,66 @@ class FitBit extends utils.Adapter {
         this.setState("sleep.Naps.InBed",  napsInBed,   true);
         this.setState("sleep.Naps.Count",  napsCount,   true);
 
+        // ▼ HAUPTSCHLAF-ZEITEN
+        const mainBlock = blocks.find(b => b.isMainSleep);
+        if (mainBlock) {
+            const fell = this.computeFellAsleepAt(mainBlock);
+            const woke = this.computeWokeUpAt(mainBlock);
+
+            if (fell) {
+                this.setState("sleep.Main.FellAsleepAt", fell.toISOString(), true);
+                this.setState("sleep.Main.FellAsleepAtLocal", this.formatDE_Short(fell), true);
+            } else {
+                this.setState("sleep.Main.FellAsleepAt", "", true);
+                this.setState("sleep.Main.FellAsleepAtLocal", "", true);
+            }
+
+            if (woke) {
+                this.setState("sleep.Main.WokeUpAt", woke.toISOString(), true);
+                this.setState("sleep.Main.WokeUpAtLocal", this.formatDE_Short(woke), true);
+            } else {
+                this.setState("sleep.Main.WokeUpAt", "", true);
+                this.setState("sleep.Main.WokeUpAtLocal", "", true);
+            }
+        } else {
+            // Kein Hauptschlaf – leeren
+            this.setState("sleep.Main.FellAsleepAt", "", true);
+            this.setState("sleep.Main.FellAsleepAtLocal", "", true);
+            this.setState("sleep.Main.WokeUpAt", "", true);
+            this.setState("sleep.Main.WokeUpAtLocal", "", true);
+        }
+
+        // ▼ LETZTES NICKERCHEN-ZEITEN
+        const napBlocks = blocks.filter(b => !b.isMainSleep);
+        if (napBlocks.length > 0) {
+            const lastNap = napBlocks[napBlocks.length - 1];
+
+            const napFell = this.computeFellAsleepAt(lastNap);
+            const napWoke = this.computeWokeUpAt(lastNap);
+
+            if (napFell) {
+                this.setState("sleep.Naps.FellAsleepAt", napFell.toISOString(), true);
+                this.setState("sleep.Naps.FellAsleepAtLocal", this.formatDE_Short(napFell), true);
+            } else {
+                this.setState("sleep.Naps.FellAsleepAt", "", true);
+                this.setState("sleep.Naps.FellAsleepAtLocal", "", true);
+            }
+
+            if (napWoke) {
+                this.setState("sleep.Naps.WokeUpAt", napWoke.toISOString(), true);
+                this.setState("sleep.Naps.WokeUpAtLocal", this.formatDE_Short(napWoke), true);
+            } else {
+                this.setState("sleep.Naps.WokeUpAt", "", true);
+                this.setState("sleep.Naps.WokeUpAtLocal", "", true);
+            }
+        } else {
+            // Kein Nap – leeren
+            this.setState("sleep.Naps.FellAsleepAt", "", true);
+            this.setState("sleep.Naps.FellAsleepAtLocal", "", true);
+            this.setState("sleep.Naps.WokeUpAt", "", true);
+            this.setState("sleep.Naps.WokeUpAtLocal", "", true);
+        }
+
         this.log.info(
             `Sleep: totalAsleep=${totalAsleep}min, totalInBed=${totalInBed}min, main Deep/Light/Rem/Wake=${mainDeep}/${mainLight}/${mainRem}/${mainWake}, naps: ${napsCount}x (${napsAsleep}min)`
         );
@@ -626,7 +792,6 @@ class FitBit extends utils.Adapter {
 
     // ================================
     // ▶️ Original-Token-Introspect (optional)
-    // (Behalten möglich; nicht zwingend genutzt)
     // ================================
     async getTokenInfo() {
         const token = this.fitbit.tokens.access_token;
@@ -640,7 +805,6 @@ class FitBit extends utils.Adapter {
                 data: payload
             });
             this.fitbit.tokens = response.data;
-            // Original schrieb client_id/user_id-States; wir sparen das hier ein (kein Extra-State)
             this.log.debug(`Token introspection ok (client_id present)`);
             return true;
         } catch (err) {
@@ -650,74 +814,73 @@ class FitBit extends utils.Adapter {
     }
 
     // ================================
-    // ▶️ Original-Token-Renew (lässt Original-Flow bestehen)
-    // Achtung: Diese Funktion schreibt im Original tokens.* States!
-    // Wir ändern daran NICHTS, damit der automatische Refresh wieder funktioniert.
+    // ▶️ Original-Token-Renew (beibehalten, mit Verbesserungen)
     // ================================
     async renewToken() {
-  // Parallele Aufrufe verhindern
-  if (this._renewInProgress) {
-    this.log.debug("renewToken: already in progress");
-    return false;
-  }
-  this._renewInProgress = true;
+        // Parallele Aufrufe verhindern
+        if (this._renewInProgress) {
+            this.log.debug("renewToken: already in progress");
+            return false;
+        }
+        this._renewInProgress = true;
 
-  try {
-    // 1) Immer den aktuellsten refresh_token aus dem State holen
-    const st = await this.getStateAsync("tokens.refresh");
-    const refreshToken = st && st.val ? String(st.val) : (this.fitbit.tokens && this.fitbit.tokens.refresh_token);
-    if (!refreshToken) {
-      throw new Error("No refresh_token available (state empty). Re-auth required.");
+        try {
+            // 1) Immer den aktuellsten refresh_token aus dem State holen
+            const st = await this.getStateAsync("tokens.refresh");
+            const refreshToken = st && st.val ? String(st.val) : (this.fitbit.tokens && this.fitbit.tokens.refresh_token);
+            if (!refreshToken) {
+                throw new Error("No refresh_token available (state empty). Re-auth required.");
+            }
+
+            // 2) App-Creds aus der UI verwenden; notfalls auf Konstanten fallen
+            const cid = this.config.clientId || "";
+            const csec = this.config.clientSecret || "";
+            if (!cid || !csec) {
+                throw new Error("ClientId/ClientSecret missing in config. Please set them in admin UI.");
+            }
+
+            // 3) Body als x-www-form-urlencoded; client_id zusätzlich mitsenden
+            const body = new URLSearchParams({
+                grant_type: "refresh_token",
+                refresh_token: refreshToken,
+                client_id: cid
+            }).toString();
+
+            const resp = await axios({
+                method: "post",
+                url: "https://api.fitbit.com/oauth2/token",
+                headers: {
+                    "Authorization": `Basic ${Buffer.from(`${cid}:${csec}`).toString("base64")}`,
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                data: body,
+                timeout: axiosTimeout,
+                validateStatus: () => true // Fehlerbody auch bei 400 erhalten
+            });
+
+            if (resp.status !== 200) {
+                this.log.error(`Renew Token failed ${resp.status}: ${JSON.stringify(resp.data)}`);
+                return false;
+            }
+
+            // 4) Neue Tokens übernehmen
+            this.fitbit.tokens = resp.data;
+
+            const expireAt = new Date(Date.now() + (this.fitbit.tokens.expires_in || 0) * 1000);
+            await this.setStateAsync("tokens.access", this.fitbit.tokens.access_token, true);
+            await this.setStateAsync("tokens.refresh", this.fitbit.tokens.refresh_token, true);
+            await this.setStateAsync("tokens.expire",  expireAt.toISOString(), true);
+
+            this.log.info(`Token renewed (original flow): ${expireAt.toISOString()}`);
+            return true;
+        } catch (e) {
+            const msg = e && e.response && e.response.data ? JSON.stringify(e.response.data) : String(e);
+            this.log.error(`Renew Token error: ${msg}`);
+            return false;
+        } finally {
+            this._renewInProgress = false;
+        }
     }
-
-    // 2) App-Creds aus der UI verwenden; notfalls auf Konstanten fallen
-    const cid = this.config.clientId || clientID;
-    const csec = this.config.clientSecret || clientSecret;
-
-    // 3) Body als x-www-form-urlencoded; client_id zusätzlich mitsenden
-    const body = new URLSearchParams({
-      grant_type: "refresh_token",
-      refresh_token: refreshToken,
-      client_id: cid
-    }).toString();
-
-    const resp = await axios({
-      method: "post",
-      url: "https://api.fitbit.com/oauth2/token",
-      headers: {
-        "Authorization": `Basic ${Buffer.from(`${cid}:${csec}`).toString("base64")}`,
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      data: body,
-      timeout: axiosTimeout,
-      // Fehlerbody immer bekommen, auch bei 400
-      validateStatus: () => true
-    });
-
-    if (resp.status !== 200) {
-      this.log.error(`Renew Token failed ${resp.status}: ${JSON.stringify(resp.data)}`);
-      return false;
-    }
-
-    // 4) Neue Tokens übernehmen
-    this.fitbit.tokens = resp.data;
-
-    const expireAt = new Date(Date.now() + (this.fitbit.tokens.expires_in || 0) * 1000);
-    await this.setStateAsync("tokens.access", this.fitbit.tokens.access_token, true);
-    await this.setStateAsync("tokens.refresh", this.fitbit.tokens.refresh_token, true);
-    await this.setStateAsync("tokens.expire",  expireAt.toISOString(), true);
-
-    this.log.info(`Token renewed (original flow): ${expireAt.toISOString()}`);
-    return true;
-  } catch (e) {
-    // detaillierter Fehler
-    const msg = e && e.response && e.response.data ? JSON.stringify(e.response.data) : String(e);
-    this.log.error(`Renew Token error: ${msg}`);
-    return false;
-  } finally {
-    this._renewInProgress = false;
-  }
-}
 
     // ================================
     // ▶️ Original-Token-Check (unverändert)
