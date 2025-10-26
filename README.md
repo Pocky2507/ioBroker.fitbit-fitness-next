@@ -25,7 +25,7 @@ und wurde von **Chris** sowie **Pocky2507** erweitert und modernisiert.
 - Option, **Schlafdaten nur einmal täglich** zu laden (zur Reduzierung der API-Aufrufe)
 - **Nickerchen-Verwaltung (Nap Management)**  
   - Letztes oder erstes Nickerchen anzeigen  
-  - Nickerchen-Liste nachts oder zu einer festen Uhrzeit automatisch löschen  
+  - Nickerchen-Liste nachts oder zu einer festen Uhrzeit automatisch leeren  
 - **Intraday-Modus** (aktiviert den Abruf hochauflösender Minutendaten)
 - Moderne **OAuth2-Authentifizierung** direkt über die Admin-Oberfläche
 - Unterstützt **Compact-Mode** und **Cloud-Verbindung**
