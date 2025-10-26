@@ -49,7 +49,7 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
   Ein zu kurzes Intervall (z. B. unter 2–3 Minuten) kann zu **API-Fehlern oder temporären Sperren** führen.  
   Empfohlen wird ein Intervall von **mindestens 5 Minuten**, um zuverlässig Daten zu erhalten.
 - Option, **Schlafdaten nur einmal täglich** zu laden (zur Reduzierung der API-Aufrufe)  
-Option entfällt wenn mindestens 5 Minuten eingestellt ist. Dann kann Intervall beibegalten werden.
+- Option entfällt wenn mindestens 5 Minuten eingestellt ist. Dann kann Intervall beibehalten werden.
 - **Nickerchen-Verwaltung (Nap Management)**  
   - Letztes oder erstes Nickerchen anzeigen  
   - Nickerchen-Liste nachts oder zu einer festen Uhrzeit automatisch leeren  
@@ -188,7 +188,8 @@ To use this adapter, you need a **Fitbit Developer Account**.
   The Fitbit API limits the number of requests per hour/day.  
   Setting the interval too low (below 2–3 minutes) may result in **temporary blocking** or **API errors**.  
   A **5-minute interval or higher** is recommended for stable operation.
-- Optional **once-per-day sleep record retrieval** (20–22 h)  
+- Optional **once-per-day sleep record retrieval** (20–22 h)
+- This option is omitted if at least 5 minutes is set. In this case, the interval can be retained.
 - **Nap management** – show last or first nap, auto-clear at night or fixed time  
 - **Intraday mode** for detailed minute-level data  
 - Built-in **OAuth2 authorization** via adapter admin UI  
