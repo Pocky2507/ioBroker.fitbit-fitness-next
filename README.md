@@ -43,7 +43,11 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 ## ✨ Funktionen
 
 - Liest Daten aus den Bereichen **Körper**, **Aktivitäten**, **Lebensmittel**, **Schlaf** und **Geräte**
-- Frei wählbares **Abrufintervall** (in Minuten)
+- Frei wählbares **Abrufintervall** (in Minuten)  
+  ⚠️ **Hinweis zum Abrufintervall:**  
+  Die Fitbit-API erlaubt nur eine begrenzte Anzahl an Abfragen pro Stunde und Tag.  
+  Ein zu kurzes Intervall (z. B. unter 2–3 Minuten) kann zu **API-Fehlern oder temporären Sperren** führen.  
+  Empfohlen wird ein Intervall von **mindestens 5 Minuten**, um zuverlässig Daten zu erhalten.
 - Option, **Schlafdaten nur einmal täglich** zu laden (zur Reduzierung der API-Aufrufe)
 - **Nickerchen-Verwaltung (Nap Management)**  
   - Letztes oder erstes Nickerchen anzeigen  
@@ -85,8 +89,8 @@ Dann werden die Werte im normalen Intervall regelmäßig abgerufen.
 |--------------|---------------|
 | **Letztes oder erstes Nickerchen anzeigen** | Zeigt entweder das erste oder das letzte Nickerchen des Tages an. |
 | **Nickerchen-Liste nachts automatisch löschen** | Leert die Liste nach Mitternacht automatisch, um alte Einträge zu vermeiden. |
-| **Tägliches Leeren aktivieren** | Leert die Nickerchen-Liste einmal täglich zu einer definierten Zeit. |
-| **Leerungszeit (HH:MM)** | Uhrzeit, zu der die Nickerchen-Liste erzwungenermaßen geleert wird (z. B. 02:45). |
+| **Tägliches Löschen aktivieren** | Leert die Nickerchen-Liste einmal täglich zu einer definierten Zeit. |
+| **Löschzeit (HH:MM)** | Uhrzeit, zu der die Nickerchen-Liste erzwungenermaßen geleert wird (z. B. 02:45). |
 
 ---
 
@@ -97,9 +101,9 @@ Dann werden die Werte im normalen Intervall regelmäßig abgerufen.
 | `refresh` | Aktualisierungsintervall in Minuten |
 | `sleeprecordsschedule` | Schlafdaten nur einmal täglich abrufen (20–22 Uhr) |
 | `showLastOrFirstNap` | Letztes oder erstes Nickerchen anzeigen |
-| `clearNapListAtNight` | Nickerchen-Liste nachts automatisch leeren |
+| `clearNapListAtNight` | Nickerchen-Liste nachts automatisch löschen |
 | `enableDailyNapClear` | Tägliches Leeren der Nickerchen-Liste aktivieren |
-| `forceClearNapListTime` | Feste Leerungszeit der Liste (HH:MM) |
+| `forceClearNapListTime` | Feste Löschzeit der Liste (HH:MM) |
 | `intraday` | Aktiviert den Abruf von Intraday-Daten (Minutenauflösung) |
 
 ---
@@ -107,6 +111,8 @@ Dann werden die Werte im normalen Intervall regelmäßig abgerufen.
 ## 🪲 Bekannte Probleme
 
 Zurzeit sind keine Probleme bekannt.  
+*(Ältere Änderungen siehe im Original-Repository)*  
+<br>[Original GitHub-Repository – Chris-656/ioBroker.fitbit-fitness](https://github.com/Chris-656/ioBroker.fitbit-fitness)
 
 ---
 
@@ -177,6 +183,10 @@ To use this adapter, you need a **Fitbit Developer Account**.
 
 - Retrieves **Body**, **Activity**, **Food**, **Sleep**, and **Device** data  
 - Customizable **refresh interval**  
+  ⚠️ **API Rate Limit Warning:**  
+  The Fitbit API limits the number of requests per hour/day.  
+  Setting the interval too low (below 2–3 minutes) may result in **temporary blocking** or **API errors**.  
+  A **5-minute interval or higher** is recommended for stable operation.
 - Optional **once-per-day sleep record retrieval** (20–22 h)  
 - **Nap management** – show last or first nap, auto-clear at night or fixed time  
 - **Intraday mode** for detailed minute-level data  
