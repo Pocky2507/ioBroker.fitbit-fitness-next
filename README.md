@@ -89,8 +89,8 @@ Dann werden die Werte im normalen Intervall regelmäßig abgerufen.
 | Einstellung | Beschreibung |
 |--------------|---------------|
 | **Letztes oder erstes Nickerchen anzeigen** | Zeigt entweder das erste oder das letzte Nickerchen des Tages an. |
-| **Nickerchen-Liste nachts automatisch löschen** | Leert die Liste nach Mitternacht automatisch, um alte Einträge zu vermeiden. |
-| **Tägliches Löschen aktivieren** | Leert die Nickerchen-Liste einmal täglich zu einer definierten Zeit. |
+| **Nickerchen-Liste nachts automatisch leeren** | Leert die Liste nach Mitternacht automatisch, um alte Einträge zu vermeiden. |
+| **Tägliches Leeren aktivieren** | Leert die Nickerchen-Liste einmal täglich zu einer definierten Zeit. |
 | **Löschzeit (HH:MM)** | Uhrzeit, zu der die Nickerchen-Liste erzwungenermaßen geleert wird (z. B. 02:45). |
 
 ---
@@ -102,9 +102,9 @@ Dann werden die Werte im normalen Intervall regelmäßig abgerufen.
 | `refresh` | Aktualisierungsintervall in Minuten |
 | `sleeprecordsschedule` | Schlafdaten nur einmal täglich abrufen (20–22 Uhr) |
 | `showLastOrFirstNap` | Letztes oder erstes Nickerchen anzeigen |
-| `clearNapListAtNight` | Nickerchen-Liste nachts automatisch löschen |
+| `clearNapListAtNight` | Nickerchen-Liste nachts automatisch leeren |
 | `enableDailyNapClear` | Tägliches Leeren der Nickerchen-Liste aktivieren |
-| `forceClearNapListTime` | Feste Löschzeit der Liste (HH:MM) |
+| `forceClearNapListTime` | Feste Leerungszeit der Liste (HH:MM) |
 | `intraday` | Aktiviert den Abruf von Intraday-Daten (Minutenauflösung) |
 
 ---
