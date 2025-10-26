@@ -11,7 +11,6 @@
   <script type="text/javascript" src="words.js"></script>
 
   <script type="text/javascript">
-    // Popup-Handling
     var oauthPopup = null;
     function openAuthPopup(url) {
       try { if (oauthPopup && !oauthPopup.closed) oauthPopup.close(); } catch(e) {}
@@ -22,13 +21,11 @@
       try { if (oauthPopup && !oauthPopup.closed) oauthPopup.close(); } catch(e){}
       oauthPopup = null;
     }
-
     function valid(s){ return s && typeof s === 'string' && s.trim() !== ''; }
 
     function load(settings, onChange) {
       if (!settings) return;
 
-      // UI Felder befüllen
       $('.value').each(function () {
         var $el = $(this), id = $el.attr('id');
         if ($el.attr('type') === 'checkbox') {
@@ -38,7 +35,6 @@
         }
       });
 
-      // Authorize-Button
       $('.table-button-do').on('click', function () {
         var clientId     = $('#clientId').val().trim();
         var clientSecret = $('#clientSecret').val().trim();
@@ -59,7 +55,6 @@
         openAuthPopup(url);
       });
 
-      // postMessage: Code von getCode.html empfangen
       var eventMethod = window.addEventListener ? 'addEventListener' : 'attachEvent';
       var eventer = window[eventMethod];
       var messageEvent = eventMethod === 'attachEvent' ? 'onmessage' : 'message';
@@ -74,13 +69,9 @@
           return;
         }
 
-        // Origin-Absicherung (erlaubt: Origin der Redirect-URL)
         try {
           var allowedOrigin = new URL(redirectUri).origin;
-          if (allowedOrigin && e.origin !== allowedOrigin) {
-            // console.warn('Blocked postMessage from', e.origin, 'expected', allowedOrigin);
-            return;
-          }
+          if (allowedOrigin && e.origin !== allowedOrigin) return;
         } catch(_) {}
 
         if (!e.data) { closeAuthPopup(e.source); return; }
@@ -129,7 +120,6 @@
         }
       }, false);
 
-      // bestehende Token anzeigen
       socket.emit('getState', 'fitbit-fitness.' + instance + '.tokens.access', function (err, state) {
         $('#accessToken').val(state ? state.val || '' : '');
       });
@@ -142,7 +132,6 @@
         setTimeout(function () { if (M) M.updateTextFields(); }, 500);
       });
 
-      // Sleep-Schedule Sichtbarkeit
       var $sleeprecords = $('#sleeprecords');
       $sleeprecords.on('change', function () {
         var val = $(this).prop('checked');
@@ -185,7 +174,6 @@
           <div class="col s6"><img src="fitbit-fitness.png" alt="logo" class="logo"></div>
         </div>
 
-        <!-- NEU: Credentials + Redirect -->
         <div class="row">
           <div class="input-field col s12 m6">
             <input class="value" id="clientId" type="text" placeholder="Deine Client ID">
@@ -257,6 +245,15 @@
             <span for="activityrecords" class="translate">activityrecords</span>
           </div>
         </div>
+
+        <!-- 🆕 Intraday Schalter -->
+        <div class="row">
+          <div class="input-field col s12 m6 l4">
+            <input class="value" id="intraday" type="checkbox">
+            <span for="intraday" class="translate">intraday</span>
+          </div>
+        </div>
+
         <div class="row">
           <div class="input-field col s3 m6 l4">
             <input class="value" id="sleeprecords" type="checkbox">
@@ -279,6 +276,37 @@
             <span for="devicerecords" class="translate">devicerecords</span>
           </div>
         </div>
+
+        <!-- 💤 Nickerchen-Einstellungen -->
+        <div class="row">
+          <div class="col s12"><h6>🕒 Nickerchen-Einstellungen</h6></div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12 m6 l4">
+            <input class="value" id="showLastOrFirstNap" type="checkbox">
+            <span for="showLastOrFirstNap" class="translate">showLastOrFirstNap</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12 m6 l4">
+            <input class="value" id="clearNapListAtNight" type="checkbox">
+            <span for="clearNapListAtNight" class="translate">clearNapListAtNight</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12 m6 l4">
+            <input class="value" id="enableDailyNapClear" type="checkbox">
+            <span for="enableDailyNapClear" class="translate">enableDailyNapClear</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12 m6 l4">
+            <i class="material-icons prefix">access_time</i>
+            <input class="value" id="forceClearNapListTime" type="text" placeholder="02:45">
+            <label for="forceClearNapListTime" class="translate">forceClearNapListTime</label>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
