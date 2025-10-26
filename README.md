@@ -112,8 +112,6 @@ Dann werden die Werte im normalen Intervall regelmäßig abgerufen.
 ## 🪲 Bekannte Probleme
 
 Zurzeit sind keine Probleme bekannt.  
-*(Ältere Änderungen siehe im Original-Repository)*  
-<br>[Original GitHub-Repository – Chris-656/ioBroker.fitbit-fitness](https://github.com/Chris-656/ioBroker.fitbit-fitness)
 
 ---
 
@@ -215,8 +213,6 @@ to include sleep data in every normal update cycle.
 
 ## 🪲 Known Issues
 No known issues.  
-*(Older changes can be found in the original repository)*  
-<br>[Original Repository – Chris-656/ioBroker.fitbit-fitness](https://github.com/Chris-656/ioBroker.fitbit-fitness)
 
 ---
 
@@ -229,6 +225,8 @@ No known issues.
 
 ### 0.5.1
 - Maintenance update  
+
+*(Older changes see in [Original-Repository](https://github.com/Chris-656/ioBroker.fitbit-fitness))* 
 
 ---
 
