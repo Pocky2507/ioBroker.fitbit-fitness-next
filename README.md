@@ -48,7 +48,8 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
   Die Fitbit-API erlaubt nur eine begrenzte Anzahl an Abfragen pro Stunde und Tag.  
   Ein zu kurzes Intervall (z. B. unter 2–3 Minuten) kann zu **API-Fehlern oder temporären Sperren** führen.  
   Empfohlen wird ein Intervall von **mindestens 5 Minuten**, um zuverlässig Daten zu erhalten.
-- Option, **Schlafdaten nur einmal täglich** zu laden (zur Reduzierung der API-Aufrufe)
+- Option, **Schlafdaten nur einmal täglich** zu laden (zur Reduzierung der API-Aufrufe)  
+Option entfällt wenn mindestens 5 Minuten eingestellt ist. Dann kann Intervall beibegalten werden.
 - **Nickerchen-Verwaltung (Nap Management)**  
   - Letztes oder erstes Nickerchen anzeigen  
   - Nickerchen-Liste nachts oder zu einer festen Uhrzeit automatisch leeren  
