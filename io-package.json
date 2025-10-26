@@ -1,8 +1,20 @@
 {
   "common": {
     "name": "fitbit-fitness",
-    "version": "0.5.1",
+    "version": "0.5.2",
     "news": {
+      "0.5.2": {
+        "en": "Added configurable nap options and improved sleep data handling",
+        "de": "Konfigurierbare Nickerchen-Optionen und verbessertes Schlafdaten-Handling hinzugefügt",
+        "ru": "Добавлены настраиваемые параметры дремоты и улучшена обработка данных сна",
+        "nl": "Configureerbare dutjesopties toegevoegd en slaapgegevensverwerking verbeterd",
+        "fr": "Ajout d'options de sieste configurables et amélioration de la gestion du sommeil",
+        "it": "Aggiunte opzioni di sonnellino configurabili e migliorata la gestione del sonno",
+        "es": "Se agregaron opciones de siesta configurables y se mejoró el manejo de datos del sueño",
+        "pl": "Dodano konfigurowalne opcje drzemki i ulepszono obsługę danych snu",
+        "uk": "Додано налаштовувані параметри дрімоти та покращено обробку даних сну",
+        "zh-cn": "添加了可配置的小睡选项并改进了睡眠数据处理"
+      },
       "0.5.1": {
         "en": "Maintanance issues",
         "de": "Wichtigste behandelte Fragen",
@@ -28,84 +40,6 @@
         "pl": "Zagadnienia administracyjne",
         "uk": "Основні проблеми",
         "zh-cn": "主要问题"
-      },
-      "0.4.14": {
-        "en": "Fixed some minor bugs",
-        "de": "Einige kleinere Fehler behoben",
-        "ru": "Исправлены некоторые незначительные ошибки",
-        "pt": "Corrigido alguns bugs menores",
-        "nl": "_",
-        "fr": "Correction de quelques insectes mineurs",
-        "it": "Risolto alcuni bug minori",
-        "es": "Arreglado algunos errores menores",
-        "pl": "Fixed Some Minor bugs (ang.)",
-        "uk": "Виправлено деякі незначні помилки",
-        "zh-cn": "偷窃某些小偷窃者"
-      },
-      "0.4.13": {
-        "en": "make heartrate time series working",
-        "de": "herzhafte zeitreihen arbeiten",
-        "ru": "сделать серию сердечных времен работая",
-        "pt": "fazer séries de tempo de ritmo cardíaco trabalhando",
-        "nl": "maak hartslagtijdserieën die werken",
-        "fr": "faire fonctionner les séries temporelles",
-        "it": "rendere cardiovascolare tempo serie di lavoro",
-        "es": "hacer el trabajo de la serie de tiempo",
-        "pl": "czas pracy",
-        "uk": "змусити роботу сердечника серця",
-        "zh-cn": "工作时间系列"
-      },
-      "0.4.12": {
-        "en": "changed node dependencies to node 16",
-        "de": "geänderte knotenabhängigkeiten zum knoten 16",
-        "ru": "изменены зависимости от узлов до ноды 16",
-        "pt": "dependências de nó alteradas para o nó 16",
-        "nl": "veranderde node afhankelijkheid om 16",
-        "fr": "changement de dépendances de noeud à node 16",
-        "it": "cambiato nodo dipendenze in nodo 16",
-        "es": "cambios en las dependencias de los nodos",
-        "pl": "zmiany węzłów zależą od węzła 16",
-        "uk": "змінені залежності вершини до вершини 16",
-        "zh-cn": "第16条"
-      },
-      "0.4.11": {
-        "en": "Catch unpresent activity data",
-        "de": "Nicht vorhandene Aktivitätsdaten erfassen",
-        "ru": "Поймать непредвиденные данные о деятельности",
-        "pt": "Pegar dados de atividade não presentes",
-        "nl": "Vang onvoorspelbare activiteiten",
-        "fr": "Catch unpresent activity data",
-        "it": "Cattura i dati delle attività non presenti",
-        "es": "Buscar datos de actividad no presentes",
-        "pl": "Catch unprezentuje dane",
-        "uk": "Кетч непредставлені дані активності",
-        "zh-cn": "未代表的活动数据"
-      },
-      "0.4.10": {
-        "en": "fixed web page for token",
-        "de": "feste webseite für token",
-        "ru": "фиксированная веб-страница для токена",
-        "pt": "página web fixa para token",
-        "nl": "vertaling:",
-        "fr": "page web fixe pour jeton",
-        "it": "pagina web fissa per token",
-        "es": "página web fija para ficha",
-        "pl": "oficjalna strona internetowa",
-        "uk": "фіксована сторінка для токен",
-        "zh-cn": "固定网页"
-      },
-      "0.4.9": {
-        "en": "Changed Repo name",
-        "de": "Repo Name geändert",
-        "ru": "Изменено имя Repo",
-        "pt": "Nome de Repo alterado",
-        "nl": "Veranderde naam van Repo",
-        "fr": "Changement de nom Repo",
-        "it": "Cambiato nome Repo",
-        "es": "Cambio de nombre Repo",
-        "pl": "Nazwisko Repo",
-        "uk": "Змінено назву Repo",
-        "zh-cn": "B. 改变Repo名称"
       }
     },
     "titleLang": {
@@ -135,7 +69,8 @@
       "zh-cn": "fITBIT 数据检索"
     },
     "authors": [
-      "Chris <besterquester@live.at>"
+      "Chris <besterquester@live.at>",
+      "Pocky2507 (Fork & Erweiterungen)"
     ],
     "keywords": [
       "Fitbit",
@@ -147,8 +82,8 @@
     "main": "main.js",
     "icon": "fitbit-fitness.png",
     "enabled": true,
-    "extIcon": "https://raw.githubusercontent.com/Chris-656/ioBroker.fitbit-fitness/main/admin/fitbit-fitness.png",
-    "readme": "https://github.com/Chris-656/ioBroker.fitbit-fitness/blob/main/README.md",
+    "extIcon": "https://raw.githubusercontent.com/Pocky2507/ioBroker.fitbit-fitness/main/admin/fitbit-fitness.png",
+    "readme": "https://github.com/Pocky2507/ioBroker.fitbit-fitness/blob/main/README.md",
     "loglevel": "info",
     "mode": "daemon",
     "type": "health",
@@ -176,16 +111,19 @@
     "devicerecords": false,
     "clientId": "",
     "clientSecret": "",
-    "redirectUri": "https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html"
+    "redirectUri": "https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html",
+    "showLastOrFirstNap": true,
+    "clearNapListAtNight": true,
+    "enableDailyNapClear": false,
+    "forceClearNapListTime": "02:45",
+    "intraday": false
   },
   "objects": [],
   "instanceObjects": [
     {
       "_id": "info",
       "type": "channel",
-      "common": {
-        "name": "Information"
-      },
+      "common": { "name": "Information" },
       "native": {}
     },
     {
@@ -204,9 +142,7 @@
     {
       "_id": "user",
       "type": "channel",
-      "common": {
-        "name": "user data"
-      },
+      "common": { "name": "user data" },
       "native": {}
     },
     {
@@ -236,9 +172,7 @@
     {
       "_id": "tokens",
       "type": "channel",
-      "common": {
-        "name": "Access tokens"
-      },
+      "common": { "name": "Access tokens" },
       "native": {}
     },
     {
@@ -280,9 +214,7 @@
     {
       "_id": "activity",
       "type": "channel",
-      "common": {
-        "name": "Activity records"
-      },
+      "common": { "name": "Activity records" },
       "native": {}
     },
     {
@@ -374,9 +306,7 @@
     {
       "_id": "body",
       "type": "channel",
-      "common": {
-        "name": "Body Records"
-      },
+      "common": { "name": "Body Records" },
       "native": {}
     },
     {
@@ -420,9 +350,7 @@
     {
       "_id": "food",
       "type": "channel",
-      "common": {
-        "name": "food data"
-      },
+      "common": { "name": "food data" },
       "native": {}
     },
     {
@@ -513,9 +441,7 @@
     {
       "_id": "sleep",
       "type": "channel",
-      "common": {
-        "name": "sleep data"
-      },
+      "common": { "name": "sleep data" },
       "native": {}
     },
     {
