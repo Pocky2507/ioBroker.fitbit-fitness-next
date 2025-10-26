@@ -81,7 +81,7 @@ Im ioBroker-Admin unter „Adapterkonfiguration“ können folgende Optionen ein
 ### 0.5.1 (2025-09-26)
 - Maintenance fixes
 
-*(Ältere Änderungen siehe im original GitHub-Repo)*
+*(Ältere Änderungen siehe im original GitHub-Repo)*  
 https://github.com/Chris-656/ioBroker.fitbit-fitness
 
 ---
