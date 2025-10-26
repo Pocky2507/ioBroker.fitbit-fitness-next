@@ -97,9 +97,9 @@ Dann werden die Werte im normalen Intervall regelmäßig abgerufen.
 | `refresh` | Aktualisierungsintervall in Minuten |
 | `sleeprecordsschedule` | Schlafdaten nur einmal täglich abrufen (20–22 Uhr) |
 | `showLastOrFirstNap` | Letztes oder erstes Nickerchen anzeigen |
-| `clearNapListAtNight` | Nickerchen-Liste nachts automatisch löschen |
+| `clearNapListAtNight` | Nickerchen-Liste nachts automatisch leeren |
 | `enableDailyNapClear` | Tägliches Leeren der Nickerchen-Liste aktivieren |
-| `forceClearNapListTime` | Feste Löschzeit der Liste (HH:MM) |
+| `forceClearNapListTime` | Feste Leerungszeit der Liste (HH:MM) |
 | `intraday` | Aktiviert den Abruf von Intraday-Daten (Minutenauflösung) |
 
 ---
@@ -107,8 +107,6 @@ Dann werden die Werte im normalen Intervall regelmäßig abgerufen.
 ## 🪲 Bekannte Probleme
 
 Zurzeit sind keine Probleme bekannt.  
-*(Ältere Änderungen siehe im Original-Repository)*  
-<br>[Original GitHub-Repository – Chris-656/ioBroker.fitbit-fitness](https://github.com/Chris-656/ioBroker.fitbit-fitness)
 
 ---
 
