@@ -47,9 +47,9 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
   ⚠️ **Hinweis zum Abrufintervall:**  
   Die Fitbit-API erlaubt nur eine begrenzte Anzahl an Abfragen pro Stunde und Tag.  
   Ein zu kurzes Intervall (z. B. unter 2–3 Minuten) kann zu **API-Fehlern oder temporären Sperren** führen.  
-  Empfohlen wird ein Intervall von **mindestens 5 Minuten**, um zuverlässig Daten zu erhalten.
-- Option, **Schlafdaten nur einmal täglich** zu laden (zur Reduzierung der API-Aufrufe)  
-- ▲ Option entfällt wenn mindestens 5 Minuten eingestellt ist. Dann kann Intervall beibehalten werden.
+  Empfohlen wird ein Intervall von **mindestens 5 Minuten**, um zuverlässig Daten zu erhalten.  
+  ▲ Die Option *„Schlafdaten nur einmal täglich“* entfällt, wenn das Intervall mindestens 5 Minuten beträgt – dann kann der reguläre Abruf genutzt werden.
+- Option, **Schlafdaten nur einmal täglich** zu laden (zur Reduzierung der API-Aufrufe)
 - **Nickerchen-Verwaltung (Nap Management)**  
   - Letztes oder erstes Nickerchen anzeigen  
   - Nickerchen-Liste nachts oder zu einer festen Uhrzeit automatisch leeren  
@@ -152,10 +152,9 @@ Nutzung auf eigene Verantwortung.
 
 ## FITBIT Adapter for ioBroker
 
-Adapter for Fitbit devices.  
-This adapter retrieves Fitbit data into ioBroker.  
-Originally created by **@GermanBluefox**,  
-extended and maintained by **Chris** and **Pocky2507** with modern configuration and new features.
+This adapter retrieves **Fitbit data** into ioBroker and provides it as structured datapoints.  
+It is based on the original project by **@GermanBluefox** (*fitbit-api*, many thanks!)  
+and has been extended and modernized by **Chris** and **Pocky2507**.
 
 ---
 
@@ -163,16 +162,18 @@ extended and maintained by **Chris** and **Pocky2507** with modern configuration
 
 To use this adapter, you need a **Fitbit Developer Account**.
 
-1. Go to [https://dev.fitbit.com/apps/new](https://dev.fitbit.com/apps/new)
+1. Visit [https://dev.fitbit.com/apps/new](https://dev.fitbit.com/apps/new)
 2. Log in using your **regular Fitbit account**.
 3. Create a **new app**:
    - Enter any name (e.g. *ioBroker Fitbit Adapter*).
-   - Use as **Redirect URL** the same address shown in the adapter configuration (default:  
+   - Use the **Redirect URL** from the adapter configuration (default:  
      `https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html`)
    - Enable permissions:  
      *activity, heartrate, nutrition, profile, settings, sleep, weight*
-4. After saving, note the **Client ID** and **Client Secret**.
-5. Enter both values in the ioBroker adapter configuration.
+4. After saving, you will find:
+   - **Client ID**
+   - **Client Secret**
+5. Enter these values into the ioBroker adapter configuration.
 
 💡 **Note:** Without a valid Developer Account, Client ID and Secret, the adapter cannot connect to Fitbit.
 
@@ -181,38 +182,74 @@ To use this adapter, you need a **Fitbit Developer Account**.
 ## ✨ Features
 
 - Retrieves **Body**, **Activity**, **Food**, **Sleep**, and **Device** data  
-- Customizable **refresh interval**  
+- Customizable **refresh interval** (in minutes)  
   ⚠️ **API Rate Limit Warning:**  
-  The Fitbit API limits the number of requests per hour/day.  
-  Setting the interval too low (below 2–3 minutes) may result in **temporary blocking** or **API errors**.  
-  A **5-minute interval or higher** is recommended for stable operation.
-- Optional **once-per-day sleep record retrieval** (20–22 h)
-- ▲ This option is omitted if at least 5 minutes is set. In this case, the interval can be retained.
-- **Nap management** – show last or first nap, auto-clear at night or fixed time  
-- **Intraday mode** for detailed minute-level data  
-- Built-in **OAuth2 authorization** via adapter admin UI  
+  The Fitbit API allows only a limited number of requests per hour and per day.  
+  Setting the interval too low (e.g., below 2–3 minutes) may lead to **API errors or temporary blocking**.  
+  A **minimum of 5 minutes** is recommended for reliable data retrieval.  
+  ▲ The *“once-per-day sleep record”* option is ignored when the interval is at least 5 minutes, since regular updates are sufficient.  
+- Optional **once-per-day sleep record retrieval** (to reduce API calls)
+- **Nap Management**  
+  - Show last or first nap  
+  - Automatically clear nap list at night or at a defined time  
+- **Intraday mode** for minute-level detailed data
+- Modern **OAuth2 authentication** directly via Admin UI
 - Supports **compact mode** and **cloud connection**
 
 ---
 
 ## 💤 Sleep Data Handling (Why 20–22 h)
 
-Fitbit finalizes sleep data several hours after you wake up.  
-Fetching too early (e.g., 7 a.m.) may return incomplete logs.  
-Therefore, the adapter provides two options:
+Fitbit finalizes sleep data **several hours after waking up**.  
+While steps and heart rate are updated instantly, the final sleep phases and totals  
+are only available later in the day.
+
+The adapter provides two modes:
 
 | Mode | Description | Recommended for |
 |------|--------------|-----------------|
-| **Regular refresh** | Retrieves sleep data with every update interval. | Users with irregular sleep patterns |
-| **Once per day (20–22 h)** | Retrieves once daily between 20:00–22:00 for stable and complete results. | Users with regular sleep or low API usage |
+| **Regular refresh** | Sleep data is retrieved during every normal update interval (e.g. every 5 minutes). | Users with irregular or late sleep schedules |
+| **Once per day (20–22 h)** | Retrieves sleep data once a day between **20:00 and 22:00**, when the data is complete and stable. | Users with regular sleep or reduced API usage |
 
-💡 **Tip:** Disable *“Get sleep record once per day”*  
-to include sleep data in every normal update cycle.
+🧠 **Why 20–22 h?**  
+Fitbit finalizes sleep data in the afternoon or evening.  
+Fetching in the morning may return incomplete or duplicate entries.  
+The evening window ensures complete and consistent results.
+
+💡 **Tip:**  
+If you want to see sleep data right after waking up,  
+disable the *“once-per-day sleep record”* option to update sleep data continuously.
+
+---
+
+## 🕒 Nap Options
+
+| Setting | Description |
+|----------|--------------|
+| **Show last or first nap** | Displays either the first or last nap of the day. |
+| **Automatically clear nap list at night** | Clears the list after midnight to remove old entries. |
+| **Enable daily clearing** | Clears the nap list daily at a defined time. |
+| **Clear time (HH:MM)** | Time at which the nap list will be forcibly cleared (e.g. 02:45). |
+
+---
+
+## ⚙️ Adapter Settings Overview
+
+| Setting | Description |
+|----------|--------------|
+| `refresh` | Refresh interval in minutes |
+| `sleeprecordsschedule` | Retrieve sleep data once per day (20–22 h) |
+| `showLastOrFirstNap` | Show last or first nap |
+| `clearNapListAtNight` | Automatically clear nap list at night |
+| `enableDailyNapClear` | Enable daily clearing of nap list |
+| `forceClearNapListTime` | Fixed clear time (HH:MM) |
+| `intraday` | Enable intraday (minute-level) data retrieval |
 
 ---
 
 ## 🪲 Known Issues
-No known issues.  
+
+Currently, no known issues.  
 
 ---
 
@@ -226,7 +263,7 @@ No known issues.
 ### 0.5.1
 - Maintenance update  
 
-*(Older changes see in [Original-Repository](https://github.com/Chris-656/ioBroker.fitbit-fitness))* 
+*(Older changes see in [Original Repository](https://github.com/Chris-656/ioBroker.fitbit-fitness))*  
 
 ---
 
