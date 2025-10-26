@@ -18,6 +18,28 @@ und wurde von **Chris** sowie **Pocky2507** erweitert und modernisiert.
 
 ---
 
+## 🧩 Voraussetzungen
+
+Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
+
+1. Besuche [https://dev.fitbit.com/apps/new](https://dev.fitbit.com/apps/new)
+2. Melde dich mit deinem **normalen Fitbit-Konto** an.
+3. Erstelle eine **neue App**:
+   - Trage einen beliebigen Namen ein (z. B. *ioBroker Fitbit Adapter*).
+   - Gib als **Redirect URL** den Wert aus der Adapter-Konfiguration an (Standard:  
+     `https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html`)
+   - Aktiviere die Berechtigungen:  
+     *activity, heartrate, nutrition, profile, settings, sleep, weight*
+4. Nach dem Speichern findest du in deinem Dashboard:
+   - **Client ID**
+   - **Client Secret**
+5. Trage diese Werte im ioBroker-Adapter unter  
+   **Client ID** und **Client Secret** ein.
+
+💡 **Hinweis:** Ohne Developer-Account und gültige ID/Secret kann keine Verbindung zu Fitbit hergestellt werden.
+
+---
+
 ## ✨ Funktionen
 
 - Liest Daten aus den Bereichen **Körper**, **Aktivitäten**, **Lebensmittel**, **Schlaf** und **Geräte**
@@ -131,6 +153,25 @@ Adapter for Fitbit devices.
 This adapter retrieves Fitbit data into ioBroker.  
 Originally created by **@GermanBluefox**,  
 extended and maintained by **Chris** and **Pocky2507** with modern configuration and new features.
+
+---
+
+## 🧩 Requirements
+
+To use this adapter, you need a **Fitbit Developer Account**.
+
+1. Go to [https://dev.fitbit.com/apps/new](https://dev.fitbit.com/apps/new)
+2. Log in using your **regular Fitbit account**.
+3. Create a **new app**:
+   - Enter any name (e.g. *ioBroker Fitbit Adapter*).
+   - Use as **Redirect URL** the same address shown in the adapter configuration (default:  
+     `https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html`)
+   - Enable permissions:  
+     *activity, heartrate, nutrition, profile, settings, sleep, weight*
+4. After saving, note the **Client ID** and **Client Secret**.
+5. Enter both values in the ioBroker adapter configuration.
+
+💡 **Note:** Without a valid Developer Account, Client ID and Secret, the adapter cannot connect to Fitbit.
 
 ---
 
