@@ -76,7 +76,7 @@ Dann werden die Werte im normalen Intervall regelmäßig abgerufen.
 | `sleeprecordsschedule` | Schlafdaten nur einmal täglich abrufen (20–22 Uhr) |
 | `showLastOrFirstNap` | Letztes oder erstes Nickerchen anzeigen |
 | `clearNapListAtNight` | Nickerchen-Liste nachts automatisch löschen |
-| `enableDailyNapClear` | Tägliches Löschen der Nickerchen-Liste aktivieren |
+| `enableDailyNapClear` | Tägliches Leeren der Nickerchen-Liste aktivieren |
 | `forceClearNapListTime` | Feste Löschzeit der Liste (HH:MM) |
 | `intraday` | Aktiviert den Abruf von Intraday-Daten (Minutenauflösung) |
 
