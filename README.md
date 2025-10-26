@@ -189,7 +189,7 @@ To use this adapter, you need a **Fitbit Developer Account**.
   Setting the interval too low (below 2–3 minutes) may result in **temporary blocking** or **API errors**.  
   A **5-minute interval or higher** is recommended for stable operation.
 - Optional **once-per-day sleep record retrieval** (20–22 h)
-- This option is omitted if at least 5 minutes is set. In this case, the interval can be retained.
+- ▲ This option is omitted if at least 5 minutes is set. In this case, the interval can be retained.
 - **Nap management** – show last or first nap, auto-clear at night or fixed time  
 - **Intraday mode** for detailed minute-level data  
 - Built-in **OAuth2 authorization** via adapter admin UI  
