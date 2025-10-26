@@ -18,6 +18,16 @@ const DEFAULT_INTRADAY = false;
 // false = erstes Nap des Tages
 const SHOW_LAST_OR_FIRST_NAP = true;
 
+// ▶️ Nickerchenliste nachts automatisch leeren
+//  (optional und nur falls von FitBit nicht automatisch geleert wird; wirkt beim Abruf in getSleepRecords)
+const CLEAR_NAP_LIST_AT_NIGHT = false; // Standard = AUS
+
+// ▶️ Zusätzlicher täglicher Nickerchen-Reset-Schedule (fester Zeitpunkt)
+//  Standard AUS, nur wenn ENABLE_CLEAR_NAP_LIST = true
+const ENABLE_CLEAR_NAP_LIST = false;           // <- auf true setzen, um den Planer zu aktivieren
+const FORCE_CLEAR_NAP_LIST_SCHEDULE = true;    // zusätzlicher Schutzschalter (belassen)
+const FORCE_CLEAR_NAP_LIST_TIME = "02:45";     // Uhrzeit HH:MM im 24h-Format
+
 // ▶️ Fitbit APIs
 const BASE_URL = "https://api.fitbit.com/1/user/";
 const BASE2_URL = "https://api.fitbit.com/1.2/user/";
@@ -52,6 +62,8 @@ class FitBit extends utils.Adapter {
         }
         this.log.info(`Intraday mode: ${this.config.intraday ? "ENABLED" : "DISABLED"} (DEFAULT=${DEFAULT_INTRADAY})`);
         this.log.info(`Nap display mode: using ${SHOW_LAST_OR_FIRST_NAP ? "LAST" : "FIRST"} nap for nap time states.`);
+        this.log.info(`Nightly nap clear (00–04): ${CLEAR_NAP_LIST_AT_NIGHT ? "ENABLED" : "DISABLED"}`);
+        this.log.info(`Daily nap reset schedule: ${ENABLE_CLEAR_NAP_LIST ? `ENABLED @ ${FORCE_CLEAR_NAP_LIST_TIME}` : "DISABLED"}`);
 
         try {
             // Login (holt vorhandene Tokens aus tokens.*; wir legen diese NICHT neu an)
@@ -63,7 +75,7 @@ class FitBit extends utils.Adapter {
                 // Nur eigene Zusatz-States vorbereiten
                 await this.initCustomSleepStates();
 
-                // Schlaf-Scheduling wie im Original
+                // Schlaf-Scheduling wie im Original (+ optionaler Nap-Reset-Schedule)
                 this.initSleepSchedule();
 
                 // Erster Abruf
@@ -221,6 +233,7 @@ class FitBit extends utils.Adapter {
             if (this.fitbit.status === 200) {
                 this.setState("info.connection", true, true);
                 this.setUserStates(response.data);
+                this.log.info(`Login OK for user ${this.fitbit.user?.fullName || "?"}`);
             }
         } catch (err) {
             throw new Error(err);
@@ -235,7 +248,7 @@ class FitBit extends utils.Adapter {
     }
 
     // ================================
-    // Schlaf-Scheduling (Original)
+    // Schlaf-Scheduling (Original + optionaler Reset-Schedule)
     // ================================
     initSleepSchedule() {
         if (this.config.sleeprecords && this.config.sleeprecordsschedule) {
@@ -245,6 +258,31 @@ class FitBit extends utils.Adapter {
             this.schedule = mSchedule.scheduleJob(`${rndMinutes} ${rndHours} * * *`, () => {
                 if (this.config.sleeprecords) this.getSleepRecords();
             });
+        }
+
+        // ► Täglicher, fester Nap-Reset (nur wenn aktiviert)
+        if (ENABLE_CLEAR_NAP_LIST && FORCE_CLEAR_NAP_LIST_SCHEDULE) {
+            const [h, m] = String(FORCE_CLEAR_NAP_LIST_TIME).split(":");
+            const hour = parseInt(h, 10);
+            const min  = parseInt(m, 10);
+            if (!isNaN(hour) && !isNaN(min)) {
+                this.log.info(`Daily nap reset scheduled at ${FORCE_CLEAR_NAP_LIST_TIME}`);
+                mSchedule.scheduleJob(`${min} ${hour} * * *`, async () => {
+                    this.log.info("Nap reset schedule triggered");
+                    try {
+                        await this.setStateAsync("sleep.Naps.List",              { val: "[]", ack: true });
+                        await this.setStateAsync("sleep.Naps.FellAsleepAt",      { val: "", ack: true });
+                        await this.setStateAsync("sleep.Naps.FellAsleepAtLocal", { val: "", ack: true });
+                        await this.setStateAsync("sleep.Naps.WokeUpAt",          { val: "", ack: true });
+                        await this.setStateAsync("sleep.Naps.WokeUpAtLocal",     { val: "", ack: true });
+                        this.log.info("Nap states cleared (scheduled reset)");
+                    } catch (e) {
+                        this.log.error(`Error clearing naps: ${e}`);
+                    }
+                });
+            } else {
+                this.log.warn(`FORCE_CLEAR_NAP_LIST_TIME "${FORCE_CLEAR_NAP_LIST_TIME}" is invalid (expected HH:MM)`);
+            }
         }
     }
 
@@ -289,6 +327,8 @@ class FitBit extends utils.Adapter {
             if (response.status === 200) {
                 if (!this.setActivityStates(response.data)) {
                     this.log.debug(`No activity records available`);
+                } else {
+                    this.log.debug(`Activity records updated`);
                 }
             }
         } catch (err) {
@@ -328,6 +368,8 @@ class FitBit extends utils.Adapter {
             if (response.status === 200) {
                 if (!this.setHeartRateTimeSeries(response.data)) {
                     this.log.debug(`No heart rate time series available`);
+                } else {
+                    this.log.debug(`Heart rate time series updated`);
                 }
             }
         } catch (err) {
@@ -557,6 +599,15 @@ class FitBit extends utils.Adapter {
         const token = this.fitbit.tokens.access_token;
 
         try {
+            // 🔄 Option: Nickerchenliste nach Mitternacht automatisch leeren
+            if (CLEAR_NAP_LIST_AT_NIGHT) {
+                const hour = new Date().getHours();
+                if (hour >= 0 && hour < 4) {
+                    this.log.info("CLEAR_NAP_LIST_AT_NIGHT → Liste wird geleert (nach Mitternacht).");
+                    await this.setStateAsync("sleep.Naps.List", { val: "[]", ack: true });
+                }
+            }
+
             const response = await axios.get(url, {
                 headers: { "Authorization": `Bearer ${token}` },
                 timeout: axiosTimeout
@@ -564,10 +615,12 @@ class FitBit extends utils.Adapter {
 
             if (response.status === 200) {
                 if (!this.setSleepStates(response.data)) {
-                    // wenn nichts da ist, Liste leeren (Tagesreset)
+                    // keine Schlafdaten verfügbar → Tagesreset durchführen (nur Nap-Liste)
                     await this.setStateAsync("sleep.Naps.List", { val: "[]", ack: true });
                     this.log.debug(`No sleep data available`);
                 }
+            } else {
+                this.log.warn(`getSleepRecords unexpected status: ${response.status}`);
             }
         } catch (err) {
             this.log.error(`getSleepRecords failed: ${err}`);
@@ -700,56 +753,56 @@ class FitBit extends utils.Adapter {
             }
         }
 
-// Zusatz-States
-await this.setStateAsync("sleep.AsleepTotal", totalAsleep, true);
-await this.setStateAsync("sleep.InBedTotal",  totalInBed,  true);
-await this.setStateAsync("sleep.Naps.Asleep", napsAsleep,  true);
-await this.setStateAsync("sleep.Naps.InBed",  napsInBed,   true);
-await this.setStateAsync("sleep.Naps.Count",  napsCount,   true);
+        // Zusatz-States
+        await this.setStateAsync("sleep.AsleepTotal", totalAsleep, true);
+        await this.setStateAsync("sleep.InBedTotal",  totalInBed,  true);
+        await this.setStateAsync("sleep.Naps.Asleep", napsAsleep,  true);
+        await this.setStateAsync("sleep.Naps.InBed",  napsInBed,   true);
+        await this.setStateAsync("sleep.Naps.Count",  napsCount,   true);
 
-// Hauptschlaf-Zeitpunkte
-const mainBlock = blocks.find(b => b.isMainSleep);
-if (mainBlock) {
-    const fell = this.computeFellAsleepAt(mainBlock);
-    const woke = this.computeWokeUpAt(mainBlock);
+        // Hauptschlaf-Zeitpunkte
+        const mainBlock = blocks.find(b => b.isMainSleep);
+        if (mainBlock) {
+            const fell = this.computeFellAsleepAt(mainBlock);
+            const woke = this.computeWokeUpAt(mainBlock);
 
-    await this.setStateAsync("sleep.Main.FellAsleepAt",      { val: fell ? fell.toISOString() : "", ack: true });
-    await this.setStateAsync("sleep.Main.FellAsleepAtLocal", { val: fell ? this.formatDE_Short(fell) : "", ack: true });
+            await this.setStateAsync("sleep.Main.FellAsleepAt",      { val: fell ? fell.toISOString() : "", ack: true });
+            await this.setStateAsync("sleep.Main.FellAsleepAtLocal", { val: fell ? this.formatDE_Short(fell) : "", ack: true });
 
-    await this.setStateAsync("sleep.Main.WokeUpAt",          { val: woke ? woke.toISOString() : "", ack: true });
-    await this.setStateAsync("sleep.Main.WokeUpAtLocal",     { val: woke ? this.formatDE_Short(woke) : "", ack: true });
-} else {
-    await this.setStateAsync("sleep.Main.FellAsleepAt",      { val: "", ack: true });
-    await this.setStateAsync("sleep.Main.FellAsleepAtLocal", { val: "", ack: true });
-    await this.setStateAsync("sleep.Main.WokeUpAt",          { val: "", ack: true });
-    await this.setStateAsync("sleep.Main.WokeUpAtLocal",     { val: "", ack: true });
-}
+            await this.setStateAsync("sleep.Main.WokeUpAt",          { val: woke ? woke.toISOString() : "", ack: true });
+            await this.setStateAsync("sleep.Main.WokeUpAtLocal",     { val: woke ? this.formatDE_Short(woke) : "", ack: true });
+        } else {
+            await this.setStateAsync("sleep.Main.FellAsleepAt",      { val: "", ack: true });
+            await this.setStateAsync("sleep.Main.FellAsleepAtLocal", { val: "", ack: true });
+            await this.setStateAsync("sleep.Main.WokeUpAt",          { val: "", ack: true });
+            await this.setStateAsync("sleep.Main.WokeUpAtLocal",     { val: "", ack: true });
+        }
 
-// 🧩 Sortierung der Nickerchen nach Startzeit (wichtig!)
-napList.sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
+        // 🧩 Sortierung der Nickerchen nach Startzeit
+        napList.sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
 
-// ► Welches Nap in die Einzel-Datenpunkte? (erstes/letztes)
-if (napList.length > 0) {
-    const napBlock = SHOW_LAST_OR_FIRST_NAP ? napList[napList.length - 1] : napList[0];
-    await this.setStateAsync("sleep.Naps.FellAsleepAt",      { val: napBlock.startISO, ack: true });
-    await this.setStateAsync("sleep.Naps.FellAsleepAtLocal", { val: napBlock.startDE,  ack: true });
-    await this.setStateAsync("sleep.Naps.WokeUpAt",          { val: napBlock.endISO,   ack: true });
-    await this.setStateAsync("sleep.Naps.WokeUpAtLocal",     { val: napBlock.endDE,    ack: true });
-} else {
-    await this.setStateAsync("sleep.Naps.FellAsleepAt",      { val: "", ack: true });
-    await this.setStateAsync("sleep.Naps.FellAsleepAtLocal", { val: "", ack: true });
-    await this.setStateAsync("sleep.Naps.WokeUpAt",          { val: "", ack: true });
-    await this.setStateAsync("sleep.Naps.WokeUpAtLocal",     { val: "", ack: true });
-}
+        // ► Welches Nap in die Einzel-Datenpunkte? (erstes/letztes)
+        if (napList.length > 0) {
+            const napBlock = SHOW_LAST_OR_FIRST_NAP ? napList[napList.length - 1] : napList[0];
+            await this.setStateAsync("sleep.Naps.FellAsleepAt",      { val: napBlock.startISO, ack: true });
+            await this.setStateAsync("sleep.Naps.FellAsleepAtLocal", { val: napBlock.startDE,  ack: true });
+            await this.setStateAsync("sleep.Naps.WokeUpAt",          { val: napBlock.endISO,   ack: true });
+            await this.setStateAsync("sleep.Naps.WokeUpAtLocal",     { val: napBlock.endDE,    ack: true });
+        } else {
+            await this.setStateAsync("sleep.Naps.FellAsleepAt",      { val: "", ack: true });
+            await this.setStateAsync("sleep.Naps.FellAsleepAtLocal", { val: "", ack: true });
+            await this.setStateAsync("sleep.Naps.WokeUpAt",          { val: "", ack: true });
+            await this.setStateAsync("sleep.Naps.WokeUpAtLocal",     { val: "", ack: true });
+        }
 
-// Komplette Nickerchenliste (heute)
-await this.setStateAsync("sleep.Naps.List", { val: JSON.stringify(napList), ack: true });
+        // Komplette Nickerchenliste (heute)
+        await this.setStateAsync("sleep.Naps.List", { val: JSON.stringify(napList), ack: true });
 
-this.log.info(
-    `Sleep: totalAsleep=${totalAsleep}min, totalInBed=${totalInBed}min, naps=${napsCount}x (${napsAsleep}min)`
-);
+        this.log.info(
+            `Sleep: totalAsleep=${totalAsleep}min, totalInBed=${totalInBed}min, naps=${napsCount}x (${napsAsleep}min)`
+        );
 
-return true;
+        return true;
     }
 
     // ================================
@@ -904,13 +957,17 @@ return true;
             return;
         }
 
+        // Nur auf Benutzer-Schreibvorgänge reagieren
         if (state.ack === false) {
+
             if (id.indexOf("body.weight") !== -1) {
                 this.log.info(`weight changed → ${state.val}`);
                 await this.setWeight(state.val);
-                await this.setStateAsync("body.weight", { val: state.val, ack: true });
+                await this.setStateAsync("body.weight", { val: state.val, ack: true }); // Bestätigung
                 return;
             }
+
+            // (Keine manuellen Token-Buttons o.ä. mehr)
         }
     }
 }
