@@ -1,45 +1,54 @@
 {
   "common": {
     "name": "fitbit-fitness",
-    "version": "0.5.2",
+    "version": "0.5.3",
     "news": {
+      "0.5.3": {
+        "en": "Added configurable early-sleep filter (e.g. ignore before 23:00), nap options, and intraday mode. Improved sleep logic.",
+        "de": "Konfigurierbarer Frühschlaf-Filter (z. B. Ignorieren vor 23:00), Nickerchen-Optionen und Intraday-Modus hinzugefügt. Schlaflogik verbessert.",
+        "ru": "Добавлен настраиваемый фильтр раннего сна (например, игнорировать до 23:00), опции дремоты и внутридневной режим. Улучшена логика сна.",
+        "fr": "Ajout d’un filtre de sommeil précoce configurable (ex. ignorer avant 23h00), d’options de sieste et d’un mode intrajournalier. Amélioration de la logique du sommeil.",
+        "it": "Aggiunto filtro del sonno anticipato configurabile (es. ignora prima delle 23:00), opzioni pisolino e modalità intraday. Migliorata la logica del sonno.",
+        "es": "Añadido filtro de sueño temprano configurable (por ejemplo, ignorar antes de las 23:00), opciones de siesta y modo intradía. Lógica del sueño mejorada.",
+        "pl": "Dodano konfigurowalny filtr wczesnego snu (np. ignoruj przed 23:00), opcje drzemki i tryb intraday. Ulepszono logikę snu.",
+        "uk": "Додано налаштовуваний фільтр раннього сну (наприклад, ігнорувати до 23:00), параметри дрімоти та внутрішньоденний режим. Покращено логіку сну.",
+        "zh-cn": "新增可配置的早睡过滤器（例如在23:00之前忽略）、小睡选项和日内模式。改进了睡眠逻辑。"
+      },
       "0.5.2": {
-        "en": "Added configurable nap options and improved sleep data handling",
-        "de": "Konfigurierbare Nickerchen-Optionen und verbessertes Schlafdaten-Handling hinzugefügt",
-        "ru": "Добавлены настраиваемые параметры дремоты и улучшена обработка данных сна",
-        "nl": "Configureerbare dutjesopties toegevoegd en slaapgegevensverwerking verbeterd",
-        "fr": "Ajout d'options de sieste configurables et amélioration de la gestion du sommeil",
-        "it": "Aggiunte opzioni di sonnellino configurabili e migliorata la gestione del sonno",
-        "es": "Se agregaron opciones de siesta configurables y se mejoró el manejo de datos del sueño",
-        "pl": "Dodano konfigurowalne opcje drzemki i ulepszono obsługę danych snu",
-        "uk": "Додано налаштовувані параметри дрімоти та покращено обробку даних сну",
-        "zh-cn": "添加了可配置的小睡选项并改进了睡眠数据处理"
+        "en": "Added nap options and intraday mode; improved sleep logic",
+        "de": "Nickerchen-Optionen und Intraday-Modus hinzugefügt; Schlaflogik verbessert"
       },
       "0.5.1": {
-        "en": "Maintanance issues",
-        "de": "Wichtigste behandelte Fragen",
-        "ru": "Вопросы континента",
-        "pt": "Questões de manutenção",
-        "nl": "Maintanance problemen",
-        "fr": "Maintanance issues",
-        "it": "Questioni principali",
-        "es": "Cuestiones de mantenimiento",
-        "pl": "Zagadnienia administracyjne",
-        "uk": "Основні проблеми",
-        "zh-cn": "主要问题"
+        "en": "Maintenance update",
+        "de": "Wartungsupdate"
       },
       "0.5.0": {
         "en": "Maintanance issues",
-        "de": "Wichtigste behandelte Fragen",
-        "ru": "Вопросы континента",
-        "pt": "Questões de manutenção",
-        "nl": "Maintanance problemen",
-        "fr": "Maintanance issues",
-        "it": "Questioni principali",
-        "es": "Cuestiones de mantenimiento",
-        "pl": "Zagadnienia administracyjne",
-        "uk": "Основні проблеми",
-        "zh-cn": "主要问题"
+        "de": "Wichtigste behandelte Fragen"
+      },
+      "0.4.14": {
+        "en": "Fixed some minor bugs",
+        "de": "Einige kleinere Fehler behoben"
+      },
+      "0.4.13": {
+        "en": "make heartrate time series working",
+        "de": "Herzfrequenz-Zeitreihen funktionieren jetzt"
+      },
+      "0.4.12": {
+        "en": "changed node dependencies to node 16",
+        "de": "Knotenabhängigkeiten auf Node 16 geändert"
+      },
+      "0.4.11": {
+        "en": "Catch unpresent activity data",
+        "de": "Nicht vorhandene Aktivitätsdaten abfangen"
+      },
+      "0.4.10": {
+        "en": "fixed web page for token",
+        "de": "Webseite für Token repariert"
+      },
+      "0.4.9": {
+        "en": "Changed Repo name",
+        "de": "Repo-Name geändert"
       }
     },
     "titleLang": {
@@ -56,26 +65,26 @@
       "zh-cn": "fitbit-fitness"
     },
     "desc": {
-      "en": "retrieves data from FITBIT",
-      "de": "daten von FITBIT abruft",
-      "ru": "извлекает данные из FITBIT",
-      "pt": "recupera dados de FITBIT",
-      "nl": "haal gegevens van FITBIT",
-      "fr": "récupère les données de FITBIT",
-      "it": "recupera i dati da FITBIT",
-      "es": "recupera datos de FITBIT",
-      "pl": "dane z FITB",
-      "uk": "отримувати дані з FITBIT",
-      "zh-cn": "fITBIT 数据检索"
+      "en": "Retrieves Fitbit health, activity and sleep data (with nap and early-sleep filtering)",
+      "de": "Ruft Fitbit-Gesundheits-, Aktivitäts- und Schlafdaten ab (mit Nickerchen- und Frühschlaf-Filter)",
+      "ru": "Извлекает данные Fitbit о здоровье, активности и сне (с фильтрацией дремоты и раннего сна)",
+      "fr": "Récupère les données Fitbit sur la santé, l'activité et le sommeil (avec filtres sieste et sommeil précoce)",
+      "it": "Recupera dati Fitbit su salute, attività e sonno (con filtro sonnellini e sonno anticipato)",
+      "es": "Recupera datos de Fitbit de salud, actividad y sueño (con filtros de siesta y sueño temprano)",
+      "pl": "Pobiera dane Fitbit dotyczące zdrowia, aktywności i snu (z filtrowaniem drzemek i wczesnego snu)",
+      "uk": "Отримує дані Fitbit про здоров’я, активність і сон (з фільтрацією дрімоти та раннього сну)",
+      "zh-cn": "检索 Fitbit 健康、活动和睡眠数据（包括小睡和早睡过滤）"
     },
     "authors": [
       "Chris <besterquester@live.at>",
-      "Pocky2507 (Fork & Erweiterungen)"
+      "Pocky2507"
     ],
     "keywords": [
       "Fitbit",
-      "Heath",
-      "Fitness"
+      "Health",
+      "Fitness",
+      "Sleep",
+      "ioBroker"
     ],
     "license": "MIT",
     "platform": "Javascript/Node.js",
@@ -109,14 +118,16 @@
     "sleeprecordsschedule": false,
     "foodrecords": false,
     "devicerecords": false,
-    "clientId": "",
-    "clientSecret": "",
-    "redirectUri": "https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html",
+    "intraday": false,
     "showLastOrFirstNap": true,
     "clearNapListAtNight": true,
     "enableDailyNapClear": false,
     "forceClearNapListTime": "02:45",
-    "intraday": false
+    "ignoreEarlyMainSleepEnabled": true,
+    "ignoreEarlyMainSleepTime": "23:00",
+    "clientId": "",
+    "clientSecret": "",
+    "redirectUri": "https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html"
   },
   "objects": [],
   "instanceObjects": [
@@ -142,7 +153,7 @@
     {
       "_id": "user",
       "type": "channel",
-      "common": { "name": "user data" },
+      "common": { "name": "User data" },
       "native": {}
     },
     {
@@ -150,7 +161,7 @@
       "type": "state",
       "common": {
         "role": "state",
-        "name": "Full Name",
+        "name": "Full name",
         "type": "string",
         "read": true,
         "write": true
@@ -162,7 +173,7 @@
       "type": "state",
       "common": {
         "role": "state",
-        "name": "User Id on FitBit",
+        "name": "User ID on Fitbit",
         "type": "string",
         "read": true,
         "write": true
@@ -234,7 +245,7 @@
       "type": "state",
       "common": {
         "role": "value.health.heartrate",
-        "name": "heartrate",
+        "name": "Heart rate (time series)",
         "type": "number",
         "read": true,
         "write": true
@@ -270,7 +281,7 @@
       "type": "state",
       "common": {
         "role": "value.health.steps",
-        "name": "Number of daily Activities",
+        "name": "Number of daily activities",
         "type": "number",
         "read": true,
         "write": true
@@ -282,7 +293,7 @@
       "type": "state",
       "common": {
         "role": "state",
-        "name": "Active Minutes",
+        "name": "Active minutes",
         "type": "number",
         "unit": "Minutes",
         "read": true,
@@ -295,7 +306,7 @@
       "type": "state",
       "common": {
         "role": "value.health.bpm",
-        "name": "Resting Heart Rate",
+        "name": "Resting heart rate",
         "type": "number",
         "unit": "bpm",
         "read": true,
@@ -306,7 +317,7 @@
     {
       "_id": "body",
       "type": "channel",
-      "common": { "name": "Body Records" },
+      "common": { "name": "Body records" },
       "native": {}
     },
     {
@@ -350,7 +361,7 @@
     {
       "_id": "food",
       "type": "channel",
-      "common": { "name": "food data" },
+      "common": { "name": "Food data" },
       "native": {}
     },
     {
@@ -358,7 +369,7 @@
       "type": "state",
       "common": {
         "role": "value.health.calories",
-        "name": "Calories Consumed",
+        "name": "Calories consumed",
         "type": "number",
         "read": true,
         "write": true
@@ -370,7 +381,7 @@
       "type": "state",
       "common": {
         "role": "state",
-        "name": "Carbs Consumed",
+        "name": "Carbs consumed",
         "type": "number",
         "read": true,
         "write": true
@@ -382,7 +393,7 @@
       "type": "state",
       "common": {
         "role": "state",
-        "name": "Fiber Consumed",
+        "name": "Fiber consumed",
         "type": "number",
         "read": true,
         "write": true
@@ -394,7 +405,7 @@
       "type": "state",
       "common": {
         "role": "state",
-        "name": "Sodium Consumed",
+        "name": "Sodium consumed",
         "type": "number",
         "read": true,
         "write": true
@@ -406,7 +417,7 @@
       "type": "state",
       "common": {
         "role": "value.health.fat",
-        "name": "food.Fat",
+        "name": "Fat consumed",
         "type": "number",
         "unit": "%",
         "read": true,
@@ -418,8 +429,8 @@
       "_id": "food.Protein",
       "type": "state",
       "common": {
-        "role": "value.health.calories",
-        "name": "food.Protein",
+        "role": "value.health.protein",
+        "name": "Protein consumed",
         "type": "number",
         "read": true,
         "write": true
@@ -430,8 +441,8 @@
       "_id": "food.Water",
       "type": "state",
       "common": {
-        "role": "value.health.calories",
-        "name": "food.Water",
+        "role": "state",
+        "name": "Water consumed",
         "type": "number",
         "read": true,
         "write": true
@@ -441,7 +452,7 @@
     {
       "_id": "sleep",
       "type": "channel",
-      "common": { "name": "sleep data" },
+      "common": { "name": "Sleep data" },
       "native": {}
     },
     {
@@ -449,7 +460,7 @@
       "type": "state",
       "common": {
         "role": "state",
-        "name": "Deep Sleep Time",
+        "name": "Deep sleep time",
         "type": "number",
         "unit": "Minutes",
         "read": true,
@@ -462,7 +473,7 @@
       "type": "state",
       "common": {
         "role": "state",
-        "name": "Light Sleep Time",
+        "name": "Light sleep time",
         "type": "number",
         "unit": "Minutes",
         "read": true,
@@ -475,7 +486,7 @@
       "type": "state",
       "common": {
         "role": "state",
-        "name": "REM Sleep Time",
+        "name": "REM sleep time",
         "type": "number",
         "unit": "Minutes",
         "read": true,
@@ -488,7 +499,7 @@
       "type": "state",
       "common": {
         "role": "state",
-        "name": "Wake Time",
+        "name": "Wake time",
         "type": "number",
         "unit": "Minutes",
         "read": true,
