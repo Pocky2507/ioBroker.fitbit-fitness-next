@@ -9,6 +9,11 @@
  const axios = require("axios").default;
  const mSchedule = require("node-schedule");
 
+ // ----------------------------------------------------------------------------
+ // Debug-Optionen (manuell schaltbar, kein Einfluss auf API oder Funktion)
+ // ----------------------------------------------------------------------------
+ const DEBUG_SLEEP_LOG = false; // << hier auf true oder false setzen
+
  // -----------------------------------------------------------------------------
  // Zeitouts und API-Basen
  // -----------------------------------------------------------------------------
@@ -636,34 +641,59 @@
      async setSleepStates(data) {
          const blocks = data && data.sleep ? data.sleep : [];
          if (blocks.length === 0) return false;
+         // --- Debug: Ausgabe der gelieferten Schlafblöcke ------------------------------
+     if (DEBUG_SLEEP_LOG) {
+     const countMain = blocks.filter(b => b.isMainSleep).length;
+     const countNap  = blocks.filter(b => !b.isMainSleep).length;
+     this.log.info(`DEBUG → Fitbit sleep raw blocks: ${blocks.length} (main=${countMain}, nap=${countNap})`);
+     }
 
-         // ---- NEU: Frühen Hauptschlaf optional ignorieren --------------------
-         let filteredBlocks = blocks;
-         if (this.effectiveConfig.ignoreEarlyMainSleepEnabled) {
-             const [h, m] = String(this.effectiveConfig.ignoreEarlyMainSleepTime).split(":").map(n => parseInt(n, 10));
-             if (Number.isInteger(h) && Number.isInteger(m)) {
-                 filteredBlocks = blocks.filter(b => {
-                     if (b && b.isMainSleep && b.startTime) {
-                         const start = new Date(b.startTime);
-                         // Vergleich nur nach Uhrzeit (lokal)
-                         const sh = start.getHours();
-                         const sm = start.getMinutes();
-                         const before = (sh < h) || (sh === h && sm < m);
-                         if (before) {
-                             this.log.info(`Main sleep ignored (starts ${start.toISOString()} < ${this.effectiveConfig.ignoreEarlyMainSleepTime})`);
-                             return false;
-                         }
-                     }
-                     return true;
-                 });
-             }
-         }
+// ---- Frühschlaf-Filter (nur Hauptschlaf ignorieren, Naps immer behalten) ----
+let filteredBlocks = blocks;
 
-         if (filteredBlocks.length === 0) {
-             // Wenn alles herausgefiltert, nichts schreiben
-             this.log.warn("All sleep blocks ignored by early-main-sleep filter");
-             return false;
-         }
+if (this.effectiveConfig.ignoreEarlyMainSleepEnabled) {
+    const [h, m] = String(this.effectiveConfig.ignoreEarlyMainSleepTime)
+        .split(":")
+        .map(n => parseInt(n, 10));
+
+    if (Number.isInteger(h) && Number.isInteger(m)) {
+        filteredBlocks = blocks.filter(b => {
+            if (b && b.isMainSleep && b.startTime) {
+                const start = new Date(b.startTime);
+                const sh = start.getHours();
+                const sm = start.getMinutes();
+                const before = (sh < h) || (sh === h && sm < m);
+
+                if (before) {
+                    // Nur im Debug-Modus anzeigen (nicht bei jedem Zyklus)
+                    if (DEBUG_SLEEP_LOG) {
+                        this.log.info(
+                            `Main sleep ignored (starts ${start.toISOString()} < ${this.effectiveConfig.ignoreEarlyMainSleepTime})`
+                        );
+                    }
+                    return false; // nur diesen MainSleep ausfiltern
+                }
+            }
+            return true; // Naps und spätere Sleeps behalten
+        });
+    }
+}
+
+// --- Wenn kein Block übrig ist, aber Naps vorhanden wären, trotzdem weitermachen ---
+if (filteredBlocks.length === 0) {
+    const naps = blocks.filter(b => !b.isMainSleep);
+    if (naps.length > 0) {
+        const msg = `Main sleep ignored, but ${naps.length} nap(s) found → using those.`;
+        if (DEBUG_SLEEP_LOG) this.log.info(msg);
+        filteredBlocks = naps;
+    } else {
+        if (DEBUG_SLEEP_LOG) {
+            const msg = "All sleep blocks ignored by early-main-sleep filter (no naps or main sleep)";
+            this.log.debug(msg);
+        }
+        return false;
+    }
+}
 
          // Summen
          let totalAsleep = 0;
