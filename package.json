@@ -1,14 +1,17 @@
 {
   "name": "iobroker.fitbit-fitness",
-  "version": "0.5.2",
-  "description": "retrieves data from FITBIT",
+  "version": "0.5.3",
+  "description": "Retrieves Fitbit health, activity, and sleep data (including nap and early-sleep filtering) for ioBroker.",
   "author": "Chris <besterquester@live.at>",
   "homepage": "https://github.com/Pocky2507/ioBroker.fitbit-fitness",
   "license": "MIT",
   "keywords": [
     "Fitbit",
     "Health",
-    "Fitness"
+    "Fitness",
+    "Sleep",
+    "ioBroker",
+    "Adapter"
   ],
   "repository": {
     "type": "git",
