@@ -26,6 +26,10 @@
      clearNapListAtNight: false,     // 00–04 Uhr Nap-Liste leeren
      enableDailyNapClear: false,     // zusätzl. fester täglicher Reset
      dailyNapClearTime: "02:45",     // HH:MM
+
+     // NEU: Frühen Hauptschlaf (vor Uhrzeit) optional ignorieren
+     ignoreEarlyMainSleepEnabled: false,
+     ignoreEarlyMainSleepTime: "23:00",
  };
 
  class FitBit extends utils.Adapter {
@@ -65,6 +69,10 @@
                  enableDailyNapClear:    this._coalesceBool(this.config.enableDailyNapClear,    DEFAULTS.enableDailyNapClear),
                  dailyNapClearTime:      this._validTime(this.config.dailyNapClearTime) ? this.config.dailyNapClearTime : DEFAULTS.dailyNapClearTime,
 
+                 // NEU: Frühschlaf-Filter (Flag + Uhrzeit)
+                 ignoreEarlyMainSleepEnabled: this._coalesceBool(this.config.ignoreEarlyMainSleepEnabled, DEFAULTS.ignoreEarlyMainSleepEnabled),
+                 ignoreEarlyMainSleepTime:    this._validTime(this.config.ignoreEarlyMainSleepTime) ? this.config.ignoreEarlyMainSleepTime : DEFAULTS.ignoreEarlyMainSleepTime,
+
                  // Bestehende Optionen (aus Admin):
                  refresh:                Number.isFinite(this.config.refresh) ? Number(this.config.refresh) : 5,
                  bodyrecords:            !!this.config.bodyrecords,
@@ -79,7 +87,7 @@
              };
 
              // Log der effektiven Einstellungen
-             this.log.info(`Config → intraday=${this.effectiveConfig.intraday ? "on" : "off"}, showLastOrFirstNap=${this.effectiveConfig.showLastOrFirstNap ? "last" : "first"}, clearNapListAtNight=${this.effectiveConfig.clearNapListAtNight ? "on" : "off"}, enableDailyNapClear=${this.effectiveConfig.enableDailyNapClear ? `on @ ${this.effectiveConfig.dailyNapClearTime}` : "off"}`);
+             this.log.info(`Config → intraday=${this.effectiveConfig.intraday ? "on" : "off"}, showLastOrFirstNap=${this.effectiveConfig.showLastOrFirstNap ? "last" : "first"}, clearNapListAtNight=${this.effectiveConfig.clearNapListAtNight ? "on" : "off"}, enableDailyNapClear=${this.effectiveConfig.enableDailyNapClear ? `on @ ${this.effectiveConfig.dailyNapClearTime}` : "off"}, ignoreEarlyMainSleep=${this.effectiveConfig.ignoreEarlyMainSleepEnabled ? `on < ${this.effectiveConfig.ignoreEarlyMainSleepTime}` : "off"}`);
              this.log.info(`Intervals → refresh every ${this.effectiveConfig.refresh} min; scheduled sleep fetch=${this.effectiveConfig.sleeprecordsschedule ? "on" : "off"}`);
 
              // Login (holt Tokens aus States)
@@ -623,11 +631,39 @@
      }
 
      // =========================================================================
-     // Sleep – Schreiblogik (inkl. Segmentanalyse)
+     // Sleep – Schreiblogik (inkl. Segmentanalyse + Frühschlaf-Filter)
      // =========================================================================
      async setSleepStates(data) {
          const blocks = data && data.sleep ? data.sleep : [];
          if (blocks.length === 0) return false;
+
+         // ---- NEU: Frühen Hauptschlaf optional ignorieren --------------------
+         let filteredBlocks = blocks;
+         if (this.effectiveConfig.ignoreEarlyMainSleepEnabled) {
+             const [h, m] = String(this.effectiveConfig.ignoreEarlyMainSleepTime).split(":").map(n => parseInt(n, 10));
+             if (Number.isInteger(h) && Number.isInteger(m)) {
+                 filteredBlocks = blocks.filter(b => {
+                     if (b && b.isMainSleep && b.startTime) {
+                         const start = new Date(b.startTime);
+                         // Vergleich nur nach Uhrzeit (lokal)
+                         const sh = start.getHours();
+                         const sm = start.getMinutes();
+                         const before = (sh < h) || (sh === h && sm < m);
+                         if (before) {
+                             this.log.info(`Main sleep ignored (starts ${start.toISOString()} < ${this.effectiveConfig.ignoreEarlyMainSleepTime})`);
+                             return false;
+                         }
+                     }
+                     return true;
+                 });
+             }
+         }
+
+         if (filteredBlocks.length === 0) {
+             // Wenn alles herausgefiltert, nichts schreiben
+             this.log.warn("All sleep blocks ignored by early-main-sleep filter");
+             return false;
+         }
 
          // Summen
          let totalAsleep = 0;
@@ -644,7 +680,7 @@
          // Liste für Nickerchen
          const napList = [];
 
-         for (const block of blocks) {
+         for (const block of filteredBlocks) {
              totalAsleep += block.minutesAsleep || 0;
              totalInBed  += block.timeInBed     || 0;
 
@@ -687,7 +723,7 @@
          await this.setStateAsync("sleep.Naps.Count",  napsCount,   true);
 
          // Hauptschlaf-Zeitpunkte
-         const mainBlock = blocks.find(b => b.isMainSleep);
+         const mainBlock = filteredBlocks.find(b => b.isMainSleep);
          if (mainBlock) {
              const fell = this.computeFellAsleepAt(mainBlock);
              const woke = this.computeWokeUpAt(mainBlock);
