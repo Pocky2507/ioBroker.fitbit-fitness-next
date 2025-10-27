@@ -244,5 +244,27 @@ systemDictionary = {
     "es": "Hora de borrado forzado (HH:MM)",
     "pl": "Wymuszony czas czyszczenia (GG:MM)",
     "zh-cn": "强制清除时间（HH:MM）"
+  },
+
+  /* ===== 🌙 Frühschlaf-Filter (aktuelle Schlüssel) ===== */
+  "ignoreEarlyMainSleepEnabled": {
+    "en": "Ignore early main sleep phases (before defined time)",
+    "de": "Frühe Hauptschlafphasen ignorieren (vor definierter Uhrzeit)",
+    "fr": "Ignorer les phases de sommeil principales précoces (avant l'heure définie)",
+    "it": "Ignora le fasi principali di sonno anticipate (prima dell'orario definito)",
+    "es": "Ignorar las fases principales de sueño temprano (antes de la hora definida)",
+    "pl": "Ignoruj wczesne główne fazy snu (przed określoną godziną)",
+    "nl": "Negeer vroege hoofdslaapperiodes (voor de ingestelde tijd)",
+    "zh-cn": "忽略早期主要睡眠阶段（在定义时间之前）"
+  },
+  "ignoreEarlyMainSleepTime": {
+    "en": "Ignore main sleep before (HH:MM)",
+    "de": "Hauptschlaf ignorieren vor (HH:MM)",
+    "fr": "Ignorer le sommeil principal avant (HH:MM)",
+    "it": "Ignora il sonno principale prima delle (HH:MM)",
+    "es": "Ignorar el sueño principal antes de (HH:MM)",
+    "pl": "Ignoruj główny sen przed (HH:MM)",
+    "nl": "Negeer hoofdslaap vóór (HH:MM)",
+    "zh-cn": "忽略在此之前的主要睡眠 (HH:MM)"
   }
 };
