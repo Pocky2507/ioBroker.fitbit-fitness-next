@@ -340,6 +340,19 @@
       "native": {}
     },
     {
+      "_id": "activity.CurrentHeartRate",
+      "type": "state",
+      "common": {
+        "role": "value.health.bpm",
+        "name": "Current Heart Rate",
+        "type": "number",
+        "unit": "bpm",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+    {
       "_id": "body",
       "type": "channel",
       "common": { "name": "Body records" },
@@ -531,6 +544,190 @@
         "write": true
       },
       "native": {}
+    },
+
+    {
+      "_id": "sleep.AsleepTotal",
+      "type": "state",
+      "common": {
+        "role": "value",
+        "name": "Total minutes asleep (incl. naps)",
+        "type": "number",
+        "unit": "min",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+    {
+      "_id": "sleep.InBedTotal",
+      "type": "state",
+      "common": {
+        "role": "value",
+        "name": "Total minutes in bed (incl. naps)",
+        "type": "number",
+        "unit": "min",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+
+    {
+      "_id": "sleep.Main.FellAsleepAt",
+      "type": "state",
+      "common": {
+        "role": "text",
+        "name": "Main sleep - fell asleep at (ISO)",
+        "type": "string",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+    {
+      "_id": "sleep.Main.FellAsleepAtLocal",
+      "type": "state",
+      "common": {
+        "role": "text",
+        "name": "Main sleep - fell asleep at (local de-DE)",
+        "type": "string",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+    {
+      "_id": "sleep.Main.WokeUpAt",
+      "type": "state",
+      "common": {
+        "role": "text",
+        "name": "Main sleep - woke up at (ISO)",
+        "type": "string",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+    {
+      "_id": "sleep.Main.WokeUpAtLocal",
+      "type": "state",
+      "common": {
+        "role": "text",
+        "name": "Main sleep - woke up at (local de-DE)",
+        "type": "string",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+
+    {
+      "_id": "sleep.Naps.Asleep",
+      "type": "state",
+      "common": {
+        "role": "value",
+        "name": "Minutes asleep in naps",
+        "type": "number",
+        "unit": "min",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+    {
+      "_id": "sleep.Naps.InBed",
+      "type": "state",
+      "common": {
+        "role": "value",
+        "name": "Minutes in bed during naps",
+        "type": "number",
+        "unit": "min",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+    {
+      "_id": "sleep.Naps.Count",
+      "type": "state",
+      "common": {
+        "role": "value",
+        "name": "Number of naps",
+        "type": "number",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+
+    {
+      "_id": "sleep.Naps.FellAsleepAt",
+      "type": "state",
+      "common": {
+        "role": "text",
+        "name": "Nap - fell asleep at (ISO)",
+        "type": "string",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+    {
+      "_id": "sleep.Naps.FellAsleepAtLocal",
+      "type": "state",
+      "common": {
+        "role": "text",
+        "name": "Nap - fell asleep at (local de-DE)",
+        "type": "string",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+    {
+      "_id": "sleep.Naps.WokeUpAt",
+      "type": "state",
+      "common": {
+        "role": "text",
+        "name": "Nap - woke up at (ISO)",
+        "type": "string",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+    {
+      "_id": "sleep.Naps.WokeUpAtLocal",
+      "type": "state",
+      "common": {
+        "role": "text",
+        "name": "Nap - woke up at (local de-DE)",
+        "type": "string",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+    {
+      "_id": "sleep.Naps.List",
+      "type": "state",
+      "common": {
+        "role": "text",
+        "name": "List of today naps as JSON",
+        "type": "string",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+
+    {
+      "_id": "devices",
+      "type": "channel",
+      "common": { "name": "FITBIT Devices" },
+      "native": {}
     }
   ]
 }
+
