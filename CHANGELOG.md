@@ -1,4 +1,5 @@
-## Changelog
+# 📜 Changelog
+
 <!--
     ## **WORK IN PROGRESS**
 -->
@@ -27,7 +28,8 @@
 
 ## 0.5.1 (2025-10-24)
 - Maintenance and cleanup update
-- 
+
+
 ## 0.4.14 (2023-11-18)
 - Fixed some minor bugs
 
@@ -128,9 +130,9 @@
 
 ## 0.1.0 (2022-01-30)
 - Initial version
-- ported parts from projekt @GermanBluefox fitbit-api [GermanBluefox](https://github.com/GermanBluefox)
+- ported parts from project @GermanBluefox fitbit-api [GermanBluefox](https://github.com/GermanBluefox)
 - [ iobroker-community-adapters/iobroker.fitbit-fitness-api ](https://github.com/iobroker-community-adapters/iobroker.fitbit-fitness-api)
-- and adpated and enhanced
-- used the new createadapter script to be on the newest adapter standard
-- reduced the parallel reading since the web page blocks after some time
+- adapted and enhanced
+- used the new createadapter script to follow the latest adapter standard
+- reduced parallel reading since the web page blocks after some time
 - included food and sleep records to be retrieved
