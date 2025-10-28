@@ -1181,3 +1181,4 @@ if (require.main !== module) {
 } else {
     new FitBit();
 }
+
