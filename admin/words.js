@@ -16,22 +16,68 @@ systemDictionary = {
     "zh-cn": "fitbit的适配器设置"
   },
 
-  /* ===== Zusätzliche UI-Texte (Tabs/Buttons) ===== */
+  /* ===== Tabs ===== */
   "Main settings": {
     "en": "Main settings",
-    "de": "Haupteinstellungen"
+    "de": "Haupteinstellungen",
+    "ru": "Основные настройки",
+    "pt": "Configurações principais",
+    "nl": "Hoofdinstellingen",
+    "fr": "Paramètres principaux",
+    "it": "Impostazioni principali",
+    "es": "Configuraciones principales",
+    "pl": "Ustawienia główne",
+    "zh-cn": "主要设置"
   },
   "Services": {
     "en": "Services",
-    "de": "Dienste"
+    "de": "Dienste",
+    "ru": "Сервисы",
+    "pt": "Serviços",
+    "nl": "Diensten",
+    "fr": "Services",
+    "it": "Servizi",
+    "es": "Servicios",
+    "pl": "Usługi",
+    "zh-cn": "服务"
   },
+  "Debug & Erweiterte Optionen": {
+    "en": "Debug & Advanced Options",
+    "de": "Debug & Erweiterte Optionen",
+    "ru": "Отладка и дополнительные параметры",
+    "pt": "Depuração e opções avançadas",
+    "nl": "Debug & geavanceerde opties",
+    "fr": "Débogage et options avancées",
+    "it": "Debug e opzioni avanzate",
+    "es": "Depuración y opciones avanzadas",
+    "pl": "Debugowanie i opcje zaawansowane",
+    "zh-cn": "调试和高级选项"
+  },
+
+  /* ===== Buttons ===== */
   "Authorize": {
     "en": "Authorize",
-    "de": "Autorisieren"
+    "de": "Autorisieren",
+    "ru": "Авторизовать",
+    "pt": "Autorizar",
+    "nl": "Autoriseren",
+    "fr": "Autoriser",
+    "it": "Autorizza",
+    "es": "Autorizar",
+    "pl": "Autoryzuj",
+    "zh-cn": "授权"
   },
   "Update token": {
     "en": "Update token",
-    "de": "Token aktualisieren"
+    "de": "Token aktualisieren",
+    "ru": "Обновить токен",
+    "pt": "Atualizar token",
+    "nl": "Token bijwerken",
+    "fr": "Mettre à jour le jeton",
+    "it": "Aggiorna token",
+    "es": "Actualizar token",
+    "pl": "Zaktualizuj token",
+    "zh-cn": "更新令牌"
   },
 
   /* ===== Token/Timing Labels ===== */
@@ -61,21 +107,29 @@ systemDictionary = {
   },
   "Expires on": {
     "en": "Expires on",
-    "de": "Läuft ab am"
+    "de": "Läuft ab am",
+    "ru": "Истекает",
+    "pt": "Expira em",
+    "nl": "Verloopt op",
+    "fr": "Expire le",
+    "it": "Scade il",
+    "es": "Expira el",
+    "pl": "Wygasa dnia",
+    "zh-cn": "到期日"
   },
 
-  /* ===== Deine bisherigen Keys ===== */
+  /* ===== Allgemeine Adapteroptionen ===== */
   "refresh": {
     "en": "Refresh Rate (in Minutes)",
     "de": "Aktualisierungsrate (Minuten)",
-    "ru": "Частота обновления",
-    "pt": "Taxa de atualização",
-    "nl": "Vernieuwingsfrequentie",
-    "fr": "Fréquence de rafraîchissement",
-    "it": "Frequenza di aggiornamento",
-    "es": "Frecuencia de actualización",
-    "pl": "Częstotliwość odświeżania",
-    "zh-cn": "刷新率"
+    "ru": "Частота обновления (в минутах)",
+    "pt": "Taxa de atualização (em minutos)",
+    "nl": "Vernieuwingsfrequentie (in minuten)",
+    "fr": "Fréquence de rafraîchissement (en minutes)",
+    "it": "Frequenza di aggiornamento (in minuti)",
+    "es": "Frecuencia de actualización (en minutos)",
+    "pl": "Częstotliwość odświeżania (w minutach)",
+    "zh-cn": "刷新率（分钟）"
   },
   "token": {
     "en": "Access token",
@@ -85,42 +139,42 @@ systemDictionary = {
     "nl": "Toegangstoken",
     "fr": "Jeton d'accès",
     "it": "Token di accesso",
-    "es": "token de acceso",
+    "es": "Token de acceso",
     "pl": "Token dostępu",
     "zh-cn": "访问令牌"
   },
   "refreshToken": {
     "en": "Refresh Token",
     "de": "Aktualisierungstoken",
-    "ru": "обновить токен",
-    "pt": "token de atualização",
-    "nl": "ververs token",
-    "fr": "jeton d'actualisation",
-    "it": "token di aggiornamento",
-    "es": "token de actualización",
-    "pl": "odśwież token",
+    "ru": "Токен обновления",
+    "pt": "Token de atualização",
+    "nl": "Vernieuwingstoken",
+    "fr": "Jeton d'actualisation",
+    "it": "Token di aggiornamento",
+    "es": "Token de actualización",
+    "pl": "Token odświeżania",
     "zh-cn": "刷新令牌"
   },
   "bodyrecords": {
-    "en": "Body-Records: Weight,Fat, BMI",
+    "en": "Body-Records: Weight, Fat, BMI",
     "de": "Körperdaten: Gewicht, Fett, BMI",
-    "ru": "Записи тела Вес, жир, ИМТ",
-    "pt": "Registros Corporais Peso, Gordura, IMC",
-    "nl": "Lichaam registreert gewicht, vet, BMI",
-    "fr": "Enregistrements corporels Poids, Graisse, IMC",
-    "it": "Record corporei Peso, grasso, BMI",
-    "es": "Registros corporales Peso, Grasa, IMC",
-    "pl": "Waga rekordów ciała, tłuszcz, BMI",
-    "zh-cn": "身体记录体重、脂肪、BMI"
+    "ru": "Данные тела: вес, жир, ИМТ",
+    "pt": "Registros corporais: peso, gordura, IMC",
+    "nl": "Lichaam: gewicht, vet, BMI",
+    "fr": "Données corporelles : poids, graisse, IMC",
+    "it": "Dati corporei: peso, grasso, BMI",
+    "es": "Datos corporales: peso, grasa, IMC",
+    "pl": "Dane ciała: waga, tłuszcz, BMI",
+    "zh-cn": "身体数据：体重、脂肪、BMI"
   },
   "sleeprecords": {
     "en": "Sleep Records",
     "de": "Schlafaufzeichnungen",
     "ru": "Записи сна",
     "pt": "Registros de sono",
-    "nl": "Slaaprecords",
+    "nl": "Slaapgegevens",
     "fr": "Enregistrements de sommeil",
-    "it": "Registri del sonno",
+    "it": "Registrazioni del sonno",
     "es": "Registros de sueño",
     "pl": "Zapisy snu",
     "zh-cn": "睡眠记录"
@@ -128,83 +182,72 @@ systemDictionary = {
   "foodrecords": {
     "en": "Food",
     "de": "Lebensmittel",
-    "ru": "еда",
+    "ru": "Питание",
     "pt": "Comida",
-    "nl": "voedsel",
-    "fr": "aliments",
-    "it": "cibo",
-    "es": "comida",
-    "pl": "jedzenie",
+    "nl": "Voeding",
+    "fr": "Alimentation",
+    "it": "Cibo",
+    "es": "Comida",
+    "pl": "Jedzenie",
     "zh-cn": "食物"
   },
   "devicerecords": {
     "en": "Devices",
     "de": "Geräte",
-    "ru": "устройства",
-    "pt": "dispositivos",
-    "nl": "apparaten",
-    "fr": "dispositifs",
-    "it": "dispositivi",
-    "es": "dispositivos",
-    "pl": "urządzenia",
+    "ru": "Устройства",
+    "pt": "Dispositivos",
+    "nl": "Apparaten",
+    "fr": "Appareils",
+    "it": "Dispositivi",
+    "es": "Dispositivos",
+    "pl": "Urządzenia",
     "zh-cn": "设备"
   },
   "activityrecords": {
     "en": "Activities",
     "de": "Aktivitäten",
-    "ru": "виды деятельности",
+    "ru": "Активности",
     "pt": "Atividades",
-    "nl": "activiteiten",
+    "nl": "Activiteiten",
     "fr": "Activités",
-    "it": "attività",
-    "es": "ocupaciones",
-    "pl": "zajęcia",
+    "it": "Attività",
+    "es": "Actividades",
+    "pl": "Aktywności",
     "zh-cn": "活动"
   },
   "sleeprecordsschedule": {
-    "en": "get sleep record once a day",
-    "de": "Schlafaufzeichnung nur einmal am Tag",
-    "ru": "получить запись сна только один раз в день",
-    "pt": "obter registro de sono apenas uma vez por dia",
-    "nl": "krijg slechts één keer per dag een slaaprecord",
-    "fr": "obtenir un enregistrement de sommeil une seule fois par jour",
-    "it": "ottenere il record del sonno solo una volta al giorno",
-    "es": "obtener registro de sueño solo una vez al día",
-    "pl": "uzyskuj zapis snu tylko raz dziennie",
-    "zh-cn": "每天只获取一次睡眠记录"
-  },
-  "debug": {
-    "en": "debug option",
-    "de": "Debug Option",
-    "ru": "отлаживать",
-    "pt": "depurar",
-    "nl": "debuggen",
-    "fr": "déboguer",
-    "it": "eseguire il debug",
-    "es": "depurar",
-    "pl": "odpluskwić",
-    "zh-cn": "调试"
+    "en": "Get sleep record once a day",
+    "de": "Schlafaufzeichnung nur einmal täglich abrufen",
+    "ru": "Получать запись сна один раз в день",
+    "pt": "Obter registro de sono apenas uma vez por dia",
+    "nl": "Slaaprecord slechts één keer per dag ophalen",
+    "fr": "Obtenir l'enregistrement de sommeil une fois par jour",
+    "it": "Ottieni il record del sonno una volta al giorno",
+    "es": "Obtener registro de sueño solo una vez al día",
+    "pl": "Pobierz zapis snu tylko raz dziennie",
+    "zh-cn": "每天仅获取一次睡眠记录"
   },
 
-  /* ===== 🆕 Intraday-Option ===== */
+  /* ===== Intraday ===== */
   "intraday": {
     "en": "Enable intraday (1-minute heart rate data)",
-    "de": "Intraday aktivieren (1-Minuten-Herzfrequenz)",
+    "de": "Intraday aktivieren (1-Minuten-Herzfrequenzdaten)",
     "ru": "Включить внутридневные данные (пульс с интервалом 1 мин.)",
+    "pt": "Ativar intradiário (frequência cardíaca por minuto)",
     "nl": "Intraday inschakelen (hartslag per minuut)",
-    "fr": "Activer intrajournalier (fréquence cardiaque à la minute)",
+    "fr": "Activer les données intrajournalières (fréquence cardiaque par minute)",
     "it": "Abilita intraday (frequenza cardiaca al minuto)",
-    "es": "Activar intradía (frecuencia cardiaca por minuto)",
+    "es": "Activar intradía (frecuencia cardíaca por minuto)",
     "pl": "Włącz intraday (tętno co minutę)",
-    "uk": "Увімкнути intraday (пульс щохвилини)",
     "zh-cn": "启用日内（1分钟心率）"
   },
 
-  /* ===== 💤 Neue Nap-Optionen ===== */
+  /* ===== Nap Options ===== */
   "showLastOrFirstNap": {
     "en": "Show last or first nap (true = last nap, false = first nap)",
     "de": "Letztes oder erstes Nickerchen anzeigen (true = letztes, false = erstes)",
     "ru": "Показывать последнюю или первую дремоту (true = последняя, false = первая)",
+    "pt": "Mostrar última ou primeira soneca (true = última, false = primeira)",
     "nl": "Toon laatste of eerste dutje (true = laatste, false = eerste)",
     "fr": "Afficher la dernière ou la première sieste (true = dernière, false = première)",
     "it": "Mostra l'ultimo o il primo sonnellino (true = ultimo, false = primo)",
@@ -214,9 +257,10 @@ systemDictionary = {
   },
   "clearNapListAtNight": {
     "en": "Automatically clear nap list at night",
-    "de": "Nickerchen-Liste nachts automatisch leeren",
+    "de": "Nickerchenliste nachts automatisch leeren",
     "ru": "Автоматически очищать список дремоты ночью",
-    "nl": "Dutjeslijst 's nachts automatisch wissen",
+    "pt": "Limpar automaticamente a lista de sonecas à noite",
+    "nl": "Wis dutjeslijst 's nachts automatisch",
     "fr": "Effacer automatiquement la liste des siestes la nuit",
     "it": "Cancella automaticamente l'elenco dei sonnellini di notte",
     "es": "Borrar automáticamente la lista de siestas por la noche",
@@ -225,9 +269,10 @@ systemDictionary = {
   },
   "enableDailyNapClear": {
     "en": "Enable daily nap list clearing",
-    "de": "Tägliches Leeren der Nickerchen-Liste erzwingen (nur falls nicht automatisch vom Adapter geleert)",
+    "de": "Tägliches Leeren der Nickerchenliste aktivieren",
     "ru": "Включить ежедневную очистку списка дремоты",
-    "nl": "Dagelijkse wis van dutjeslijst inschakelen",
+    "pt": "Ativar limpeza diária da lista de sonecas",
+    "nl": "Dagelijks wissen van dutjeslijst inschakelen",
     "fr": "Activer l'effacement quotidien de la liste des siestes",
     "it": "Abilita la cancellazione giornaliera dell'elenco dei sonnellini",
     "es": "Habilitar borrado diario de la lista de siestas",
@@ -238,6 +283,7 @@ systemDictionary = {
     "en": "Forced clear time (HH:MM)",
     "de": "Erzwungene Leerzeit (HH:MM)",
     "ru": "Принудительное время очистки (ЧЧ:ММ)",
+    "pt": "Hora de limpeza forçada (HH:MM)",
     "nl": "Geforceerde wistijd (UU:MM)",
     "fr": "Heure d'effacement forcée (HH:MM)",
     "it": "Orario di cancellazione forzata (HH:MM)",
@@ -246,25 +292,67 @@ systemDictionary = {
     "zh-cn": "强制清除时间（HH:MM）"
   },
 
-  /* ===== 🌙 Frühschlaf-Filter (aktuelle Schlüssel) ===== */
+  /* ===== Frühschlaf-Filter ===== */
   "ignoreEarlyMainSleepEnabled": {
     "en": "Ignore early main sleep phases (before defined time)",
     "de": "Frühe Hauptschlafphasen ignorieren (vor definierter Uhrzeit)",
-    "fr": "Ignorer les phases de sommeil principales précoces (avant l'heure définie)",
-    "it": "Ignora le fasi principali di sonno anticipate (prima dell'orario definito)",
-    "es": "Ignorar las fases principales de sueño temprano (antes de la hora definida)",
-    "pl": "Ignoruj wczesne główne fazy snu (przed określoną godziną)",
+    "ru": "Игнорировать ранние фазы основного сна (до заданного времени)",
+    "pt": "Ignorar fases principais de sono cedo (antes do horário definido)",
     "nl": "Negeer vroege hoofdslaapperiodes (voor de ingestelde tijd)",
+    "fr": "Ignorer les phases principales de sommeil précoces (avant l'heure définie)",
+    "it": "Ignora le fasi principali di sonno anticipate (prima dell'orario definito)",
+    "es": "Ignorar fases principales de sueño temprano (antes de la hora definida)",
+    "pl": "Ignoruj wczesne główne fazy snu (przed określoną godziną)",
     "zh-cn": "忽略早期主要睡眠阶段（在定义时间之前）"
   },
   "ignoreEarlyMainSleepTime": {
     "en": "Ignore main sleep before (HH:MM)",
     "de": "Hauptschlaf ignorieren vor (HH:MM)",
+    "ru": "Игнорировать основной сон до (ЧЧ:ММ)",
+    "pt": "Ignorar sono principal antes (HH:MM)",
+    "nl": "Negeer hoofdslaap vóór (HH:MM)",
     "fr": "Ignorer le sommeil principal avant (HH:MM)",
     "it": "Ignora il sonno principale prima delle (HH:MM)",
     "es": "Ignorar el sueño principal antes de (HH:MM)",
     "pl": "Ignoruj główny sen przed (HH:MM)",
-    "nl": "Negeer hoofdslaap vóór (HH:MM)",
     "zh-cn": "忽略在此之前的主要睡眠 (HH:MM)"
+  },
+
+  /* ===== Debug & Advanced Options ===== */
+  "Debug-Ausgabe aktivieren": {
+    "en": "Enable debug output",
+    "de": "Debug-Ausgabe aktivieren",
+    "ru": "Включить вывод отладки",
+    "pt": "Ativar saída de depuração",
+    "nl": "Debug-uitvoer inschakelen",
+    "fr": "Activer la sortie de débogage",
+    "it": "Abilita output di debug",
+    "es": "Activar salida de depuración",
+    "pl": "Włącz wyjście debugowania",
+    "zh-cn": "启用调试输出"
+  },
+  "Intelligente Frühschlaf-Erkennung": {
+    "en": "Smart early sleep detection",
+    "de": "Intelligente Frühschlaf-Erkennung",
+    "ru": "Интеллектуальное определение раннего сна",
+    "pt": "Detecção inteligente de sono precoce",
+    "nl": "Slimme vroege-slaapdetectie",
+    "fr": "Détection intelligente du sommeil précoce",
+    "it": "Rilevamento intelligente del sonno anticipato",
+    "es": "Detección inteligente del sueño temprano",
+    "pl": "Inteligentne wykrywanie wczesnego snu",
+    "zh-cn": "智能早睡检测"
+  },
+  "Schwellwert für kurzen Schlaf (Stunden)": {
+    "en": "Threshold for short main sleep (hours)",
+    "de": "Schwellwert für kurzen Schlaf (Stunden)",
+    "ru": "Порог для короткого основного сна (часы)",
+    "pt": "Limite para sono principal curto (horas)",
+    "nl": "Drempel voor korte hoofdslaap (uren)",
+    "fr": "Seuil pour sommeil principal court (heures)",
+    "it": "Soglia per sonno principale breve (ore)",
+    "es": "Umbral para sueño principal corto (horas)",
+    "pl": "Próg dla krótkiego głównego snu (godziny)",
+    "zh-cn": "短主睡眠阈值（小时）"
   }
 };
