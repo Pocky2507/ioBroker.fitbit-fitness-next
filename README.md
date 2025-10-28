@@ -111,19 +111,19 @@ Der neue kombinierte Filter verbindet:
 
 ## ⚙️ Standardkonfiguration (Default Settings)
 
-| Schlüssel | Standardwert | Beschreibung |
-|:-----------|:-------------|:--------------|
-| `refresh` | 5 Minuten | Aktualisierungsintervall |
-| `intraday` | ❌ | 1-Minuten-Herzfrequenz deaktiviert |
-| `ignoreEarlyMainSleepEnabled` | ✅ | Frühschlaf-Filter aktiv |
-| `ignoreEarlyMainSleepTime` | 23:00 | Uhrzeitgrenze |
-| `smartEarlySleepEnabled` | ✅ | SmartSleep aktiv |
-| `minMainSleepHours` | 3 | Mindestdauer Hauptschlaf |
-| `showLastOrFirstNap` | ✅ | Zeigt letztes Nickerchen |
-| `clearNapListAtNight` | ✅ | Liste wird nachts geleert |
-| `enableDailyNapClear` | ❌ | Deaktiviert |
-| `forceClearNapListTime` | 02:45 | Leerungszeit |
-| `debugEnabled` | ❌ | Debug aus |
+| Schlüssel | Standardwert | Kurzbeschreibung |
+|:-----------|:-------------|:------------------|
+| `refresh` | 5 Minuten | Intervall, in dem Fitbit-Daten abgerufen werden |
+| `intraday` | ❌ | Aktiviert den Intraday-Modus mit 1-Minuten-Herzfrequenzwerten |
+| `ignoreEarlyMainSleepEnabled` | ✅ | Ignoriert Hauptschlafphasen, die vor der eingestellten Uhrzeit beginnen |
+| `ignoreEarlyMainSleepTime` | 23:00 | Uhrzeit, ab der Schlafphasen als Nachtschlaf gelten |
+| `smartEarlySleepEnabled` | ✅ | Erkennt lange Schlafphasen automatisch als Hauptschlaf (SmartSleep) |
+| `minMainSleepHours` | 3 | Mindestdauer einer Hauptschlafphase für SmartSleep |
+| `showLastOrFirstNap` | ✅ | Zeigt das **letzte** (true) oder **erste** (false) Nickerchen an |
+| `clearNapListAtNight` | ✅ | Leert die Nickerchenliste automatisch nach Mitternacht |
+| `enableDailyNapClear` | ❌ | Aktiviert zusätzliches tägliches Leeren der Liste |
+| `forceClearNapListTime` | 02:45 | Uhrzeit, zu der die Nickerchenliste zwangsweise gelöscht wird |
+| `debugEnabled` | ❌ | Aktiviert detaillierte Debug-Ausgabe im Log |
 
 ---
 
@@ -189,7 +189,7 @@ To use this adapter, you need a **Fitbit Developer Account**.
 ## ✨ New in Version 0.5.5
 
 - Added **combined real-time EarlySleep & SmartSleep filter**
-- Automatically skips night sleep analysis when current time is before cutoff (e.g. 22:30)
+- Automatically skips night-sleep analysis when current time < cutoff (e.g. 22:30)
 - Long main-sleep blocks before cutoff are **accepted automatically**
 - Improved debug logging and stability of sleep logic
 - Added **total sleep and nap summary datapoints**
@@ -204,7 +204,7 @@ To use this adapter, you need a **Fitbit Developer Account**.
 - **Intraday mode** for 1-minute heart-rate data
 - **Nap management** (first / last nap, auto-clear)
 - **Combined EarlySleep & SmartSleep logic** with real-time clock check
-- **Debug mode** switch in Admin UI
+- **Debug mode** toggle in Admin UI
 - Supports **compact mode** and **cloud connection**
 
 ---
@@ -255,19 +255,19 @@ This combined logic merges **time-based filtering** and **SmartSleep duration an
 
 ## ⚙️ Default Configuration
 
-| Key | Default | Description |
-|:------|:----------|:-------------|
-| `refresh` | 5 min | Refresh interval |
-| `intraday` | ❌ | 1-minute data disabled |
-| `ignoreEarlyMainSleepEnabled` | ✅ | Enable EarlySleep filter |
-| `ignoreEarlyMainSleepTime` | 23:00 | Cutoff time |
-| `smartEarlySleepEnabled` | ✅ | SmartSleep enabled |
-| `minMainSleepHours` | 3 | Minimum main-sleep duration |
-| `showLastOrFirstNap` | ✅ | Show last nap |
-| `clearNapListAtNight` | ✅ | Auto-clear after midnight |
-| `enableDailyNapClear` | ❌ | Disabled |
-| `forceClearNapListTime` | 02:45 | Clear time |
-| `debugEnabled` | ❌ | Debug off |
+| Key | Default | Short Description |
+|:------|:----------|:------------------|
+| `refresh` | 5 min | Interval in which Fitbit data is fetched |
+| `intraday` | ❌ | Enables Intraday mode with 1-minute heart-rate values |
+| `ignoreEarlyMainSleepEnabled` | ✅ | Ignores main-sleep blocks that start before the cutoff time |
+| `ignoreEarlyMainSleepTime` | 23:00 | Cutoff time defining start of night-sleep window |
+| `smartEarlySleepEnabled` | ✅ | Automatically accepts long main-sleep blocks before cutoff |
+| `minMainSleepHours` | 3 | Minimum duration (hours) of main-sleep for SmartSleep |
+| `showLastOrFirstNap` | ✅ | Show **last** (true) or **first** (false) nap |
+| `clearNapListAtNight` | ✅ | Clears nap list automatically after midnight |
+| `enableDailyNapClear` | ❌ | Enables additional daily nap list clearing |
+| `forceClearNapListTime` | 02:45 | Fixed time when nap list is cleared |
+| `debugEnabled` | ❌ | Enables detailed debug logging in the console |
 
 ---
 
