@@ -2,6 +2,32 @@
 <!--
     ## **WORK IN PROGRESS**
 -->
+
+## 0.5.5 (2025-10-28)
+- Added **combined real-time EarlySleep & SmartSleep filter**
+  → Combines current time check with sleep duration logic
+- Long main-sleep blocks before cutoff are now accepted
+- Improved debug output and sleep logic stability
+- Added **total sleep and nap summary datapoints**
+- Enhanced overall performance and logic
+
+## 0.5.4 (2025-10-27)
+- Added **Debug & Advanced Options** tab
+- Added SmartSleep detection with configurable minimum duration (e.g. 3 h)
+- Improved main-sleep filtering
+- UI and translation improvements
+
+## 0.5.3 (2025-10-26)
+- Added configurable EarlySleep filter (ignore sleep before defined cutoff)
+- Improved sleep logic and nap separation
+
+## 0.5.2 (2025-10-25)
+- Added nap management and intraday mode
+- Improved stability in sleep and activity retrieval
+
+## 0.5.1 (2025-10-24)
+- Maintenance and cleanup update
+- 
 ## 0.4.14 (2023-11-18)
 - Fixed some minor bugs
 
