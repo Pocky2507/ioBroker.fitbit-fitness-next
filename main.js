@@ -670,9 +670,37 @@ class FitBit extends utils.Adapter {
     // =========================================================================
     // Sleep – Schreiblogik (inkl. Segmentanalyse + Filter)
     // =========================================================================
-    async setSleepStates(data) {
+async setSleepStates(data) {
         const blocks = data && data.sleep ? data.sleep : [];
         if (blocks.length === 0) return false;
+
+        // --- ⏰ Echtzeitprüfung: Ist es derzeit noch zu früh für Nachtschlaf? ---
+        if (this.effectiveConfig.ignoreEarlyMainSleepEnabled && this.effectiveConfig.ignoreEarlyMainSleepTime) {
+            try {
+                const [h, m] = String(this.effectiveConfig.ignoreEarlyMainSleepTime)
+                    .split(":")
+                    .map(n => parseInt(n, 10));
+
+                const now = new Date();
+                const tooEarlyNow = (now.getHours() < h) || (now.getHours() === h && now.getMinutes() < m);
+
+                if (tooEarlyNow) {
+                    if (DEBUG_SLEEP_LOG) {
+                        this.log.info(
+                            `It’s currently too early (${now.toTimeString().slice(0,5)} < ${this.effectiveConfig.ignoreEarlyMainSleepTime}) → skip nightly sleep analysis.`
+                        );
+                    }
+                    // 💡 Abbruch: Es ist noch zu früh für Nachtschlaf – Fitbit-Daten werden ignoriert
+                    return false;
+                } else if (DEBUG_SLEEP_LOG) {
+                    this.log.debug(
+                        `Current time ${now.toTimeString().slice(0,5)} >= ${this.effectiveConfig.ignoreEarlyMainSleepTime} → proceed with sleep analysis.`
+                    );
+                }
+            } catch (err) {
+                this.log.warn(`⚠️ Real-time night check failed: ${err.message}`);
+            }
+        }
 
         // --- Debug: Ausgabe der gelieferten Schlafblöcke ----------------------
         if (DEBUG_SLEEP_LOG) {
