@@ -1,20 +1,20 @@
 {
   "name": "iobroker.fitbit-fitness",
   "version": "0.5.5",
-  "description": "Retrieves Fitbit health, activity, and sleep data (including naps, intraday mode and combined real-time EarlySleep & SmartSleep filtering) for ioBroker. Now with extended debug, realtime sleep checks and nap summaries.",
+  "description": "Retrieves Fitbit health, activity, and sleep data (with naps, intraday mode, and combined real-time EarlySleep & SmartSleep filtering) for ioBroker. Includes extended debug, realtime sleep logic, and nap summaries.",
   "author": "Chris <besterquester@live.at>, Pocky2507",
   "homepage": "https://github.com/Pocky2507/ioBroker.fitbit-fitness",
   "license": "MIT",
   "keywords": [
+    "ioBroker",
+    "Adapter",
     "Fitbit",
     "Health",
     "Fitness",
     "Sleep",
     "Nap",
     "SmartSleep",
-    "EarlySleep",
-    "ioBroker",
-    "Adapter"
+    "EarlySleep"
   ],
   "repository": {
     "type": "git",
