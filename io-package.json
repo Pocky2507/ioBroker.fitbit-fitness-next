@@ -1,8 +1,30 @@
 {
   "common": {
     "name": "fitbit-fitness",
-    "version": "0.5.3",
+    "version": "0.5.5",
     "news": {
+      "0.5.5": {
+        "en": "Added combined EarlySleep & SmartSleep filter: long main-sleep blocks before cutoff time are now accepted; improved debug output and sleep logic stability.",
+        "de": "Neuer kombinierter Frühschlaf- & SmartSleep-Filter: Lange Hauptschlafphasen vor der Uhrzeitgrenze werden jetzt akzeptiert; verbesserte Debug-Ausgabe und stabilere Schlaflogik.",
+        "ru": "Добавлен комбинированный фильтр раннего сна и SmartSleep: теперь принимаются длительные основные фазы сна до порогового времени; улучшена отладка и стабильность логики сна.",
+        "fr": "Ajout d’un filtre combiné EarlySleep & SmartSleep : les longues phases de sommeil principal avant l’heure limite sont désormais acceptées ; sortie de débogage et stabilité de la logique du sommeil améliorées.",
+        "it": "Aggiunto filtro combinato EarlySleep & SmartSleep: ora vengono accettate lunghe fasi di sonno principale prima dell’orario limite; migliorati output di debug e stabilità della logica del sonno.",
+        "es": "Se añadió filtro combinado EarlySleep y SmartSleep: ahora se aceptan bloques largos de sueño principal antes de la hora límite; mejorada la salida de depuración y la estabilidad de la lógica de sueño.",
+        "pl": "Dodano połączony filtr EarlySleep i SmartSleep: długie główne bloki snu przed godziną graniczną są teraz akceptowane; ulepszono logowanie debug i stabilność logiki snu.",
+        "uk": "Додано комбінований фільтр EarlySleep і SmartSleep: тепер приймаються тривалі основні фази сну до граничного часу; покращено відлагодження та стабільність логіки сну.",
+        "zh-cn": "新增组合 EarlySleep 与 SmartSleep 过滤器：现在接受截止时间前的长主睡眠阶段；改进了调试输出与睡眠逻辑稳定性。"
+      },
+      "0.5.4": {
+        "en": "Added Debug & Advanced Options tab with toggles for debug output, smart early-sleep detection and minimum main sleep threshold.",
+        "de": "Neuer Tab 'Debug & Erweiterte Optionen' mit Schaltern für Debug-Ausgabe, intelligente Frühschlaf-Erkennung und Mindest-Schlafdauer hinzugefügt.",
+        "ru": "Добавлена вкладка «Отладка и дополнительные параметры» с переключателями вывода отладки, интеллектуального определения раннего сна и минимальной продолжительности сна.",
+        "fr": "Ajout de l’onglet « Débogage et options avancées » avec des commutateurs pour la sortie de débogage, la détection intelligente du sommeil précoce et le seuil de durée minimale du sommeil.",
+        "it": "Aggiunta scheda 'Debug e Opzioni Avanzate' con interruttori per output di debug, rilevamento intelligente del sonno anticipato e soglia minima di sonno principale.",
+        "es": "Se añadió la pestaña 'Depuración y opciones avanzadas' con interruptores para la salida de depuración, la detección de sueño temprano inteligente y el umbral de sueño principal mínimo.",
+        "pl": "Dodano kartę 'Debugowanie i opcje zaawansowane' z przełącznikami wyjścia debugowania, inteligentnego wykrywania wczesnego snu i minimalnego progu głównego snu.",
+        "uk": "Додано вкладку 'Налагодження та розширені параметри' з перемикачами для відладки, розумного виявлення раннього сну та мінімальної тривалості основного сну.",
+        "zh-cn": "新增“调试和高级选项”选项卡，带有调试输出、智能早睡检测和最小主睡眠时间阈值开关。"
+      },
       "0.5.3": {
         "en": "Added configurable early-sleep filter (e.g. ignore before 23:00), nap options, and intraday mode. Improved sleep logic.",
         "de": "Konfigurierbarer Frühschlaf-Filter (z. B. Ignorieren vor 23:00), Nickerchen-Optionen und Intraday-Modus hinzugefügt. Schlaflogik verbessert.",
@@ -65,15 +87,15 @@
       "zh-cn": "fitbit-fitness"
     },
     "desc": {
-      "en": "Retrieves Fitbit health, activity and sleep data (with nap and early-sleep filtering)",
-      "de": "Ruft Fitbit-Gesundheits-, Aktivitäts- und Schlafdaten ab (mit Nickerchen- und Frühschlaf-Filter)",
-      "ru": "Извлекает данные Fitbit о здоровье, активности и сне (с фильтрацией дремоты и раннего сна)",
-      "fr": "Récupère les données Fitbit sur la santé, l'activité et le sommeil (avec filtres sieste et sommeil précoce)",
-      "it": "Recupera dati Fitbit su salute, attività e sonno (con filtro sonnellini e sonno anticipato)",
-      "es": "Recupera datos de Fitbit de salud, actividad y sueño (con filtros de siesta y sueño temprano)",
-      "pl": "Pobiera dane Fitbit dotyczące zdrowia, aktywności i snu (z filtrowaniem drzemek i wczesnego snu)",
-      "uk": "Отримує дані Fitbit про здоров’я, активність і сон (з фільтрацією дрімоти та раннього сну)",
-      "zh-cn": "检索 Fitbit 健康、活动和睡眠数据（包括小睡和早睡过滤）"
+      "en": "Retrieves Fitbit health, activity and sleep data (with nap and combined early-sleep filtering)",
+      "de": "Ruft Fitbit-Gesundheits-, Aktivitäts- und Schlafdaten ab (mit Nickerchen- und kombiniertem Frühschlaf-Filter)",
+      "ru": "Извлекает данные Fitbit о здоровье, активности и сне (с фильтрацией дремоты и комбинированным ранним сном)",
+      "fr": "Récupère les données Fitbit sur la santé, l'activité et le sommeil (avec filtres sieste et sommeil précoce combiné)",
+      "it": "Recupera dati Fitbit su salute, attività e sonno (con filtro combinato sonnellini e sonno anticipato)",
+      "es": "Recupera datos de Fitbit de salud, actividad y sueño (con filtros combinados de siesta y sueño temprano)",
+      "pl": "Pobiera dane Fitbit dotyczące zdrowia, aktywności i snu (z połączonym filtrowaniem drzemek i wczesnego snu)",
+      "uk": "Отримує дані Fitbit про здоров’я, активність і сон (з комбінованою фільтрацією дрімоти та раннього сну)",
+      "zh-cn": "检索 Fitbit 健康、活动和睡眠数据（包含组合小睡与早睡过滤）"
     },
     "authors": [
       "Chris <besterquester@live.at>",
@@ -127,7 +149,10 @@
     "ignoreEarlyMainSleepTime": "23:00",
     "clientId": "",
     "clientSecret": "",
-    "redirectUri": "https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html"
+    "redirectUri": "https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html",
+    "debugEnabled": false,
+    "smartEarlySleepEnabled": true,
+    "minMainSleepHours": 3
   },
   "objects": [],
   "instanceObjects": [
