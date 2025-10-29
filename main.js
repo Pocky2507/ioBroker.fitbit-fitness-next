@@ -907,12 +907,16 @@ if (this.effectiveConfig.smartEarlySleepEnabled && !this.effectiveConfig.ignoreE
             await this.setStateAsync("sleep.Naps.WokeUpAtLocal",     { val: "", ack: true });
         }
 
-        // Komplette Nickerchenliste (heute)
-        await this.setStateAsync("sleep.Naps.List", { val: JSON.stringify(napList), ack: true });
+// Komplette Schlaf und Nickerchenliste (heute)
+await this.setStateAsync("sleep.Naps.List", { val: JSON.stringify(napList), ack: true });
 
-        this.log.info(
-            `Sleep: totalAsleep=${totalAsleep}min, totalInBed=${totalInBed}min, naps=${napsCount}x (${napsAsleep}min)`
-        );
+// --- Zusammenfassungs-Log nur bei aktiviertem Debug ---
+if (DEBUG_SLEEP_LOG) {
+    this.log.info(
+        `Sleep: totalAsleep=${totalAsleep}min, totalInBed=${totalInBed}min, naps=${napsCount}x (${napsAsleep}min)`
+    );
+}
+
 // -------------------------------------------------------------------------
 // Kompakter Test-Log (nur aktiv, wenn DEBUG_TEST_MODE = true)
 // -------------------------------------------------------------------------
