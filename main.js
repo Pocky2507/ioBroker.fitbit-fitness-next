@@ -27,20 +27,14 @@ const HEART_RATE_ZONE_RANGES = ["customHeartRateZones", "heartRateZones"];
 // -----------------------------------------------------------------------------
 const DEFAULTS = {
     intraday: false,
-    showLastOrFirstNap: true,       // true = letztes Nap, false = erstes Nap
-    clearNapListAtNight: true,      // 00–04 Uhr Nap-Liste leeren
-    enableDailyNapClear: false,     // zusätzl. fester täglicher Reset
-    dailyNapClearTime: "02:45",     // HH:MM
-
-    // Frühschlaf-Filter (fixe Uhrzeit)
+    showLastOrFirstNap: true,
+    clearNapListAtNight: true,
+    enableDailyNapClear: false,
+    dailyNapClearTime: "02:45",
     ignoreEarlyMainSleepEnabled: true,
     ignoreEarlyMainSleepTime: "23:00",
-
-    // 🆕 Smart-Filter: kurze Hauptschlafphasen ignorieren
     smartEarlySleepEnabled: true,
     minMainSleepHours: 3,
-
-    // 🆕 Debug-Schalter aus Admin
     debugEnabled: false
 };
 
@@ -63,9 +57,7 @@ class FitBit extends utils.Adapter {
 
         this._renewInProgress = false;
         this.FORBIDDEN_CHARS = /[.\[\],]/g;
-
-        // kleine Helper, werden in onReady() belegt
-        this.dlog = (level, msg) => {}; // Debug-Logger
+        this.dlog = (level, msg) => {};
     }
 
     // =========================================================================
@@ -73,32 +65,25 @@ class FitBit extends utils.Adapter {
     // =========================================================================
     async onReady() {
         try {
-            // Verbindung erstmal auf false
             await this.setStateAsync("info.connection", { val: false, ack: true });
 
-            // Konfiguration mit Defaults zusammenführen (rückwärtskompatibel)
             this.effectiveConfig = {
-                // bestehende Optionen
-                intraday:               this._coalesceBool(this.config.intraday,               DEFAULTS.intraday),
-                showLastOrFirstNap:     this._coalesceBool(this.config.showLastOrFirstNap,     DEFAULTS.showLastOrFirstNap),
-                clearNapListAtNight:    this._coalesceBool(this.config.clearNapListAtNight,    DEFAULTS.clearNapListAtNight),
-                enableDailyNapClear:    this._coalesceBool(this.config.enableDailyNapClear,    DEFAULTS.enableDailyNapClear),
+                intraday:               this._coalesceBool(this.config.intraday, DEFAULTS.intraday),
+                showLastOrFirstNap:     this._coalesceBool(this.config.showLastOrFirstNap, DEFAULTS.showLastOrFirstNap),
+                clearNapListAtNight:    this._coalesceBool(this.config.clearNapListAtNight, DEFAULTS.clearNapListAtNight),
+                enableDailyNapClear:    this._coalesceBool(this.config.enableDailyNapClear, DEFAULTS.enableDailyNapClear),
                 dailyNapClearTime:      this._validTime(this.config.forceClearNapListTime || this.config.dailyNapClearTime)
                                          ? (this.config.forceClearNapListTime || this.config.dailyNapClearTime)
                                          : DEFAULTS.dailyNapClearTime,
-
-                // Frühschlaf-Filter (fixe Uhrzeit)
                 ignoreEarlyMainSleepEnabled: this._coalesceBool(this.config.ignoreEarlyMainSleepEnabled, DEFAULTS.ignoreEarlyMainSleepEnabled),
-                ignoreEarlyMainSleepTime:    this._validTime(this.config.ignoreEarlyMainSleepTime) ? this.config.ignoreEarlyMainSleepTime : DEFAULTS.ignoreEarlyMainSleepTime,
-
-                // 🆕 Smart-Filter (Mindestdauer Hauptschlaf)
+                ignoreEarlyMainSleepTime:    this._validTime(this.config.ignoreEarlyMainSleepTime)
+                                             ? this.config.ignoreEarlyMainSleepTime
+                                             : DEFAULTS.ignoreEarlyMainSleepTime,
                 smartEarlySleepEnabled: this._coalesceBool(this.config.smartEarlySleepEnabled, DEFAULTS.smartEarlySleepEnabled),
-                minMainSleepHours:      Number.isFinite(this.config.minMainSleepHours) ? Number(this.config.minMainSleepHours) : DEFAULTS.minMainSleepHours,
-
-                // 🆕 Debug-Schalter
+                minMainSleepHours:      Number.isFinite(this.config.minMainSleepHours)
+                                             ? Number(this.config.minMainSleepHours)
+                                             : DEFAULTS.minMainSleepHours,
                 debugEnabled:           this._coalesceBool(this.config.debugEnabled, DEFAULTS.debugEnabled),
-
-                // Admin/Bestandsoptionen
                 refresh:                Number.isFinite(this.config.refresh) ? Number(this.config.refresh) : 5,
                 bodyrecords:            !!this.config.bodyrecords,
                 activityrecords:        !!this.config.activityrecords,
@@ -111,11 +96,9 @@ class FitBit extends utils.Adapter {
                 redirectUri:            this.config.redirectUri || "",
             };
 
-            // Debug-Schalter aktivieren
             DEBUG_SLEEP_LOG = !!this.effectiveConfig.debugEnabled;
-            this.dlog = (level, msg) => { if (DEBUG_SLEEP_LOG && this.log && typeof this.log[level] === "function") this.log[level](msg); };
+            this.dlog = (lvl, msg) => { if (DEBUG_SLEEP_LOG && this.log && typeof this.log[lvl] === "function") this.log[lvl](msg); };
 
-            // Log der effektiven Einstellungen
             this.log.info(
                 `Config → intraday=${this.effectiveConfig.intraday ? "on" : "off"}, ` +
                 `showLastOrFirstNap=${this.effectiveConfig.showLastOrFirstNap ? "last" : "first"}, ` +
@@ -127,22 +110,14 @@ class FitBit extends utils.Adapter {
             );
             this.log.info(`Intervals → refresh every ${this.effectiveConfig.refresh} min; scheduled sleep fetch=${this.effectiveConfig.sleeprecordsschedule ? "on" : "off"}`);
 
-            // Login (holt Tokens aus States)
             await this.login();
 
             if (this.fitbit.status === 200) {
                 await this.setStateAsync("info.connection", { val: true, ack: true });
-
-                // Zusatz-States anlegen (nur einmalig)
                 await this.initCustomSleepStates();
-
-                // Sleep-Pläne (Admin-Optionen)
                 this.initSleepSchedule();
-
-                // Erster Abruf
                 await this.getFitbitRecords();
 
-                // Wiederholter Abruf
                 const refreshMs = Math.max(1, this.effectiveConfig.refresh) * 60 * 1000;
                 this.updateInterval = setInterval(async () => {
                     try {
@@ -159,15 +134,13 @@ class FitBit extends utils.Adapter {
             this.log.error(`Adapter start failed: ${error}`);
         }
 
-        // Schreibbare States abonnieren (z.B. body.weight)
         this.subscribeStates("body.weight");
     }
 
     // =========================================================================
-    // States vorbereiten (zusätzlich zu io-package / Original)
+    // Sleep States anlegen
     // =========================================================================
     async initCustomSleepStates() {
-        // Minuten-/Zähler-States
         const minuteStates = [
             { id: "sleep.AsleepTotal", name: "Total minutes asleep (incl. naps)", unit: "min" },
             { id: "sleep.InBedTotal",  name: "Total minutes in bed (incl. naps)", unit: "min" },
@@ -175,7 +148,6 @@ class FitBit extends utils.Adapter {
             { id: "sleep.Naps.InBed",  name: "Minutes in bed during naps", unit: "min" },
             { id: "sleep.Naps.Count",  name: "Number of naps", unit: "" },
         ];
-
         for (const s of minuteStates) {
             await this.setObjectNotExistsAsync(s.id, {
                 type: "state",
@@ -184,22 +156,16 @@ class FitBit extends utils.Adapter {
             });
         }
 
-        // Zeitstempel- und Text-States
         const timeStates = [
-            // Hauptschlaf
-            { id: "sleep.Main.FellAsleepAt",      name: "Main sleep - fell asleep at (ISO)" },
+            { id: "sleep.Main.FellAsleepAt", name: "Main sleep - fell asleep at (ISO)" },
             { id: "sleep.Main.FellAsleepAtLocal", name: "Main sleep - fell asleep at (local de-DE)" },
-            { id: "sleep.Main.WokeUpAt",          name: "Main sleep - woke up at (ISO)" },
-            { id: "sleep.Main.WokeUpAtLocal",     name: "Main sleep - woke up at (local de-DE)" },
-
-            // ausgewähltes Nap
-            { id: "sleep.Naps.FellAsleepAt",      name: "Nap - fell asleep at (ISO)" },
+            { id: "sleep.Main.WokeUpAt", name: "Main sleep - woke up at (ISO)" },
+            { id: "sleep.Main.WokeUpAtLocal", name: "Main sleep - woke up at (local de-DE)" },
+            { id: "sleep.Naps.FellAsleepAt", name: "Nap - fell asleep at (ISO)" },
             { id: "sleep.Naps.FellAsleepAtLocal", name: "Nap - fell asleep at (local de-DE)" },
-            { id: "sleep.Naps.WokeUpAt",          name: "Nap - woke up at (ISO)" },
-            { id: "sleep.Naps.WokeUpAtLocal",     name: "Nap - woke up at (local de-DE)" },
-
-            // Liste aller heutigen Naps (JSON)
-            { id: "sleep.Naps.List",              name: "List of today naps as JSON" },
+            { id: "sleep.Naps.WokeUpAt", name: "Nap - woke up at (ISO)" },
+            { id: "sleep.Naps.WokeUpAtLocal", name: "Nap - woke up at (local de-DE)" },
+            { id: "sleep.Naps.List", name: "List of today naps as JSON" },
         ];
 
         for (const s of timeStates) {
@@ -210,7 +176,6 @@ class FitBit extends utils.Adapter {
             });
         }
 
-        // Geräte-Channel (falls nicht vorhanden)
         await this.setObjectNotExistsAsync("devices", {
             type: "channel",
             common: { name: "FITBIT Devices" },
@@ -219,6 +184,80 @@ class FitBit extends utils.Adapter {
     }
 
     // =========================================================================
+    // Login + Tokenprüfung
+    // =========================================================================
+    async login() {
+        try {
+            const accessToken  = await this.getStateAsync("tokens.access");
+            const refreshToken = await this.getStateAsync("tokens.refresh");
+            if (accessToken && refreshToken && accessToken.val && refreshToken.val) {
+                this.fitbit.tokens = {
+                    access_token:  String(accessToken.val),
+                    refresh_token: String(refreshToken.val),
+                };
+            } else throw new Error("no tokens available. Recreate token in config");
+
+            const url = "https://api.fitbit.com/1/user/-/profile.json";
+            const response = await axios.get(url, {
+                headers: { "Authorization": `Bearer ${this.fitbit.tokens.access_token}` },
+                timeout: axiosTimeout
+            });
+
+            this.fitbit.status = response.status;
+            if (response.status === 200) {
+                await this.setStateAsync("info.connection", { val: true, ack: true });
+                this.setUserStates(response.data);
+                this.log.info(`Login OK for user ${this.fitbit.user?.fullName || "?"}`);
+            } else throw new Error(`Login failed with status ${response.status}`);
+        } catch (err) {
+            throw new Error(err);
+        }
+    }
+
+    setUserStates(data) {
+        this.fitbit.user = data.user || {};
+        this.log.info(`User logged in ${this.fitbit.user.fullName} id:${this.fitbit.user.encodedId}`);
+        this.setState("user.fullName", this.fitbit.user.fullName || "", true);
+        this.setState("user.userid",   this.fitbit.user.encodedId || "", true);
+    }
+
+    // =========================================================================
+    // Sleep-Schedule
+    // =========================================================================
+    initSleepSchedule() {
+        if (this.effectiveConfig.sleeprecords && this.effectiveConfig.sleeprecordsschedule) {
+            const rndMinutes = Math.floor(Math.random() * 59);
+            const rndHours = 20 + Math.floor(Math.random() * 2);
+            this.log.info(`Sleep schedule: daily ${rndHours}:${rndMinutes.toString().padStart(2, "0")} (randomized)`);
+            this.sleepSchedule = mSchedule.scheduleJob(`${rndMinutes} ${rndHours} * * *`, () => {
+                if (this.effectiveConfig.sleeprecords) this.getSleepRecords();
+            });
+        }
+
+        if (this.effectiveConfig.enableDailyNapClear) {
+            const t = this.effectiveConfig.dailyNapClearTime || DEFAULTS.dailyNapClearTime;
+            const [h, m] = String(t).split(":");
+            const hour = parseInt(h, 10);
+            const min  = parseInt(m, 10);
+            if (!isNaN(hour) && !isNaN(min)) {
+                this.log.info(`Daily nap reset scheduled at ${t}`);
+                mSchedule.scheduleJob(`${min} ${hour} * * *`, async () => {
+                    this.log.info("Nap reset schedule triggered");
+                    try {
+                        await this._clearNapStates();
+                        this.log.info("Nap states cleared (scheduled reset)");
+                    } catch (e) {
+                        this.log.error(`Error clearing naps: ${e}`);
+                    }
+                });
+            } else {
+                this.log.warn(`dailyNapClearTime "${t}" is invalid (expected HH:MM)`);
+            }
+        }
+    }
+
+// --- END OF PART 1 ---
+// =========================================================================
     // Hauptabruf
     // =========================================================================
     async getFitbitRecords(retry = false) {
@@ -315,43 +354,6 @@ class FitBit extends utils.Adapter {
         this.log.info(`User logged in ${this.fitbit.user.fullName} id:${this.fitbit.user.encodedId}`);
         this.setState("user.fullName", this.fitbit.user.fullName || "", true);
         this.setState("user.userid",   this.fitbit.user.encodedId || "", true);
-    }
-
-    // =========================================================================
-    // Sleep-Scheduling (Admin-Optionen + zusätzlicher Reset)
-    // =========================================================================
-    initSleepSchedule() {
-        // 1) Täglicher randomisierter Abruf (wie original), wenn aktiviert
-        if (this.effectiveConfig.sleeprecords && this.effectiveConfig.sleeprecordsschedule) {
-            const rndMinutes = Math.floor(Math.random() * 59);
-            const rndHours = 20 + Math.floor(Math.random() * 2); // 20–21 Uhr
-            this.log.info(`Sleep schedule: daily ${rndHours}:${rndMinutes.toString().padStart(2, "0")} (randomized)`);
-            this.sleepSchedule = mSchedule.scheduleJob(`${rndMinutes} ${rndHours} * * *`, () => {
-                if (this.effectiveConfig.sleeprecords) this.getSleepRecords();
-            });
-        }
-
-        // 2) Optional: fester täglicher Nap-Reset (nur wenn enableDailyNapClear=true)
-        if (this.effectiveConfig.enableDailyNapClear) {
-            const t = this.effectiveConfig.dailyNapClearTime || DEFAULTS.dailyNapClearTime;
-            const [h, m] = String(t).split(":");
-            const hour = parseInt(h, 10);
-            const min  = parseInt(m, 10);
-            if (!isNaN(hour) && !isNaN(min)) {
-                this.log.info(`Daily nap reset scheduled at ${t}`);
-                mSchedule.scheduleJob(`${min} ${hour} * * *`, async () => {
-                    this.log.info("Nap reset schedule triggered");
-                    try {
-                        await this._clearNapStates();
-                        this.log.info("Nap states cleared (scheduled reset)");
-                    } catch (e) {
-                        this.log.error(`Error clearing naps: ${e}`);
-                    }
-                });
-            } else {
-                this.log.warn(`dailyNapClearTime "${t}" is invalid (expected HH:MM)`);
-            }
-        }
     }
 
     // =========================================================================
@@ -674,33 +676,48 @@ async setSleepStates(data) {
         const blocks = data && data.sleep ? data.sleep : [];
         if (blocks.length === 0) return false;
 
-        // --- ⏰ Echtzeitprüfung: Ist es derzeit noch zu früh für Nachtschlaf? ---
-        if (this.effectiveConfig.ignoreEarlyMainSleepEnabled && this.effectiveConfig.ignoreEarlyMainSleepTime) {
-            try {
-                const [h, m] = String(this.effectiveConfig.ignoreEarlyMainSleepTime)
-                    .split(":")
-                    .map(n => parseInt(n, 10));
+// --- ⏰ Echtzeitprüfung: Ist es derzeit noch zu früh für Nachtschlaf? ---
+if (this.effectiveConfig.ignoreEarlyMainSleepEnabled && this.effectiveConfig.ignoreEarlyMainSleepTime) {
+    try {
+        const [h, m] = String(this.effectiveConfig.ignoreEarlyMainSleepTime)
+            .split(":")
+            .map(n => parseInt(n, 10));
 
-                const now = new Date();
-                const tooEarlyNow = (now.getHours() < h) || (now.getHours() === h && now.getMinutes() < m);
+        const now = new Date();
+        const tooEarlyNow = (now.getHours() < h) || (now.getHours() === h && now.getMinutes() < m);
 
-                if (tooEarlyNow) {
-                    if (DEBUG_SLEEP_LOG) {
-                        this.log.info(
-                            `It’s currently too early (${now.toTimeString().slice(0,5)} < ${this.effectiveConfig.ignoreEarlyMainSleepTime}) → skip nightly sleep analysis.`
-                        );
-                    }
-                    // 💡 Abbruch: Es ist noch zu früh für Nachtschlaf – Fitbit-Daten werden ignoriert
-                    return false;
-                } else if (DEBUG_SLEEP_LOG) {
-                    this.log.debug(
-                        `Current time ${now.toTimeString().slice(0,5)} >= ${this.effectiveConfig.ignoreEarlyMainSleepTime} → proceed with sleep analysis.`
+        if (tooEarlyNow) {
+            // 🔍 Prüfen, ob Fitbit bereits einen vollständigen Hauptschlaf gemeldet hat
+            const hasCompleteMainSleep = Array.isArray(blocks) && blocks.some(b =>
+                b &&
+                b.isMainSleep &&
+                b.startTime && b.endTime &&
+                new Date(b.endTime).getTime() < Date.now()
+            );
+
+            if (hasCompleteMainSleep) {
+                this.log.info(
+                    `It’s currently early (${now.toTimeString().slice(0,5)} < ${this.effectiveConfig.ignoreEarlyMainSleepTime}), ` +
+                    `but Fitbit already reports a complete main sleep → proceed with analysis.`
+                );
+            } else {
+                if (DEBUG_SLEEP_LOG) {
+                    this.log.info(
+                        `It’s currently too early (${now.toTimeString().slice(0,5)} < ${this.effectiveConfig.ignoreEarlyMainSleepTime}) → skip nightly sleep analysis.`
                     );
                 }
-            } catch (err) {
-                this.log.warn(`⚠️ Real-time night check failed: ${err.message}`);
+                // 💡 Abbruch: Es ist noch zu früh für Nachtschlaf – Fitbit-Daten werden ignoriert
+                return false;
             }
+        } else if (DEBUG_SLEEP_LOG) {
+            this.log.debug(
+                `Current time ${now.toTimeString().slice(0,5)} >= ${this.effectiveConfig.ignoreEarlyMainSleepTime} → proceed with sleep analysis.`
+            );
         }
+    } catch (err) {
+        this.log.warn(`⚠️ Real-time night check failed: ${err.message}`);
+    }
+}
 
         // --- Debug: Ausgabe der gelieferten Schlafblöcke ----------------------
         if (DEBUG_SLEEP_LOG) {
@@ -904,28 +921,115 @@ if (this.effectiveConfig.smartEarlySleepEnabled && !this.effectiveConfig.ignoreE
         return segs;
     }
 
+    // -------------------------------------------------------------------------
+    // Segment-Tools für Sleep (verfeinerte Erkennung + Debug)
+    // -------------------------------------------------------------------------
     computeFellAsleepAt(block) {
         const segs = this.getLevelSegments(block);
         const SLEEP_LEVELS = new Set(["asleep", "light", "deep", "rem"]);
-        const first = segs.find(s => SLEEP_LEVELS.has(s.level));
-        if (first) return this._parseISO(first.dateTime) || this._parseISO(block && block.startTime);
+
+        if (!segs.length) return this._parseISO(block && block.startTime);
+
+        // 🔍 Suche erste stabile Schlafphase (mind. 20 Min.) ohne nachfolgende lange Wachphase
+        for (let i = 0; i < segs.length; i++) {
+            const s = segs[i];
+            if (SLEEP_LEVELS.has(s.level)) {
+                const start = this._parseISO(s.dateTime);
+                let sleepDurMin = 0;
+
+                // ⏱️ Summiere fortlaufende Schlafsegmente
+                for (let j = i; j < segs.length && SLEEP_LEVELS.has(segs[j].level); j++) {
+                    const next = segs[j + 1] ? this._parseISO(segs[j + 1].dateTime) : null;
+                    if (next) sleepDurMin += (next - this._parseISO(segs[j].dateTime)) / 60000;
+                }
+
+                // Prüfe, ob direkt danach eine längere Wachphase folgt
+                const nextWake = segs[i + 1];
+                const nextWakeDur = (nextWake && !SLEEP_LEVELS.has(nextWake.level) && segs[i + 2])
+                    ? (this._parseISO(segs[i + 2].dateTime) - this._parseISO(nextWake.dateTime)) / 60000
+                    : 0;
+
+                if (sleepDurMin >= 20 && nextWakeDur < 15) {
+                    if (DEBUG_SLEEP_LOG) {
+                        this.log.info(
+                            `🛌 Refined sleep start detected at ${start?.toISOString() || "?"} (stable ${Math.round(sleepDurMin)} min)`
+                        );
+                    }
+                    return start;
+                }
+            }
+        }
+
+        // Fallback auf block.startTime
+        if (DEBUG_SLEEP_LOG) {
+            this.log.debug("No refined sleep phase found → fallback to block.startTime");
+        }
         return this._parseISO(block && block.startTime);
     }
 
     computeWokeUpAt(block) {
         const segs = this.getLevelSegments(block);
         const SLEEP_LEVELS = new Set(["asleep", "light", "deep", "rem"]);
+
+        // Kein Detail → nimm block.endTime
+        if (!segs.length) return this._parseISO(block && block.endTime);
+
+        // 1️⃣ Letztes Schlaf-Segment finden
+        let lastSleepIdx = -1;
         for (let i = segs.length - 1; i >= 0; i--) {
-            const s = segs[i];
-            if (SLEEP_LEVELS.has(s.level)) {
-                const start = this._parseISO(s.dateTime);
-                if (start) {
-                    if (typeof s.seconds === "number") return this._addSeconds(start, s.seconds);
-                    return this._parseISO(block && block.endTime) || start;
-                }
+            if (SLEEP_LEVELS.has(segs[i].level)) {
+                lastSleepIdx = i;
+                break;
             }
         }
-        return this._parseISO(block && block.endTime);
+        if (lastSleepIdx === -1) return this._parseISO(block && block.endTime);
+
+        const s = segs[lastSleepIdx];
+        const segStart = this._parseISO(s.dateTime);
+
+        // 2️⃣ Ende der letzten Schlaf-Episode bestimmen
+        let endOfLastSleep = null;
+        if (typeof s.seconds === "number") {
+            endOfLastSleep = this._addSeconds(segStart, s.seconds);
+        } else if (segs[lastSleepIdx + 1]) {
+            endOfLastSleep = this._parseISO(segs[lastSleepIdx + 1].dateTime);
+        } else {
+            endOfLastSleep = this._parseISO(block && block.endTime) || segStart;
+        }
+
+        // 3️⃣ Stabilitäts-Check: nachfolgende Wach-Periode
+        const wakeStableMin = 20; // Minuten
+        let wakeDurMin = 0;
+
+        for (let j = lastSleepIdx + 1; j < segs.length && !SLEEP_LEVELS.has(segs[j].level); j++) {
+            const wStart = this._parseISO(segs[j].dateTime);
+            const wNext = segs[j + 1] ? this._parseISO(segs[j + 1].dateTime) : null;
+            if (wNext) {
+                wakeDurMin += (wNext - wStart) / 60000;
+            } else {
+                const endTime = this._parseISO(block && block.endTime) || endOfLastSleep;
+                wakeDurMin += (endTime - wStart) / 60000;
+            }
+        }
+
+        // 💤 Wenn keine stabile Wachphase erkannt → fallback
+        if (wakeDurMin < wakeStableMin) {
+            const fallback = this._parseISO(block && block.endTime);
+            if (DEBUG_SLEEP_LOG) {
+                this.log.debug(
+                    `Wake stability only ${Math.round(wakeDurMin)} min → fallback to block.endTime ${fallback?.toISOString() || "?"}`
+                );
+            }
+            return fallback || endOfLastSleep;
+        }
+
+        if (DEBUG_SLEEP_LOG) {
+            this.log.info(
+                `🌅 Final wake at end of last sleep seg: ${endOfLastSleep?.toISOString() || "?"} (stable wake ${Math.round(wakeDurMin)} min)`
+            );
+        }
+
+        return endOfLastSleep;
     }
 
     // =========================================================================
@@ -1181,4 +1285,3 @@ if (require.main !== module) {
 } else {
     new FitBit();
 }
-
