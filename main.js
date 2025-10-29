@@ -14,6 +14,11 @@ const mSchedule = require("node-schedule");
 // ----------------------------------------------------------------------------
 let DEBUG_SLEEP_LOG = false; // Wird in onReady() aus this.effectiveConfig.debugEnabled gesetzt
 
+// Zusätzlicher kompakter Test-Debug-Modus (manuell aktivierbar)
+// Nur für Entwickler-Testzwecke – kein Admin-Setting!
+// Wenn true, werden pro Schlafdurchlauf kompakte Zusammenfassungen geloggt.
+const DEBUG_TEST_MODE = false; // <— bei Bedarf auf false setzen
+
 // -----------------------------------------------------------------------------
 // Timeouts und API-Basen
 // -----------------------------------------------------------------------------
@@ -63,79 +68,86 @@ class FitBit extends utils.Adapter {
     // =========================================================================
     // Adapter Start
     // =========================================================================
-    async onReady() {
-        try {
-            await this.setStateAsync("info.connection", { val: false, ack: true });
+async onReady() {
+    try {
+        await this.setStateAsync("info.connection", { val: false, ack: true });
 
-            this.effectiveConfig = {
-                intraday:               this._coalesceBool(this.config.intraday, DEFAULTS.intraday),
-                showLastOrFirstNap:     this._coalesceBool(this.config.showLastOrFirstNap, DEFAULTS.showLastOrFirstNap),
-                clearNapListAtNight:    this._coalesceBool(this.config.clearNapListAtNight, DEFAULTS.clearNapListAtNight),
-                enableDailyNapClear:    this._coalesceBool(this.config.enableDailyNapClear, DEFAULTS.enableDailyNapClear),
-                dailyNapClearTime:      this._validTime(this.config.forceClearNapListTime || this.config.dailyNapClearTime)
-                                         ? (this.config.forceClearNapListTime || this.config.dailyNapClearTime)
-                                         : DEFAULTS.dailyNapClearTime,
-                ignoreEarlyMainSleepEnabled: this._coalesceBool(this.config.ignoreEarlyMainSleepEnabled, DEFAULTS.ignoreEarlyMainSleepEnabled),
-                ignoreEarlyMainSleepTime:    this._validTime(this.config.ignoreEarlyMainSleepTime)
-                                             ? this.config.ignoreEarlyMainSleepTime
-                                             : DEFAULTS.ignoreEarlyMainSleepTime,
-                smartEarlySleepEnabled: this._coalesceBool(this.config.smartEarlySleepEnabled, DEFAULTS.smartEarlySleepEnabled),
-                minMainSleepHours:      Number.isFinite(this.config.minMainSleepHours)
-                                             ? Number(this.config.minMainSleepHours)
-                                             : DEFAULTS.minMainSleepHours,
-                debugEnabled:           this._coalesceBool(this.config.debugEnabled, DEFAULTS.debugEnabled),
-                refresh:                Number.isFinite(this.config.refresh) ? Number(this.config.refresh) : 5,
-                bodyrecords:            !!this.config.bodyrecords,
-                activityrecords:        !!this.config.activityrecords,
-                sleeprecords:           !!this.config.sleeprecords,
-                sleeprecordsschedule:   !!this.config.sleeprecordsschedule,
-                foodrecords:            !!this.config.foodrecords,
-                devicerecords:          !!this.config.devicerecords,
-                clientId:               this.config.clientId || "",
-                clientSecret:           this.config.clientSecret || "",
-                redirectUri:            this.config.redirectUri || "",
-            };
+        this.effectiveConfig = {
+            intraday:               this._coalesceBool(this.config.intraday, DEFAULTS.intraday),
+            showLastOrFirstNap:     this._coalesceBool(this.config.showLastOrFirstNap, DEFAULTS.showLastOrFirstNap),
+            clearNapListAtNight:    this._coalesceBool(this.config.clearNapListAtNight, DEFAULTS.clearNapListAtNight),
+            enableDailyNapClear:    this._coalesceBool(this.config.enableDailyNapClear, DEFAULTS.enableDailyNapClear),
+            dailyNapClearTime:      this._validTime(this.config.forceClearNapListTime || this.config.dailyNapClearTime)
+                                     ? (this.config.forceClearNapListTime || this.config.dailyNapClearTime)
+                                     : DEFAULTS.dailyNapClearTime,
+            ignoreEarlyMainSleepEnabled: this._coalesceBool(this.config.ignoreEarlyMainSleepEnabled, DEFAULTS.ignoreEarlyMainSleepEnabled),
+            ignoreEarlyMainSleepTime:    this._validTime(this.config.ignoreEarlyMainSleepTime)
+                                         ? this.config.ignoreEarlyMainSleepTime
+                                         : DEFAULTS.ignoreEarlyMainSleepTime,
+            smartEarlySleepEnabled: this._coalesceBool(this.config.smartEarlySleepEnabled, DEFAULTS.smartEarlySleepEnabled),
+            minMainSleepHours:      Number.isFinite(this.config.minMainSleepHours)
+                                         ? Number(this.config.minMainSleepHours)
+                                         : DEFAULTS.minMainSleepHours,
+            debugEnabled:           this._coalesceBool(this.config.debugEnabled, DEFAULTS.debugEnabled),
+            refresh:                Number.isFinite(this.config.refresh) ? Number(this.config.refresh) : 5,
+            bodyrecords:            !!this.config.bodyrecords,
+            activityrecords:        !!this.config.activityrecords,
+            sleeprecords:           !!this.config.sleeprecords,
+            sleeprecordsschedule:   !!this.config.sleeprecordsschedule,
+            foodrecords:            !!this.config.foodrecords,
+            devicerecords:          !!this.config.devicerecords,
+            clientId:               this.config.clientId || "",
+            clientSecret:           this.config.clientSecret || "",
+            redirectUri:            this.config.redirectUri || "",
+        };
 
-            DEBUG_SLEEP_LOG = !!this.effectiveConfig.debugEnabled;
-            this.dlog = (lvl, msg) => { if (DEBUG_SLEEP_LOG && this.log && typeof this.log[lvl] === "function") this.log[lvl](msg); };
+        DEBUG_SLEEP_LOG = !!this.effectiveConfig.debugEnabled;
+        this.dlog = (lvl, msg) => { if (DEBUG_SLEEP_LOG && this.log && typeof this.log[lvl] === "function") this.log[lvl](msg); };
 
+        // --- Nur Konfiguration immer loggen ---
+        this.log.info(
+            `Config → intraday=${this.effectiveConfig.intraday ? "on" : "off"}, ` +
+            `showLastOrFirstNap=${this.effectiveConfig.showLastOrFirstNap ? "last" : "first"}, ` +
+            `clearNapListAtNight=${this.effectiveConfig.clearNapListAtNight ? "on" : "off"}, ` +
+            `enableDailyNapClear=${this.effectiveConfig.enableDailyNapClear ? `on @ ${this.effectiveConfig.dailyNapClearTime}` : "off"}, ` +
+            `ignoreEarlyMainSleep=${this.effectiveConfig.ignoreEarlyMainSleepEnabled ? `on < ${this.effectiveConfig.ignoreEarlyMainSleepTime}` : "off"}, ` +
+            `smartEarlySleep=${this.effectiveConfig.smartEarlySleepEnabled ? `on < ${this.effectiveConfig.minMainSleepHours}h` : "off"}, ` +
+            `debug=${DEBUG_SLEEP_LOG ? "on" : "off"}`
+        );
+
+        // --- Diese Zeile nur bei aktiviertem Debug ---
+        if (DEBUG_SLEEP_LOG) {
             this.log.info(
-                `Config → intraday=${this.effectiveConfig.intraday ? "on" : "off"}, ` +
-                `showLastOrFirstNap=${this.effectiveConfig.showLastOrFirstNap ? "last" : "first"}, ` +
-                `clearNapListAtNight=${this.effectiveConfig.clearNapListAtNight ? "on" : "off"}, ` +
-                `enableDailyNapClear=${this.effectiveConfig.enableDailyNapClear ? `on @ ${this.effectiveConfig.dailyNapClearTime}` : "off"}, ` +
-                `ignoreEarlyMainSleep=${this.effectiveConfig.ignoreEarlyMainSleepEnabled ? `on < ${this.effectiveConfig.ignoreEarlyMainSleepTime}` : "off"}, ` +
-                `smartEarlySleep=${this.effectiveConfig.smartEarlySleepEnabled ? `on < ${this.effectiveConfig.minMainSleepHours}h` : "off"}, ` +
-                `debug=${DEBUG_SLEEP_LOG ? "on" : "off"}`
+                `Intervals → refresh every ${this.effectiveConfig.refresh} min; scheduled sleep fetch=${this.effectiveConfig.sleeprecordsschedule ? "on" : "off"}`
             );
-            this.log.info(`Intervals → refresh every ${this.effectiveConfig.refresh} min; scheduled sleep fetch=${this.effectiveConfig.sleeprecordsschedule ? "on" : "off"}`);
-
-            await this.login();
-
-            if (this.fitbit.status === 200) {
-                await this.setStateAsync("info.connection", { val: true, ack: true });
-                await this.initCustomSleepStates();
-                this.initSleepSchedule();
-                await this.getFitbitRecords();
-
-                const refreshMs = Math.max(1, this.effectiveConfig.refresh) * 60 * 1000;
-                this.updateInterval = setInterval(async () => {
-                    try {
-                        await this.getFitbitRecords();
-                    } catch (err) {
-                        this.log.error(`Periodic fetch failed: ${err}`);
-                    }
-                }, refreshMs);
-            } else {
-                await this.setStateAsync("info.connection", { val: false, ack: true });
-                this.log.warn(`FITBIT login failed with status ${this.fitbit.status}`);
-            }
-        } catch (error) {
-            this.log.error(`Adapter start failed: ${error}`);
         }
 
-        this.subscribeStates("body.weight");
+        await this.login();
+
+        if (this.fitbit.status === 200) {
+            await this.setStateAsync("info.connection", { val: true, ack: true });
+            await this.initCustomSleepStates();
+            this.initSleepSchedule();
+            await this.getFitbitRecords();
+
+            const refreshMs = Math.max(1, this.effectiveConfig.refresh) * 60 * 1000;
+            this.updateInterval = setInterval(async () => {
+                try {
+                    await this.getFitbitRecords();
+                } catch (err) {
+                    this.log.error(`Periodic fetch failed: ${err}`);
+                }
+            }, refreshMs);
+        } else {
+            await this.setStateAsync("info.connection", { val: false, ack: true });
+            this.log.warn(`FITBIT login failed with status ${this.fitbit.status}`);
+        }
+    } catch (error) {
+        this.log.error(`Adapter start failed: ${error}`);
     }
+
+    this.subscribeStates("body.weight");
+}
 
     // =========================================================================
     // Sleep States anlegen
@@ -696,14 +708,16 @@ if (this.effectiveConfig.ignoreEarlyMainSleepEnabled && this.effectiveConfig.ign
             );
 
             if (hasCompleteMainSleep) {
-                this.log.info(
-                    `It’s currently early (${now.toTimeString().slice(0,5)} < ${this.effectiveConfig.ignoreEarlyMainSleepTime}), ` +
-                    `but Fitbit already reports a complete main sleep → proceed with analysis.`
-                );
+                if (DEBUG_SLEEP_LOG) {
+                    this.log.info(
+                        `It’s currently early (${now.toTimeString().slice(0, 5)} < ${this.effectiveConfig.ignoreEarlyMainSleepTime}), ` +
+                        `but Fitbit already reports a complete main sleep → proceed with analysis.`
+                    );
+                }
             } else {
                 if (DEBUG_SLEEP_LOG) {
                     this.log.info(
-                        `It’s currently too early (${now.toTimeString().slice(0,5)} < ${this.effectiveConfig.ignoreEarlyMainSleepTime}) → skip nightly sleep analysis.`
+                        `It’s currently too early (${now.toTimeString().slice(0, 5)} < ${this.effectiveConfig.ignoreEarlyMainSleepTime}) → skip nightly sleep analysis.`
                     );
                 }
                 // 💡 Abbruch: Es ist noch zu früh für Nachtschlaf – Fitbit-Daten werden ignoriert
@@ -711,20 +725,13 @@ if (this.effectiveConfig.ignoreEarlyMainSleepEnabled && this.effectiveConfig.ign
             }
         } else if (DEBUG_SLEEP_LOG) {
             this.log.debug(
-                `Current time ${now.toTimeString().slice(0,5)} >= ${this.effectiveConfig.ignoreEarlyMainSleepTime} → proceed with sleep analysis.`
+                `Current time ${now.toTimeString().slice(0, 5)} >= ${this.effectiveConfig.ignoreEarlyMainSleepTime} → proceed with sleep analysis.`
             );
         }
     } catch (err) {
         this.log.warn(`⚠️ Real-time night check failed: ${err.message}`);
     }
 }
-
-        // --- Debug: Ausgabe der gelieferten Schlafblöcke ----------------------
-        if (DEBUG_SLEEP_LOG) {
-            const countMain = blocks.filter(b => b.isMainSleep).length;
-            const countNap  = blocks.filter(b => !b.isMainSleep).length;
-            this.log.info(`DEBUG → Fitbit sleep raw blocks: ${blocks.length} (main=${countMain}, nap=${countNap})`);
-        }
 
 // ---- Frühschlaf- und SmartSleep-Filter kombiniert (optimiert & fehlerfrei) ----
 let filteredBlocks = blocks;
@@ -906,8 +913,39 @@ if (this.effectiveConfig.smartEarlySleepEnabled && !this.effectiveConfig.ignoreE
         this.log.info(
             `Sleep: totalAsleep=${totalAsleep}min, totalInBed=${totalInBed}min, naps=${napsCount}x (${napsAsleep}min)`
         );
+// -------------------------------------------------------------------------
+// Kompakter Test-Log (nur aktiv, wenn DEBUG_TEST_MODE = true)
+// -------------------------------------------------------------------------
+if (DEBUG_TEST_MODE) {
+    // Hauptschlaf
+    const mainBlock = filteredBlocks.find(b => b.isMainSleep);
+    if (mainBlock) {
+        const fell = this.computeFellAsleepAt(mainBlock);
+        const woke = this.computeWokeUpAt(mainBlock);
+        const dur = woke && fell ? Math.round((woke - fell) / 60000) : 0;
 
-        return true;
+        // Erkennen, ob refined oder Fallback (Heuristik: Abweichung <2 Min = Fallback)
+        const refined = fell && woke && Math.abs((new Date(mainBlock.startTime) - fell)) > 120000;
+        const source = refined ? "refined" : "fallback";
+
+        this.log.info(
+            `MainSleep (${source}) → Fell: ${this.formatDE_Short(fell)}, ` +
+            `Wake: ${this.formatDE_Short(woke)}, Duration: ${dur}min`
+        );
+    }
+
+    // Naps (nur relevante)
+    if (napsCount > 0 && napList.length > 0) {
+        napList
+            .filter(n => n.minutesAsleep >= 10) // kurze Micro-Naps ignorieren
+            .forEach((nap, idx) => {
+                this.log.info(
+                    `Nap ${idx + 1}/${napList.length} → ${nap.startDE} – ${nap.endDE} (${nap.minutesAsleep}min)`
+                );
+            });
+    }
+}
+return true;
     }
 
     // -------------------------------------------------------------------------
@@ -952,7 +990,7 @@ if (this.effectiveConfig.smartEarlySleepEnabled && !this.effectiveConfig.ignoreE
                 if (sleepDurMin >= 20 && nextWakeDur < 15) {
                     if (DEBUG_SLEEP_LOG) {
                         this.log.info(
-                            `🛌 Refined sleep start detected at ${start?.toISOString() || "?"} (stable ${Math.round(sleepDurMin)} min)`
+                            `Refined sleep start detected at ${start?.toISOString() || "?"} (stable ${Math.round(sleepDurMin)} min)`
                         );
                     }
                     return start;
@@ -1025,7 +1063,7 @@ if (this.effectiveConfig.smartEarlySleepEnabled && !this.effectiveConfig.ignoreE
 
         if (DEBUG_SLEEP_LOG) {
             this.log.info(
-                `🌅 Final wake at end of last sleep seg: ${endOfLastSleep?.toISOString() || "?"} (stable wake ${Math.round(wakeDurMin)} min)`
+                `Final wake at end of last sleep seg: ${endOfLastSleep?.toISOString() || "?"} (stable wake ${Math.round(wakeDurMin)} min)`
             );
         }
 
