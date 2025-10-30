@@ -2,11 +2,15 @@
 
 # ioBroker.fitbit-fitness
 
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/Pocky2507/ioBroker.fitbit-fitness)](https://github.com/Pocky2507/ioBroker.fitbit-fitness/releases)
-[![Installationen (latest)](https://iobroker.live/badges/fitbit-fitness-installed.svg)](https://iobroker.live/badges/fitbit-fitness-installed.svg)
-[![Installationen (stable)](https://iobroker.live/badges/fitbit-fitness.svg)](https://iobroker.live/badges/fitbit-fitness.svg)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/Pocky2507/ioBroker.fitbit-fitness?logo=github)](https://github.com/Pocky2507/ioBroker.fitbit-fitness/releases)
+[![ioBroker stable installs](https://img.shields.io/badge/ioBroker-stable%20release-blue?logo=iobroker&logoColor=white)](https://iobroker.live/badges/fitbit-fitness.svg)
+[![ioBroker installs (latest)](https://img.shields.io/badge/ioBroker-latest%20installed-blueviolet?logo=iobroker&logoColor=white)](https://iobroker.live/badges/fitbit-fitness-installed.svg)
+[![GitHub issues](https://img.shields.io/github/issues/Pocky2507/ioBroker.fitbit-fitness?logo=github)](https://github.com/Pocky2507/ioBroker.fitbit-fitness/issues)
 [![Known Vulnerabilities](https://snyk.io/test/github/Pocky2507/ioBroker.fitbit-fitness/badge.svg)](https://app.snyk.io/org/Pocky2507/ioBroker.fitbit-fitness)
-[![GitHub issues](https://img.shields.io/github/issues/Pocky2507/ioBroker.fitbit-fitness)](https://github.com/Pocky2507/ioBroker.fitbit-fitness/issues)
+
+---
+
+📖 **Sprachen / Languages:** [Deutsch](#-über-diesen-fork) | [English](#-about-this-fork-english)
 
 ---
 
