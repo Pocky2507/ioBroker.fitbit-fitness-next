@@ -11,7 +11,7 @@
 
 ---
 
-> ⚠️ **Wichtiger Installationshinweis**
+> ⚠️ **Wichtiger Installationshinweis**  
 > Bitte installiere diesen Adapter **direkt von GitHub**, um korrekte Updates zu erhalten:
 >
 > ```
@@ -190,7 +190,7 @@ extended and modernized by **Chris** and **Pocky2507**.
 
 ## 🧾 Installation Note
 
-> ⚠️ **Important:**
+> ⚠️ **Important:**  
 > Install this adapter **only from GitHub** to ensure the correct version and updates.
 >
 > ```
