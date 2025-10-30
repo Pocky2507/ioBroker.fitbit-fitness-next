@@ -11,7 +11,7 @@
 
 ---
 
-> ⚠️ **Wichtiger Installationshinweis**  
+> ⚠️ **Wichtiger Installationshinweis**
 > Bitte installiere diesen Adapter **direkt von GitHub**, um korrekte Updates zu erhalten:
 >
 > ```
@@ -180,11 +180,17 @@ Verwendung auf eigene Verantwortung.
 
 # 🇬🇧 English Version
 
+## 🩺 Fitbit Adapter for ioBroker (v0.5.6)
+
+This adapter retrieves **Fitbit data** into ioBroker and provides structured datapoints.
+Based on the original **fitbit-api** by *@GermanBluefox*,
+extended and modernized by **Chris** and **Pocky2507**.
+
 ---
 
 ## 🧾 Installation Note
 
-> ⚠️ **Important:**  
+> ⚠️ **Important:**
 > Install this adapter **only from GitHub** to ensure the correct version and updates.
 >
 > ```
@@ -192,14 +198,6 @@ Verwendung auf eigene Verantwortung.
 > ```
 >
 > Do **not** install from npm – this is a protected nonNpm build.
-
----
-
-## 🩺 Fitbit Adapter for ioBroker (v0.5.6)
-
-This adapter retrieves **Fitbit data** into ioBroker and provides structured datapoints.
-Based on the original **fitbit-api** by *@GermanBluefox*,
-extended and modernized by **Chris** and **Pocky2507**.
 
 ---
 
@@ -242,7 +240,92 @@ To use this adapter, you need a **Fitbit Developer Account**.
 - **Debug mode** toggle in Admin UI
 - Supports **compact mode** and **cloud connection**
 
+---
 
+## 💤 Sleep Data Processing
+
+Fitbit finalizes sleep data a few hours after wake-up.
+The most complete data is available in the **evening (8–10 PM)**.
+
+| Mode | Description | Recommended for |
+|:------|:-------------|:----------------|
+| **Regular** | Fetch sleep data on every interval | Irregular sleep patterns |
+| **Once daily (8–10 PM)** | Fetch only in the evening | Regular schedules & API efficiency |
+
+💡 If you need instant morning data, disable *“Fetch sleep once per day”*.
+
+---
+
+## 🌙 Combined EarlySleep & SmartSleep Filter (Realtime)
+
+Fitbit sometimes marks early evening rest as night sleep.
+This logic combines **time-based filtering** and **SmartSleep duration analysis**.
+
+| Setting | Description |
+|:----------|:-------------|
+| **Ignore early main sleep** | Activates time-based filter for blocks before cutoff time. |
+| **Cutoff time (HH:MM)** | Default: 22:30 or 23:00 |
+| **Enable SmartSleep detection** | Accepts long blocks even if before cutoff. |
+| **Minimum duration (hours)** | e.g. 3 → main sleeps > 3 h accepted, shorter ignored. |
+
+💡 **Examples:**
+- Start 21:00 → 1 h → **ignored**
+- Start 21:15 → 6 h → **accepted (SmartSleep)**
+- Current time 20:30 < cutoff 23:00 → **analysis skipped**
+
+---
+
+## 🕒 Nap Options
+
+| Setting | Description |
+|:----------|:-------------|
+| **Show last or first nap** | true = last, false = first |
+| **Clear naps at night** | Clears list after midnight |
+| **Enable daily nap clearing** | Clears once per day |
+| **Forced clearing time (HH:MM)** | e.g. 02:45 AM |
+
+---
+
+## ⚙️ Default Configuration
+
+| Key | Default | Short Description |
+|:------|:----------|:------------------|
+| `refresh` | 5 min | Interval in which Fitbit data is fetched |
+| `intraday` | ❌ | Enables Intraday mode with 1-minute heart-rate values |
+| `ignoreEarlyMainSleepEnabled` | ✅ | Ignores main sleeps starting before cutoff |
+| `ignoreEarlyMainSleepTime` | 23:00 | Defines night sleep window |
+| `smartEarlySleepEnabled` | ✅ | Accepts long sleeps before cutoff |
+| `minMainSleepHours` | 3 | Minimum main sleep duration (hours) |
+| `sleepStabilityMinutes` | 20 | Minutes required for stable sleep |
+| `showLastOrFirstNap` | ✅ | Show last (true) or first (false) nap |
+| `clearNapListAtNight` | ✅ | Clears nap list after midnight |
+| `enableDailyNapClear` | ❌ | Enables additional daily clearing |
+| `forceClearNapListTime` | 02:45 | Fixed time for forced clearing |
+| `debugEnabled` | ❌ | Enables detailed debug output |
+
+---
+
+## 🧾 Changelog
+
+### **0.5.6 (2025-10-30)**
+- Added **Sleep Stability (Minutes)** configuration
+- Default value 20 minutes
+- Debug output only once on startup
+- Improved Admin UI for Debug tab
+- Configuration and logging optimized
+
+### **0.5.5 (2025-10-28)**
+- Added **combined real-time EarlySleep & SmartSleep filter**
+- Long main sleeps before cutoff are now accepted
+- Improved debug output and stability
+- Added total sleep and nap summaries
+
+### **0.5.4 (2025-10-27)**
+- Added **Debug & Advanced Options Tab**
+- SmartSleep detection with minimum duration setting
+- UI and translation improvements
+
+---
 
 ## 👨‍💻 Authors
 
@@ -257,4 +340,3 @@ MIT License
 © 2025 Chris & Pocky2507
 Software provided *as is*, without warranty.
 Use at your own risk.
-
