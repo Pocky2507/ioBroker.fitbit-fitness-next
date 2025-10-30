@@ -13,6 +13,10 @@
       "Pocky2507 (fork and maintenance)"
     ],
     "forkOf": "iobroker-community-adapters/ioBroker.fitbit-fitness",
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/Pocky2507/ioBroker.fitbit-fitness"
+    },
     "news": {
       "0.5.6": {
         "en": "Added configurable sleep stability threshold (default 20 min) to fine-tune refined sleep phase detection.",
@@ -105,8 +109,7 @@
       {
         "js-controller": ">=2.0.0"
       }
-    ],
-    "installedFrom": "Pocky2507/ioBroker.fitbit-fitness#main"
+    ]
   },
   "native": {
     "refresh": 5,
