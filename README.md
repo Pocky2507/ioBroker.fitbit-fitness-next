@@ -14,9 +14,9 @@
 > ⚠️ **Wichtiger Installationshinweis**  
 > Bitte installiere diesen Adapter **direkt von GitHub**, um korrekte Updates zu erhalten:
 >
-> ```
 > Nutze dafür genau diesen Befehl!
 >
+> ```
 > iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main"
 > ```
 >
@@ -194,6 +194,8 @@ extended and modernized by **Chris** and **Pocky2507**.
 
 > ⚠️ **Important:**  
 > Install this adapter **only from GitHub** to ensure the correct version and updates.
+>
+> Use this exact command for that!
 >
 > ```
 > iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main"
