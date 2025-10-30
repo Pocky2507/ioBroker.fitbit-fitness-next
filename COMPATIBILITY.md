@@ -5,7 +5,7 @@
 | Component | Version | Status | Notes |
 |:-----------|:---------|:--------|:------|
 | **Node.js** | 18.x, 20.x, 22.x, 24.x | ✅ Supported | Tested under Node 22, verified compatible with Node 24 |
-| **ioBroker js-controller** | 5.x, 6.x | ✅ Supported | Fully compatible and API-stable |
+| **ioBroker js-controller** | 5.x, 6.x, 7x | ✅ Supported | Fully compatible and API-stable |
 | **Operating Systems** | Linux, macOS, Windows | ✅ Supported | No OS-specific dependencies |
 
 ---
