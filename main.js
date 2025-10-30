@@ -439,48 +439,67 @@ this.log.info(
         }
     }
 
-    async setHeartRateTimeSeries(data) {
-        if (!data || !data["activities-heart"]) return false;
+async setHeartRateTimeSeries(data) {
+    if (!data || !data["activities-heart"]) return false;
 
-        for (const entry of data["activities-heart"]) {
-            const val = entry.value || {};
+    // --- Zonen-Minuten sammeln ---
+    const zoneMinutes = {
+        "Out of Range": 0,
+        "Fat Burn": 0,
+        "Cardio": 0,
+        "Peak": 0
+    };
 
-            // Zonen (custom/standard)
-            for (const zonesKey of Object.keys(val).filter(k => HEART_RATE_ZONE_RANGES.includes(k))) {
-                const zonesArr = Array.isArray(val[zonesKey]) ? val[zonesKey] : [];
-                for (const zone of zonesArr) {
-                    const zoneName = String(zone.name || "Zone").replace(this.FORBIDDEN_CHARS, "_");
+    for (const entry of data["activities-heart"]) {
+        const val = entry.value || {};
 
-                    for (const k of Object.keys(zone).filter(k => k !== "name")) {
-                        const entryValueName = k.replace(this.FORBIDDEN_CHARS, "_");
-                        const id = `activity.heartratezones.${zoneName}.${entryValueName}`;
+        // Zonen (custom/standard)
+        for (const zonesKey of Object.keys(val).filter(k => HEART_RATE_ZONE_RANGES.includes(k))) {
+            const zonesArr = Array.isArray(val[zonesKey]) ? val[zonesKey] : [];
+            for (const zone of zonesArr) {
+                const zoneName = String(zone.name || "Zone").replace(this.FORBIDDEN_CHARS, "_");
 
-                        await this.setObjectNotExistsAsync(id, {
-                            type: "state",
-                            common: { name: `${k} - ${zoneName}`, type: "number", read: true, write: true },
-                            native: {}
-                        });
-                        await this.setStateAsync(id, { val: (zone[k] ?? 0), ack: true });
-                    }
+                // Wenn Fitbit Minuten liefert, in zoneMinutes merken
+                if (zone.name && typeof zone.minutes === "number") {
+                    zoneMinutes[zone.name] = zone.minutes;
+                }
 
-                    const idCustom = `activity.heartratezones.${zoneName}.isCustom`;
-                    await this.setObjectNotExistsAsync(idCustom, {
+                for (const k of Object.keys(zone).filter(k => k !== "name")) {
+                    const entryValueName = k.replace(this.FORBIDDEN_CHARS, "_");
+                    const id = `activity.heartratezones.${zoneName}.${entryValueName}`;
+
+                    await this.setObjectNotExistsAsync(id, {
                         type: "state",
-                        common: { name: "custom heart rate zone", type: "boolean", read: true, write: true },
+                        common: { name: `${k} - ${zoneName}`, type: "number", read: true, write: true },
                         native: {}
                     });
-                    await this.setStateAsync(idCustom, { val: zonesKey.includes("custom"), ack: true });
+                    await this.setStateAsync(id, { val: (zone[k] ?? 0), ack: true });
                 }
-            }
 
-            // RHR ggf. überschreiben
-            if (entry.value && typeof entry.value.restingHeartRate === "number") {
-                await this.setStateAsync("activity.RestingHeartRate", { val: entry.value.restingHeartRate, ack: true });
+                const idCustom = `activity.heartratezones.${zoneName}.isCustom`;
+                await this.setObjectNotExistsAsync(idCustom, {
+                    type: "state",
+                    common: { name: "custom heart rate zone", type: "boolean", read: true, write: true },
+                    native: {}
+                });
+                await this.setStateAsync(idCustom, { val: zonesKey.includes("custom"), ack: true });
             }
         }
 
-        return true;
+        // RHR ggf. überschreiben
+        if (entry.value && typeof entry.value.restingHeartRate === "number") {
+            await this.setStateAsync("activity.RestingHeartRate", { val: entry.value.restingHeartRate, ack: true });
+        }
     }
+
+    // --- Jetzt die neuen zusammengefassten Minuten-States schreiben ---
+    await this.setStateAsync("activity.heartratezones.OutOfRange.minutes", zoneMinutes["Out of Range"] || 0, true);
+    await this.setStateAsync("activity.heartratezones.FatBurn.minutes", zoneMinutes["Fat Burn"] || 0, true);
+    await this.setStateAsync("activity.heartratezones.Cardio.minutes", zoneMinutes["Cardio"] || 0, true);
+    await this.setStateAsync("activity.heartratezones.Peak.minutes", zoneMinutes["Peak"] || 0, true);
+
+    return true;
+}
 
     // =========================================================================
     // Intraday Herz (optional)
