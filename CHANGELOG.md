@@ -35,7 +35,9 @@
 
 ## 0.5.1 (2025-10-24)
 - Maintenance and cleanup update
-
+  
+## 0.5.0 (2023-11-18)
+- Maintenance issues
 
 ## 0.4.14 (2023-11-18)
 - Fixed some minor bugs
