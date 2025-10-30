@@ -11,7 +11,7 @@
 
 ---
 
-> ⚠️ **Wichtiger Installationshinweis**
+> ⚠️ **Wichtiger Installationshinweis**  
 > Bitte installiere diesen Adapter **direkt von GitHub**, um korrekte Updates zu erhalten:
 >
 > ```
