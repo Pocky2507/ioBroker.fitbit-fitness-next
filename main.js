@@ -40,7 +40,8 @@ const DEFAULTS = {
     ignoreEarlyMainSleepTime: "23:00",
     smartEarlySleepEnabled: true,
     minMainSleepHours: 3,
-    debugEnabled: false
+    debugEnabled: false,
+    sleepStabilityMinutes: 20
 };
 
 class FitBit extends utils.Adapter {
@@ -90,6 +91,9 @@ async onReady() {
                                          : DEFAULTS.minMainSleepHours,
             debugEnabled:           this._coalesceBool(this.config.debugEnabled, DEFAULTS.debugEnabled),
             refresh:                Number.isFinite(this.config.refresh) ? Number(this.config.refresh) : 5,
+            sleepStabilityMinutes:  Number.isFinite(this.config.sleepStabilityMinutes)
+                                ? Number(this.config.sleepStabilityMinutes)
+                                : DEFAULTS.sleepStabilityMinutes,
             bodyrecords:            !!this.config.bodyrecords,
             activityrecords:        !!this.config.activityrecords,
             sleeprecords:           !!this.config.sleeprecords,
@@ -104,16 +108,17 @@ async onReady() {
         DEBUG_SLEEP_LOG = !!this.effectiveConfig.debugEnabled;
         this.dlog = (lvl, msg) => { if (DEBUG_SLEEP_LOG && this.log && typeof this.log[lvl] === "function") this.log[lvl](msg); };
 
-        // --- Nur Konfiguration immer loggen ---
-        this.log.info(
-            `Config → intraday=${this.effectiveConfig.intraday ? "on" : "off"}, ` +
-            `showLastOrFirstNap=${this.effectiveConfig.showLastOrFirstNap ? "last" : "first"}, ` +
-            `clearNapListAtNight=${this.effectiveConfig.clearNapListAtNight ? "on" : "off"}, ` +
-            `enableDailyNapClear=${this.effectiveConfig.enableDailyNapClear ? `on @ ${this.effectiveConfig.dailyNapClearTime}` : "off"}, ` +
-            `ignoreEarlyMainSleep=${this.effectiveConfig.ignoreEarlyMainSleepEnabled ? `on < ${this.effectiveConfig.ignoreEarlyMainSleepTime}` : "off"}, ` +
-            `smartEarlySleep=${this.effectiveConfig.smartEarlySleepEnabled ? `on < ${this.effectiveConfig.minMainSleepHours}h` : "off"}, ` +
-            `debug=${DEBUG_SLEEP_LOG ? "on" : "off"}`
-        );
+// --- Nur Konfiguration immer loggen (einmalig beim Start) ---
+this.log.info(
+    `Config → intraday=${this.effectiveConfig.intraday ? "on" : "off"}, ` +
+    `showLastOrFirstNap=${this.effectiveConfig.showLastOrFirstNap ? "last" : "first"}, ` +
+    `clearNapListAtNight=${this.effectiveConfig.clearNapListAtNight ? "on" : "off"}, ` +
+    `enableDailyNapClear=${this.effectiveConfig.enableDailyNapClear ? `on @ ${this.effectiveConfig.dailyNapClearTime}` : "off"}, ` +
+    `ignoreEarlyMainSleep=${this.effectiveConfig.ignoreEarlyMainSleepEnabled ? `on < ${this.effectiveConfig.ignoreEarlyMainSleepTime}` : "off"}, ` +
+    `smartEarlySleep=${this.effectiveConfig.smartEarlySleepEnabled ? `on < ${this.effectiveConfig.minMainSleepHours}h` : "off"}, ` +
+    `sleepStability=${this.effectiveConfig.sleepStabilityMinutes}min, ` +
+    `debug=${DEBUG_SLEEP_LOG ? "on" : "off"}`
+);
 
         // --- Diese Zeile nur bei aktiviertem Debug ---
         if (DEBUG_SLEEP_LOG) {
@@ -972,35 +977,37 @@ return true;
 
         if (!segs.length) return this._parseISO(block && block.startTime);
 
-        // 🔍 Suche erste stabile Schlafphase (mind. 20 Min.) ohne nachfolgende lange Wachphase
-        for (let i = 0; i < segs.length; i++) {
-            const s = segs[i];
-            if (SLEEP_LEVELS.has(s.level)) {
-                const start = this._parseISO(s.dateTime);
-                let sleepDurMin = 0;
+// 🔍 Suche erste stabile Schlafphase (mind. X Min.) ohne nachfolgende lange Wachphase
+const stabilityMin = this.effectiveConfig?.sleepStabilityMinutes || 20;
 
-                // ⏱️ Summiere fortlaufende Schlafsegmente
-                for (let j = i; j < segs.length && SLEEP_LEVELS.has(segs[j].level); j++) {
-                    const next = segs[j + 1] ? this._parseISO(segs[j + 1].dateTime) : null;
-                    if (next) sleepDurMin += (next - this._parseISO(segs[j].dateTime)) / 60000;
-                }
+for (let i = 0; i < segs.length; i++) {
+    const s = segs[i];
+    if (SLEEP_LEVELS.has(s.level)) {
+        const start = this._parseISO(s.dateTime);
+        let sleepDurMin = 0;
 
-                // Prüfe, ob direkt danach eine längere Wachphase folgt
-                const nextWake = segs[i + 1];
-                const nextWakeDur = (nextWake && !SLEEP_LEVELS.has(nextWake.level) && segs[i + 2])
-                    ? (this._parseISO(segs[i + 2].dateTime) - this._parseISO(nextWake.dateTime)) / 60000
-                    : 0;
-
-                if (sleepDurMin >= 20 && nextWakeDur < 15) {
-                    if (DEBUG_SLEEP_LOG) {
-                        this.log.info(
-                            `Refined sleep start detected at ${start?.toISOString() || "?"} (stable ${Math.round(sleepDurMin)} min)`
-                        );
-                    }
-                    return start;
-                }
-            }
+        // ⏱️ Summiere fortlaufende Schlafsegmente
+        for (let j = i; j < segs.length && SLEEP_LEVELS.has(segs[j].level); j++) {
+            const next = segs[j + 1] ? this._parseISO(segs[j + 1].dateTime) : null;
+            if (next) sleepDurMin += (next - this._parseISO(segs[j].dateTime)) / 60000;
         }
+
+        // Prüfe, ob direkt danach eine längere Wachphase folgt
+        const nextWake = segs[i + 1];
+        const nextWakeDur = (nextWake && !SLEEP_LEVELS.has(nextWake.level) && segs[i + 2])
+            ? (this._parseISO(segs[i + 2].dateTime) - this._parseISO(nextWake.dateTime)) / 60000
+            : 0;
+
+        if (sleepDurMin >= stabilityMin && nextWakeDur < 15) {
+            if (DEBUG_SLEEP_LOG) {
+                this.log.info(
+                    `Refined sleep start detected at ${start?.toISOString() || "?"} (stable ${Math.round(sleepDurMin)} min ≥ ${stabilityMin} min)`
+                );
+            }
+            return start;
+        }
+    }
+}
 
         // Fallback auf block.startTime
         if (DEBUG_SLEEP_LOG) {
@@ -1039,39 +1046,39 @@ return true;
             endOfLastSleep = this._parseISO(block && block.endTime) || segStart;
         }
 
-        // 3️⃣ Stabilitäts-Check: nachfolgende Wach-Periode
-        const wakeStableMin = 20; // Minuten
-        let wakeDurMin = 0;
+// 3️⃣ Stabilitäts-Check: nachfolgende Wach-Periode
+const wakeStableMin = this.effectiveConfig?.sleepStabilityMinutes || 20; // Minuten (konfigurierbar)
+let wakeDurMin = 0;
 
-        for (let j = lastSleepIdx + 1; j < segs.length && !SLEEP_LEVELS.has(segs[j].level); j++) {
-            const wStart = this._parseISO(segs[j].dateTime);
-            const wNext = segs[j + 1] ? this._parseISO(segs[j + 1].dateTime) : null;
-            if (wNext) {
-                wakeDurMin += (wNext - wStart) / 60000;
-            } else {
-                const endTime = this._parseISO(block && block.endTime) || endOfLastSleep;
-                wakeDurMin += (endTime - wStart) / 60000;
-            }
-        }
+for (let j = lastSleepIdx + 1; j < segs.length && !SLEEP_LEVELS.has(segs[j].level); j++) {
+    const wStart = this._parseISO(segs[j].dateTime);
+    const wNext = segs[j + 1] ? this._parseISO(segs[j + 1].dateTime) : null;
+    if (wNext) {
+        wakeDurMin += (wNext - wStart) / 60000;
+    } else {
+        const endTime = this._parseISO(block && block.endTime) || endOfLastSleep;
+        wakeDurMin += (endTime - wStart) / 60000;
+    }
+}
 
-        // 💤 Wenn keine stabile Wachphase erkannt → fallback
-        if (wakeDurMin < wakeStableMin) {
-            const fallback = this._parseISO(block && block.endTime);
-            if (DEBUG_SLEEP_LOG) {
-                this.log.debug(
-                    `Wake stability only ${Math.round(wakeDurMin)} min → fallback to block.endTime ${fallback?.toISOString() || "?"}`
-                );
-            }
-            return fallback || endOfLastSleep;
-        }
+// 💤 Wenn keine stabile Wachphase erkannt → fallback
+if (wakeDurMin < wakeStableMin) {
+    const fallback = this._parseISO(block && block.endTime);
+    if (DEBUG_SLEEP_LOG) {
+        this.log.debug(
+            `Wake stability only ${Math.round(wakeDurMin)} min < ${wakeStableMin} min → fallback to block.endTime ${fallback?.toISOString() || "?"}`
+        );
+    }
+    return fallback || endOfLastSleep;
+}
 
-        if (DEBUG_SLEEP_LOG) {
-            this.log.info(
-                `Final wake at end of last sleep seg: ${endOfLastSleep?.toISOString() || "?"} (stable wake ${Math.round(wakeDurMin)} min)`
-            );
-        }
+if (DEBUG_SLEEP_LOG) {
+    this.log.info(
+        `Final wake at end of last sleep seg: ${endOfLastSleep?.toISOString() || "?"} (stable wake ${Math.round(wakeDurMin)} min ≥ ${wakeStableMin} min)`
+    );
+}
 
-        return endOfLastSleep;
+return endOfLastSleep;
     }
 
     // =========================================================================
