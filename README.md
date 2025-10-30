@@ -235,6 +235,14 @@ to deliver Fitbit data more reliably, accurately, and in real-time within ioBrok
 
 ---
 
+## 🩺 Fitbit Adapter for ioBroker (v0.5.6)
+
+This adapter retrieves **Fitbit data** into ioBroker and provides structured datapoints.
+Based on the original **fitbit-api** by *@GermanBluefox*,
+extended and modernized by **Chris** and **Pocky2507**.
+
+---
+
 ## 🧩 Requirements
 
 To use this adapter, you need a **Fitbit Developer Account**.
