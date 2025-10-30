@@ -1,8 +1,14 @@
 {
   "common": {
     "name": "fitbit-fitness",
-    "version": "0.5.5",
+    "version": "0.5.6",
+    "nonNpm": true,
+    "installedFrom": "https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main",
     "news": {
+        "0.5.6": {
+        "en": "Added configurable sleep stability threshold (default 20 min) to fine-tune refined sleep phase detection.",
+        "de": "Konfigurierbare Stabilitätsschwelle für Schlaf (Standard 20 Min) hinzugefügt, um die verfeinerte Schlafphasenerkennung zu    optimieren."
+      },
       "0.5.5": {
         "en": "Added combined EarlySleep & SmartSleep filter: long main-sleep blocks before cutoff time are now accepted; improved debug output and sleep logic stability.",
         "de": "Neuer kombinierter Frühschlaf- & SmartSleep-Filter: Lange Hauptschlafphasen vor der Uhrzeitgrenze werden jetzt akzeptiert; verbesserte Debug-Ausgabe und stabilere Schlaflogik.",
@@ -152,7 +158,8 @@
     "redirectUri": "https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html",
     "debugEnabled": false,
     "smartEarlySleepEnabled": true,
-    "minMainSleepHours": 3
+    "minMainSleepHours": 3,
+    "sleepStabilityMinutes": 20
   },
   "objects": [],
   "instanceObjects": [
@@ -730,3 +737,4 @@
     }
   ]
 }
+
