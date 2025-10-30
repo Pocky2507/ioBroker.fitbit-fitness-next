@@ -5,11 +5,11 @@
 -->
 
 ## **0.5.6 (2025-10-30)**
-- Neue Einstellung **Schlaf-Stabilität (Minuten)** hinzugefügt
-- Standardwert 20 Minuten
-- Debug-Ausgabe nur noch einmalig beim Adapterstart
-- Verbesserte Darstellung im Debug-Tab
-- Optimierungen der Konfiguration und internen Logik
+- Added a new setting for sleep stability (minutes)
+- Default value: 20 minutes
+- Debug output now only appears once at adapter startup
+- Improved display in the Debug tab
+- Optimizations to the configuration and internal logic
 
 ## 0.5.5 (2025-10-28)
 - Added **combined real-time EarlySleep & SmartSleep filter**
