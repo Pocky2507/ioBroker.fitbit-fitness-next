@@ -354,5 +354,31 @@ systemDictionary = {
     "es": "Umbral para sueño principal corto (horas)",
     "pl": "Próg dla krótkiego głównego snu (godziny)",
     "zh-cn": "短主睡眠阈值（小时）"
+  },
+  "Schlaf-Stabilität (Minuten)": {
+    "en": "Sleep stability (minutes)",
+    "de": "Schlaf-Stabilität (Minuten)",
+    "ru": "Стабильность сна (минуты)",
+    "pt": "Estabilidade do sono (minutos)",
+    "nl": "Slaapprogramma stabiliteit (minuten)",
+    "fr": "Stabilité du sommeil (minutes)",
+    "it": "Stabilità del sonno (minuti)",
+    "es": "Estabilidad del sueño (minutos)",
+    "pl": "Stabilność snu (minuty)",
+    "uk": "Стабільність сну (хвилини)",
+    "zh-cn": "睡眠稳定性（分钟）"
+  },
+  "Schlaf-Stabilität (Minuten) Tooltip": {
+    "en": "Minimum duration (in minutes) a sleep phase must last to be considered stable sleep.",
+    "de": "Minimale Dauer (in Minuten), die eine Schlafphase andauern muss, um als stabiler Schlaf zu gelten.",
+    "ru": "Минимальная продолжительность (в минутах), в течение которой фаза сна считается стабильной.",
+    "pt": "Duração mínima (em minutos) que uma fase de sono deve durar para ser considerada sono estável.",
+    "nl": "Minimale duur (in minuten) die een slaapfase moet duren om als stabiele slaap te gelden.",
+    "fr": "Durée minimale (en minutes) pendant laquelle une phase de sommeil est considérée comme stable.",
+    "it": "Durata minima (in minuti) che una fase di sonno deve durare per essere considerata stabile.",
+    "es": "Duración mínima (en minutos) que una fase de sueño debe durar para considerarse sueño estable.",
+    "pl": "Minimalny czas trwania (w minutach), aby faza snu była uznana za stabilny sen.",
+    "uk": "Мінімальна тривалість (у хвилинах), яку має тривати фаза сну, щоб вважатися стабільною.",
+    "zh-cn": "睡眠阶段必须持续的最短时间（分钟），以被视为稳定睡眠。"
   }
 };
