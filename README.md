@@ -11,6 +11,24 @@
 
 ---
 
+## 🧠 Über diesen Fork
+
+Dieser Adapter ist **eine erweiterte und modernisierte Version** des ursprünglichen ioBroker-Fitbit-Adapters von *besterquester*.  
+Der Fork von **Pocky2507** enthält zahlreiche neue Funktionen, Stabilitätsverbesserungen und Debug-Optionen,  
+um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereitzustellen.
+
+**Neue Schwerpunkte dieses Forks:**
+- Erweiterte **Schlafanalyse** mit *SmartSleep*, *EarlySleep* und *Nap-Erkennung*
+- **Intraday-Modus** für 1-Minuten-Herzfrequenzwerte
+- **Stabilitäts- und Fehler-Filter** zur Datenvalidierung
+- Überarbeitete **Admin-Oberfläche** mit Debug- und Entwickler-Tab
+- Verbesserte **Token-Verwaltung** (automatischer Refresh, Introspect-Prüfung)
+
+> 💡 Ziel dieses Forks ist es, Fitbit-Daten nicht nur periodisch,  
+> sondern *intelligent und kontextbasiert* zu analysieren — insbesondere Schlaf- und Herzfrequenzmuster in Echtzeit.
+
+---
+
 > ⚠️ **Wichtiger Installationshinweis**  
 > Bitte installiere diesen Adapter **direkt von GitHub**, um korrekte Updates zu erhalten:
 >
@@ -182,11 +200,23 @@ Verwendung auf eigene Verantwortung.
 
 # 🇬🇧 English Version
 
-## 🩺 Fitbit Adapter for ioBroker (v0.5.6)
+---
 
-This adapter retrieves **Fitbit data** into ioBroker and provides structured datapoints.
-Based on the original **fitbit-api** by *@GermanBluefox*,
-extended and modernized by **Chris** and **Pocky2507**.
+## 🧠 About this fork (English)
+
+This adapter is an **enhanced and modernized version** of the original ioBroker Fitbit adapter by *besterquester*.  
+The **Pocky2507** fork introduces new features, improved stability, and advanced debug options  
+to deliver Fitbit data more reliably, accurately, and in real-time within ioBroker.
+
+**Key improvements in this fork:**
+- Advanced **sleep analysis** with *SmartSleep*, *EarlySleep*, and *nap detection*
+- **Intraday mode** for 1-minute heart-rate data
+- **Stability filters** and smarter error handling
+- Reworked **Admin UI** with Debug & Developer tabs
+- Improved **OAuth2 handling** with automatic refresh and introspection
+
+> 💡 The goal of this fork is to analyze Fitbit data *intelligently and context-aware*,  
+> focusing on real-time sleep and heart-rate patterns.
 
 ---
 
