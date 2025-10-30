@@ -42,7 +42,7 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 
 ---
 
-# 🩺 ioBroker Fitbit Adapter (v0.5.6)
+## 🩺 ioBroker Fitbit Adapter (v0.5.6)
 
 Dieser Adapter ruft **Fitbit-Daten** in ioBroker ab und stellt sie als strukturierte Datenpunkte bereit.
 Er basiert auf dem ursprünglichen Projekt von **@GermanBluefox** (*fitbit-api*)
@@ -198,7 +198,7 @@ Verwendung auf eigene Verantwortung.
 
 ---
 
-# 🇬🇧 English Version
+## 🇬🇧 English Version
 
 ---
 
