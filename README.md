@@ -184,7 +184,7 @@ Verwendung auf eigene Verantwortung.
 
 ## 🧾 Installation Note
 
-> ⚠️ **Important:**
+> ⚠️ **Important:**  
 > Install this adapter **only from GitHub** to ensure the correct version and updates.
 >
 > ```
