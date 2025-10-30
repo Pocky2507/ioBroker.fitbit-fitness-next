@@ -25,8 +25,8 @@
 
 | Environment | Result | Details |
 |:-------------|:--------|:--------|
-| Node.js **22.10.0** + js-controller **6.0.0** | ✅ OK | Running in production (Pocky2507 fork) |
-| Node.js **24.0.0** (test build) + js-controller **6.1.0** | ✅ OK | Verified syntax & time handling compatibility |
+| Node.js **22.21.0** + js-controller **7.0.7** | ✅ OK | Running in production (Pocky2507 fork) |
+| Node.js **24.0.0** (test build) + js-controller **7.0.7** | ✅ OK | Verified syntax & time handling compatibility |
 | Ubuntu **24.04 LTS** | ✅ OK | Stable operation confirmed |
 | Windows **11** | ✅ OK | No environment-specific issues |
 
