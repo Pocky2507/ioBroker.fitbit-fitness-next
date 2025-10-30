@@ -15,7 +15,9 @@
 > Bitte installiere diesen Adapter **direkt von GitHub**, um korrekte Updates zu erhalten:
 >
 > ```
-> iobroker install https://github.com/Pocky2507/ioBroker.fitbit-fitness
+> Nutze dafür genau diesen Befehl!
+>
+> iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main"
 > ```
 >
 > **Nicht** über npm installieren – dies ist ein geschützter *nonNpm*-Build.
@@ -194,7 +196,7 @@ extended and modernized by **Chris** and **Pocky2507**.
 > Install this adapter **only from GitHub** to ensure the correct version and updates.
 >
 > ```
-> iobroker install https://github.com/Pocky2507/ioBroker.fitbit-fitness
+> iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main"
 > ```
 >
 > Do **not** install from npm – this is a protected nonNpm build.
