@@ -14,10 +14,6 @@
 
 ---
 
-📖 **Sprachen / Languages:** [Deutsch](#-über-diesen-fork) | [English](#-about-this-fork-english)
-
----
-
 ## 🧠 Über diesen Fork
 
 Dieser Adapter ist **eine erweiterte und modernisierte Version** des ursprünglichen ioBroker-Fitbit-Adapters von *besterquester*.  
