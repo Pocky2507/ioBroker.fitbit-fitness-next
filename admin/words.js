@@ -41,18 +41,18 @@ systemDictionary = {
     "pl": "Usługi",
     "zh-cn": "服务"
   },
-  "Debug & Erweiterte Optionen": {
-    "en": "Debug & Advanced Options",
-    "de": "Debug & Erweiterte Optionen",
-    "ru": "Отладка и дополнительные параметры",
-    "pt": "Depuração e opções avançadas",
-    "nl": "Debug & geavanceerde opties",
-    "fr": "Débogage et options avancées",
-    "it": "Debug e opzioni avanzate",
-    "es": "Depuración y opciones avanzadas",
-    "pl": "Debugowanie i opcje zaawansowane",
-    "zh-cn": "调试和高级选项"
-  },
+"Debug & Erweiterte Optionen": {
+  "en": "Debug & Options",
+  "de": "Debug & Optionen",
+  "ru": "Отладка и параметры",
+  "pt": "Depuração e opções",
+  "nl": "Debug & opties",
+  "fr": "Débogage et options",
+  "it": "Debug e opzioni",
+  "es": "Depuración y opciones",
+  "pl": "Debugowanie i opcje",
+  "zh-cn": "调试和选项"
+},
 
   /* ===== Buttons ===== */
   "Authorize": {
@@ -228,18 +228,19 @@ systemDictionary = {
     "zh-cn": "每天仅获取一次睡眠记录"
   },
 
-  /* ===== Intraday ===== */
+   /* ===== Intraday ===== */
   "intraday": {
-    "en": "Enable intraday (1-minute heart rate data)",
-    "de": "Intraday aktivieren (1-Minuten-Herzfrequenzdaten)",
-    "ru": "Включить внутридневные данные (пульс с интервалом 1 мин.)",
-    "pt": "Ativar intradiário (frequência cardíaca por minuto)",
-    "nl": "Intraday inschakelen (hartslag per minuut)",
-    "fr": "Activer les données intrajournalières (fréquence cardiaque par minute)",
-    "it": "Abilita intraday (frequenza cardiaca al minuto)",
-    "es": "Activar intradía (frecuencia cardíaca por minuto)",
-    "pl": "Włącz intraday (tętno co minutę)",
-    "zh-cn": "启用日内（1分钟心率）"
+    "en": "Enable intraday (retrieve heart rate data according to configured interval)",
+    "de": "Intraday aktivieren (Herzfrequenzdaten abrufen wie im Intervall eingestellt)",
+    "ru": "Включить внутридневные данные (запрашивать пульс в соответствии с заданным интервалом)",
+    "pt": "Ativar intradiário (obter dados de frequência cardíaca conforme o intervalo configurado)",
+    "nl": "Intraday inschakelen (hartslaggegevens ophalen volgens de ingestelde interval)",
+    "fr": "Activer les données intrajournalières (récupérer la fréquence cardiaque selon l’intervalle configuré)",
+    "it": "Abilita intraday (recupera i dati della frequenza cardiaca secondo l’intervallo configurato)",
+    "es": "Activar intradía (obtener la frecuencia cardíaca según el intervalo configurado)",
+    "pl": "Włącz intraday (pobieranie danych tętna zgodnie z ustawionym interwałem)",
+    "uk": "Увімкнути внутрішньодобові дані (отримувати пульс відповідно до заданого інтервалу)",
+    "zh-cn": "启用日内（根据设定的间隔获取心率数据）"
   },
 
   /* ===== Nap Options ===== */
@@ -318,7 +319,7 @@ systemDictionary = {
     "zh-cn": "忽略在此之前的主要睡眠 (HH:MM)"
   },
 
-  /* ===== Debug & Advanced Options ===== */
+  /* ===== Debug & Options ===== */
   "Debug-Ausgabe aktivieren": {
     "en": "Enable debug output",
     "de": "Debug-Ausgabe aktivieren",
