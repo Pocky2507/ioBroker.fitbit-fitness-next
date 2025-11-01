@@ -447,19 +447,22 @@ if (this.updateInterval) {
                 }
                 // === Fitbit Rate-Limit Header-Auswertung + Tageszähler ===
 if (response && response.headers) {
-    const rem = Number(response.headers["fitbit-rate-limit-remaining"] || 0);
-    const lim = Number(response.headers["fitbit-rate-limit-limit"] || 0);
+    const lim   = Number(response.headers["fitbit-rate-limit-limit"] || 0);
+    const rem   = Number(response.headers["fitbit-rate-limit-remaining"] || 0);
     const reset = response.headers["fitbit-rate-limit-reset"];
 
     if (lim > 0) await this.setStateAsync("info.apiCalls.limit", { val: lim, ack: true });
     if (rem >= 0) await this.setStateAsync("info.apiCalls.remaining", { val: rem, ack: true });
 
-    if (reset) {
+    // Fitbit liefert meist keinen festen Reset-Zeitpunkt mehr (rolling window)
+    if (reset && Number(reset) > 1000000000) {
         const ts = new Date(Number(reset) * 1000);
         await this.setStateAsync("info.apiCalls.resetAt", { val: ts.toISOString(), ack: true });
+    } else {
+        await this.setStateAsync("info.apiCalls.resetAt", { val: "rolling window", ack: true });
     }
 
-    // Tageswechsel prüfen
+    // === Tageswechsel prüfen ===
     const today = this._todayString();
     if (today !== this.apiCallsDate) {
         this.apiCallsDate = today;
@@ -468,7 +471,7 @@ if (response && response.headers) {
         await this.setStateAsync("info.apiCalls.todayDate", { val: today, ack: true });
     }
 
-    // Tageszähler erhöhen
+    // === Tageszähler erhöhen ===
     this.apiCallsToday++;
     await this.setStateAsync("info.apiCalls.todayTotal", { val: this.apiCallsToday, ack: true });
 }
