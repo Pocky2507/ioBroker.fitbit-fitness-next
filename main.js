@@ -1395,46 +1395,50 @@ class FitBit extends utils.Adapter {
     const segs = this.getLevelSegments(block);
     const SLEEP_LEVELS = new Set(["asleep", "light", "deep", "rem"]);
 
-    // ---------------------------------------------------------------------------
-    // 🩺 Herzfrequenz-basierter Frühschlaf-Check (nur Hauptschlaf, optional)
-    // ---------------------------------------------------------------------------
+    // 🩺 Herzfrequenz-basierter Frühschlaf-Check (nur Hauptschlaf, optional, erweitert)
     if (
       block.isMainSleep &&
       this.effectiveConfig.intraday &&
       this.recentHeartData?.length > 10
     ) {
       const start = new Date(block.startTime);
-      const window30 = this.recentHeartData.filter(
-        (p) => Math.abs(start - p.ts) <= 30 * 60000,
+      const window60 = this.recentHeartData.filter(
+        (p) => Math.abs(start - p.ts) <= 60 * 60000 // ±60 Minuten Fenster
       );
-      if (window30.length > 10) {
+      if (window60.length > 10) {
         const mean = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
-        const smooth = (arr) => {
-          if (!arr || arr.length === 0) return 0;
-          if (arr.length <= 3) return mean(arr);
-          return mean(
-            arr
-              .slice()
-              .sort((a, b) => a - b)
-              .slice(1, -1),
-          );
-        };
-        const mid = Math.floor(window30.length / 2);
-        const before = smooth(window30.slice(0, mid).map((p) => p.value));
-        const after = smooth(window30.slice(mid).map((p) => p.value));
+        const before = mean(window60.filter(p => p.ts < start).map(p => p.value));
+        const after  = mean(window60.filter(p => p.ts >= start).map(p => p.value));
         const drop = before - after;
 
-        if (drop < 5) {
+        if (drop < 8) { // war <5
           this.dlog(
             "debug",
-            `Heart-rate drop only ${drop.toFixed(1)} BPM around ${start.toISOString()} → likely not asleep (Couch phase).`,
+            `[COUCH-FILTER] Heart-rate drop only ${drop.toFixed(1)} BPM around ${start.toISOString()} → likely not asleep (Couch phase).`
           );
           return this._parseISO(block.startTime); // Frühschlaf-Block ignorieren
         } else {
           this.dlog(
             "debug",
-            `Heart-rate dropped ${drop.toFixed(1)} BPM → likely real sleep.`,
+            `[COUCH-FILTER] Heart-rate dropped ${drop.toFixed(1)} BPM → likely real sleep.`
           );
+        }
+      }
+    }
+
+    // 🔍 Frühschlaf-Erkennung anhand fehlender Deep/REM-Phasen in den ersten 3 Stunden
+    if (block.isMainSleep && segs.length > 0) {
+      const start = new Date(block.startTime);
+      const within180 = segs.filter(s => new Date(s.dateTime) - start <= 180 * 60000);
+      const hasDeepRem = within180.some(s => s.level === "deep" || s.level === "rem");
+      if (!hasDeepRem) {
+        const firstReal = segs.find(s => s.level === "deep" || s.level === "rem" || s.level === "light");
+        if (firstReal) {
+          this.dlog(
+            "debug",
+            `[COUCH-FILTER] No Deep/REM within 3 h after ${start.toISOString()} → adjusted start to ${firstReal.dateTime}`
+          );
+          return new Date(firstReal.dateTime);
         }
       }
     }
