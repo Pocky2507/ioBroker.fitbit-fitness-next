@@ -276,6 +276,8 @@ class FitBit extends utils.Adapter {
     }
 
     this.subscribeStates("body.weight");
+    this.subscribeStates("sleep.Recalculate");
+
   }
 
   // =========================================================================
@@ -356,6 +358,51 @@ class FitBit extends utils.Adapter {
         native: {},
       });
     }
+
+    // ---------------------------------------------------------------------------
+    // 🔁 Recalculate Button + Raw Sleep Data Storage
+    // ---------------------------------------------------------------------------
+    await this.setObjectNotExistsAsync("sleep.Recalculate", {
+      type: "state",
+      common: {
+        name: "Recalculate sleep data from last RawData",
+        type: "boolean",
+        role: "button",
+        read: true,
+        write: true,
+      },
+      native: {},
+    });
+
+    await this.setObjectNotExistsAsync("sleep.RawData", {
+      type: "state",
+      common: {
+        name: "Last raw sleep JSON from Fitbit",
+        type: "string",
+        role: "json",
+        read: true,
+        write: false,
+      },
+      native: {},
+    });
+
+    await this.setObjectNotExistsAsync("sleep.LastRecalculated", {
+      type: "state",
+      common: {
+        name: "Timestamp of last recalculation",
+        type: "string",
+        role: "date",
+        read: true,
+        write: false,
+      },
+      native: {},
+    });
+
+    await this.setObjectNotExistsAsync("devices", {
+      type: "channel",
+      common: { name: "FITBIT Devices" },
+      native: {},
+    });
 
     await this.setObjectNotExistsAsync("devices", {
       type: "channel",
@@ -1001,6 +1048,13 @@ class FitBit extends utils.Adapter {
       });
 
       if (response.status === 200) {
+        // 🧾 Save raw sleep JSON for later recalculation
+        await this.setStateAsync("sleep.RawData", {
+          val: JSON.stringify(response.data),
+          ack: true,
+        });
+
+        // 💤 Verarbeite aktuelle Schlafdaten
         if (!this.setSleepStates(response.data)) {
           // keine Schlafdaten → Nap-Liste zurücksetzen
           await this._clearNapStates({ onlyList: true });
@@ -1017,7 +1071,7 @@ class FitBit extends utils.Adapter {
   // =========================================================================
   // Sleep – Schreiblogik (inkl. Segmentanalyse + Filter)
   // =========================================================================
-  async setSleepStates(data) {
+  async setSleepStates(data, options = {}) {
     const blocks = data && data.sleep ? data.sleep : [];
     if (blocks.length === 0) return false;
 
@@ -1256,8 +1310,13 @@ class FitBit extends utils.Adapter {
 
     const mainBlock = filteredBlocks.find((b) => b.isMainSleep);
     if (mainBlock) {
-      const fell = this.computeFellAsleepAt(mainBlock);
+      const fell = this.computeFellAsleepAt(mainBlock, options);
       const woke = this.computeWokeUpAt(mainBlock);
+
+      this.dlog(
+        "info",
+        `🕒 Hauptschlaf erkannt → Eingeschlafen: ${this.formatDE_Short(fell)}, Aufgewacht: ${this.formatDE_Short(woke)}`
+      );
 
       await this.setStateAsync("sleep.Main.FellAsleepAt", {
         val: fell ? fell.toISOString() : "",
@@ -1343,7 +1402,7 @@ class FitBit extends utils.Adapter {
     if (DEBUG_TEST_MODE) {
       const mainBlock = filteredBlocks.find((b) => b.isMainSleep);
       if (mainBlock) {
-        const fell = this.computeFellAsleepAt(mainBlock);
+        const fell = this.computeFellAsleepAt(mainBlock, options);
         const woke = this.computeWokeUpAt(mainBlock);
         const dur = woke && fell ? Math.round((woke - fell) / 60000) : 0;
         const refined =
@@ -1391,7 +1450,7 @@ class FitBit extends utils.Adapter {
   // -------------------------------------------------------------------------
   // Segment-Tools für Sleep (verfeinerte Erkennung + Debug)
   // -------------------------------------------------------------------------
-  computeFellAsleepAt(block) {
+  computeFellAsleepAt(block, options = {}) {
     const segs = this.getLevelSegments(block);
     const SLEEP_LEVELS = new Set(["asleep", "light", "deep", "rem"]);
 
@@ -1444,6 +1503,49 @@ class FitBit extends utils.Adapter {
     }
 
     // ---------------------------------------------------------------------------
+    // 🌙 NEU: Suche den ersten stabilen Deep/REM nach der definierten Zeit (z. B. 23:00)
+    // ---------------------------------------------------------------------------
+    if (block.isMainSleep && this.effectiveConfig.ignoreEarlyMainSleepEnabled) {
+      const [h, m] = this.effectiveConfig.ignoreEarlyMainSleepTime
+      .split(":")
+      .map(Number);
+      const earlyLimit = h + m / 60;
+      const stabilityMin = options?.relaxed ? 5 : (this.effectiveConfig?.sleepStabilityMinutes || 20);
+
+      if (segs.length > 0) {
+        const firstValid = segs.find((s) => {
+          const dt = new Date(s.dateTime);
+          const hour = dt.getHours() + dt.getMinutes() / 60;
+          const afterLimit = hour >= earlyLimit;
+          const isDeepOrRem = s.level === "deep" || s.level === "rem";
+          return afterLimit && isDeepOrRem;
+        });
+
+        if (firstValid) {
+          const idx = segs.indexOf(firstValid);
+          const next = segs[idx + 1]
+          ? new Date(segs[idx + 1].dateTime)
+          : new Date(firstValid.dateTime);
+          const durMin = (next - new Date(firstValid.dateTime)) / 60000;
+
+          if (durMin >= stabilityMin) {
+            this.dlog(
+              "info",
+              `[EARLY-FILTER] First stable Deep/REM found after ${this.effectiveConfig.ignoreEarlyMainSleepTime} → ${firstValid.dateTime} (${Math.round(durMin)}min ≥ ${stabilityMin}min)`
+            );
+            return new Date(firstValid.dateTime);
+          } else {
+            this.dlog(
+              "debug",
+              `[EARLY-FILTER] Deep/REM ${firstValid.dateTime} too short (${Math.round(durMin)}min < ${stabilityMin}min) → ignoring`
+            );
+          }
+        }
+      }
+    }
+
+
+    // ---------------------------------------------------------------------------
     // ⏰ Frühschlaf-Korrektur basierend auf Config-Zeit + Schlafsegmenten
     // ---------------------------------------------------------------------------
     if (block.isMainSleep && this.effectiveConfig.ignoreEarlyMainSleepEnabled) {
@@ -1484,7 +1586,7 @@ class FitBit extends utils.Adapter {
     // 🔍 Suche erste stabile Schlafphase (mind. X Minuten) ohne nachfolgende lange Wachphase
     // ---------------------------------------------------------------------------
     if (!segs.length) return this._parseISO(block && block.startTime);
-    const stabilityMin = this.effectiveConfig?.sleepStabilityMinutes || 20;
+    const stabilityMin = options?.relaxed ? 5 : (this.effectiveConfig?.sleepStabilityMinutes || 20);
 
     for (let i = 0; i < segs.length; i++) {
       const s = segs[i];
@@ -1880,6 +1982,37 @@ class FitBit extends utils.Adapter {
         await this.setStateAsync("body.weight", { val: state.val, ack: true }); // Bestätigung
         return;
       }
+
+      // 🧮 Manual recalculation trigger
+      if (id.endsWith("sleep.Recalculate") && state.val === true) {
+        if (this._recalcInProgress) {
+          this.log.warn("Recalculation already in progress — skipping duplicate click.");
+          return;
+        }
+        this._recalcInProgress = true;
+        try {
+          const raw = await this.getStateAsync("sleep.RawData");
+          if (raw && raw.val) {
+            const parsed = JSON.parse(raw.val);
+            this.log.info("🔁 Recalculating sleep data from stored RawData (relaxed mode)...");
+            await this.setSleepStates(parsed, { relaxed: true });
+            await this.setStateAsync("sleep.LastRecalculated", {
+              val: new Date().toISOString(),
+                                     ack: true,
+            });
+            this.log.info("✅ Sleep recalculation completed successfully.");
+          } else {
+            this.log.warn("⚠️ No stored RawData available — nothing to recalc.");
+          }
+        } catch (err) {
+          this.log.error(`❌ Recalculation failed: ${err}`);
+        } finally {
+          this._recalcInProgress = false;
+          await this.setStateAsync(id, { val: false, ack: true }); // Button zurücksetzen
+        }
+        return;
+      }
+
       // (Keine manuellen Token-Buttons o.ä.)
     }
   }
