@@ -32,7 +32,7 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 
 ---
 
-> ⚠️ **Wichtiger Installationshinweis**  
+> ⚠️ **Wichtiger Installationshinweis**
 > Bitte installiere diesen Adapter **direkt von GitHub**, um korrekte Updates zu erhalten:
 >
 > Dieser Adapter muss neu installliert werden falls der alte Adapter von Chris-656 schon installiert ist
@@ -153,7 +153,7 @@ Der kombinierte Filter verbindet:
 | Schlüssel | Standardwert | Kurzbeschreibung |
 |:-----------|:-------------|:------------------|
 | `refresh` | 5 Minuten | Intervall für den Datenabruf |
-| `intraday` | ❌ | Aktiviert 1-Minuten-Herzfrequenzwerte |
+| `intraday` | ✅ | Aktiviert Herzfrequenzwerte mit eingestelltem Refresh Intervall |
 | `ignoreEarlyMainSleepEnabled` | ✅ | Ignoriert Hauptschlafphasen vor der Uhrzeitgrenze |
 | `ignoreEarlyMainSleepTime` | 23:00 | Beginn des Nachtschlaf-Fensters |
 | `smartEarlySleepEnabled` | ✅ | Erkennt lange Schlafphasen automatisch |
@@ -232,7 +232,7 @@ to deliver Fitbit data more reliably, accurately, and in real-time within ioBrok
 
 ## 🧾 Installation Note
 
-> ⚠️ **Important:**  
+> ⚠️ **Important:**
 > Install this adapter **only from GitHub** to ensure the correct version and updates.
 >
 > This adapter must be reinstalled if the old adapter from Chris-656 is already installed
@@ -347,7 +347,7 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 | Key | Default | Short Description |
 |:------|:----------|:------------------|
 | `refresh` | 5 min | Interval in which Fitbit data is fetched |
-| `intraday` | ❌ | Enables Intraday mode with 1-minute heart-rate values |
+| `intraday` | ✅ | Enables Intraday mode with Refresh Intervall heart-rate values |
 | `ignoreEarlyMainSleepEnabled` | ✅ | Ignores main sleeps starting before cutoff |
 | `ignoreEarlyMainSleepTime` | 23:00 | Defines night sleep window |
 | `smartEarlySleepEnabled` | ✅ | Accepts long sleeps before cutoff |
