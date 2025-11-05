@@ -32,7 +32,7 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 
 ---
 
-> ⚠️ **Wichtiger Installationshinweis**
+> ⚠️ **Wichtiger Installationshinweis**  
 > Bitte installiere diesen Adapter **direkt von GitHub**, um korrekte Updates zu erhalten:
 >
 > Dieser Adapter muss neu installliert werden falls der alte Adapter schon installiert ist
