@@ -1,15 +1,15 @@
 {
   "common": {
     "name": "fitbit-fitness",
-    "version": "0.5.6",
+    "version": "0.5.7",
     "nonNpm": true,
     "installedFrom": "https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main",
     "desc": {
-      "en": "Fork of the original ioBroker Fitbit adapter by Chris (besterquester). Extended and maintained by Pocky2507 — includes advanced sleep detection, nap handling, stability threshold, and heart-rate zone metrics. Retrieves Fitbit health, activity and sleep data with nap and early-sleep filtering.",
+      "en": "Fork of the original ioBroker Fitbit adapter by Chris-656 (besterquester). Extended and maintained by Pocky2507 — includes advanced sleep detection, nap handling, stability threshold, and heart-rate zone metrics. Retrieves Fitbit health, activity and sleep data with nap and early-sleep filtering.",
       "de": "Fork des ursprünglichen ioBroker Fitbit-Adapters von Chris (besterquester). Erweiterung und Pflege durch Pocky2507 – enthält erweiterte Schlaferkennung, Nickerchen-Verarbeitung, Stabilitätsschwelle und Herzfrequenzzonen. Ruft Fitbit-Gesundheits-, Aktivitäts- und Schlafdaten ab (mit Nickerchen- und Frühschlaf-Filter)."
     },
     "authors": [
-      "Chris <besterquester@live.at> (original author)",
+      "Chris-656 <besterquester@live.at> (original author)",
       "Pocky2507 (fork and maintenance)"
     ],
     "forkOf": "iobroker-community-adapters/ioBroker.fitbit-fitness",
@@ -18,6 +18,10 @@
     "url": "https://github.com/Pocky2507/ioBroker.fitbit-fitness"
     },
     "news": {
+      "0.5.7": {
+        "en": "Fine-tuning the "Couchtimes"",
+        "de": "Feintuning der "Sofazeiten""
+      },
       "0.5.6": {
         "en": "Added configurable sleep stability threshold (default 20 min) to fine-tune refined sleep phase detection.",
         "de": "Konfigurierbare Stabilitätsschwelle für Schlaf (Standard 20 Min) hinzugefügt, um die verfeinerte Schlafphasenerkennung zu optimieren."
