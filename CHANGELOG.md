@@ -4,6 +4,9 @@
     ## **WORK IN PROGRESS**
 -->
 
+## **0.5.7 (2025-11-05)**
+- Fine-tuning the "Couchtimes""
+
 ## **0.5.6 (2025-10-30)**
 - Added a new setting for sleep stability (minutes)
 - Default value: 20 minutes
