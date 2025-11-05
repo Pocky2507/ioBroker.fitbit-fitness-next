@@ -35,11 +35,11 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 > ⚠️ **Wichtiger Installationshinweis**
 > Bitte installiere diesen Adapter **direkt von GitHub**, um korrekte Updates zu erhalten:
 >
-> Dieser Adapter muss neu installliert werden fall der Alte Adapter schon installiert ist
+> Dieser Adapter muss neu installliert werden falls der alte Adapter schon installiert ist
 > ```
-> iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main"
+> iobroker del fitbit-fitness
 > ```
-> Nutze dafür genau diesen Befehl!
+> Um diesen Fork zu installieren nutze dafür genau diesen Befehl!
 >
 > ```
 > iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main"
