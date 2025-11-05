@@ -540,10 +540,27 @@ class FitBit extends utils.Adapter {
         }
       }
 
+      //
       // Geräte
+      //
       if (this.effectiveConfig.devicerecords) {
-        await this.getDeviceRecords();
+        try {
+          const deviceResponse = await this.getDeviceRecords();
+
+          if (deviceResponse && deviceResponse.status === 200 && Array.isArray(deviceResponse.data?.devices)) {
+            this.fitbit.devices = deviceResponse.data.devices;
+            this.dlog("debug", `Device info cached (${deviceResponse.data.devices.length} Geräte)`);
+          } else if (Array.isArray(deviceResponse?.data)) {
+            this.fitbit.devices = deviceResponse.data;
+            this.dlog("debug", `Device info cached (${deviceResponse.data.length} Geräte, direct array)`);
+          } else {
+            this.dlog("debug", "Device info not cached (unexpected response format)");
+          }
+        } catch (err) {
+          this.log.warn(`Device info fetch failed: ${err.message}`);
+        }
       }
+
     } catch (err) {
       // 401 → einmalig Token erneuern und retry
       if (err && err.response && err.response.status === 401) {
@@ -552,9 +569,7 @@ class FitBit extends utils.Adapter {
           const renewed = await this.renewToken();
           if (renewed) return this.getFitbitRecords(true);
         }
-        this.log.error(
-          "Still 401 after renew attempt. Manual re-auth may be required.",
-        );
+        this.log.error("Still 401 after renew attempt. Manual re-auth may be required.");
       } else {
         this.log.error(`Data retrieval error: ${err}`);
       }
@@ -1629,6 +1644,56 @@ class FitBit extends utils.Adapter {
     // ---------------------------------------------------------------------------
     // 💤 Fallback: keine stabile Schlafphase gefunden → block.startTime verwenden
     // ---------------------------------------------------------------------------
+
+    // === AUTO LAST ACTIVITY CORRECTION (v0.5.7+) ===
+    if (block.isMainSleep) {
+      try {
+        // Aktuellen berechneten Start (wenn vorhanden)
+        let adjustedStart = start instanceof Date ? new Date(start) : this._parseISO(block?.startTime);
+
+        // Zugriff auf Geräte aus Speicher (falls vorhanden)
+        const devices = this.fitbit?.devices || [];
+
+        // Prüfen ob Puls- oder Syncdaten da sind
+        if ((this.effectiveConfig.intraday || this.recentHeartData?.length > 0) && devices.length > 0) {
+
+          // 1️⃣ Letzte Herzfrequenz vor aktuellem Start
+          const lastHR = this.recentHeartData
+          .filter(h => h.ts instanceof Date && h.ts < adjustedStart)
+          .sort((a, b) => b.ts - a.ts)[0];
+
+          // 2️⃣ Letzte Sync-Zeit aus Geräten
+          const lastSyncDevice = devices.find(d => d.lastSyncTime);
+          const lastSync = lastSyncDevice ? new Date(lastSyncDevice.lastSyncTime) : null;
+
+          // 3️⃣ Letzte Aktivität = spätestes von HR oder Sync
+          const lastActivity = [lastHR?.ts, lastSync]
+          .filter(Boolean)
+          .sort((a, b) => b - a)[0];
+
+          if (lastActivity) {
+            const bufferMinutes = this.effectiveConfig.smartEarlySleepEnabled ? 15 : 10;
+            const minSleepStart = new Date(lastActivity.getTime() + bufferMinutes * 60000);
+
+            if (adjustedStart < minSleepStart) {
+              this.dlog(
+                "info",
+                `⏱️ Auto-corrected sleep start: ${adjustedStart.toLocaleTimeString("de-DE")} → ${minSleepStart.toLocaleTimeString("de-DE")} (last activity: ${lastActivity.toLocaleTimeString("de-DE")})`
+              );
+              adjustedStart = minSleepStart;
+            }
+          }
+        }
+
+        // Wenn eine Korrektur erfolgt ist, zurückgeben
+        if (adjustedStart) return adjustedStart;
+
+      } catch (err) {
+        this.dlog("warn", `Auto activity correction failed: ${err.message}`);
+      }
+    }
+    // === ENDE AUTO CORRECTION ===
+
     this.dlog(
       "debug",
       "No refined sleep phase found → fallback to block.startTime",
