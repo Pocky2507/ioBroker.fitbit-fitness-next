@@ -16,8 +16,8 @@
 
 ## 🧠 Über diesen Fork
 
-Dieser Adapter ist **eine erweiterte und modernisierte Version** des ursprünglichen ioBroker-Fitbit-Adapters von *besterquester*.  
-Der Fork von **Pocky2507** enthält zahlreiche neue Funktionen, Stabilitätsverbesserungen und Debug-Optionen,  
+Dieser Adapter ist **eine erweiterte und modernisierte Version** des ursprünglichen ioBroker-Fitbit-Adapters von *besterquester*.
+Der Fork von **Pocky2507** enthält zahlreiche neue Funktionen, Stabilitätsverbesserungen und Debug-Optionen,
 um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereitzustellen.
 
 **Neue Schwerpunkte dieses Forks:**
@@ -27,12 +27,12 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 - Überarbeitete **Admin-Oberfläche** mit Debug- und Entwickler-Tab
 - Verbesserte **Token-Verwaltung** (automatischer Refresh, Introspect-Prüfung)
 
-> 💡 Ziel dieses Forks ist es, Fitbit-Daten nicht nur periodisch,  
+> 💡 Ziel dieses Forks ist es, Fitbit-Daten nicht nur periodisch,
 > sondern *intelligent und kontextbasiert* zu analysieren — insbesondere Schlaf- und Herzfrequenzmuster in Echtzeit.
 
 ---
 
-> ⚠️ **Wichtiger Installationshinweis**  
+> ⚠️ **Wichtiger Installationshinweis**
 > Bitte installiere diesen Adapter **direkt von GitHub**, um korrekte Updates zu erhalten:
 >
 > Nutze dafür genau diesen Befehl!
@@ -45,11 +45,11 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 
 ---
 
-## 🩺 ioBroker Fitbit Adapter (v0.5.6)
+## 🩺 ioBroker Fitbit Adapter (v0.5.7)
 
 Dieser Adapter ruft **Fitbit-Daten** in ioBroker ab und stellt sie als strukturierte Datenpunkte bereit.
 Er basiert auf dem ursprünglichen Projekt von **@GermanBluefox** (*fitbit-api*)
-und wurde von **Chris** und **Pocky2507** umfassend erweitert und modernisiert.
+und wurde von **Chris-656** und **Pocky2507** umfassend erweitert und modernisiert.
 
 ---
 
@@ -73,14 +73,14 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 
 ---
 
-## ✨ Neue Funktionen in Version 0.5.6
+## ✨ Neue Funktionen in Version 0.5.7
 
 - Neue Option **Schlaf-Stabilität (Minuten)** zur Definition, wie lange ein Schlaf stabil sein muss, bevor er als Hauptschlaf zählt
 - Standardwert: **20 Minuten**
 - **Debug-Ausgabe** wird jetzt nur noch **einmalig beim Adapterstart** angezeigt
 - Verbesserte Struktur und Darstellung des **Debug-Tabs**
 - Interne Optimierungen für Konfigurations- und Logverhalten
-- Rückwärtskompatibel zu v0.5.5
+- Rückwärtskompatibel zu v0.5.6
 
 ---
 
@@ -165,6 +165,9 @@ Der kombinierte Filter verbindet:
 
 ## 🧾 Changelog
 
+### **0.5.7 (2025-11-05)**
+- Feintuning der "Sofazeiten"
+
 ### **0.5.6 (2025-10-30)**
 - Neue Einstellung **Schlaf-Stabilität (Minuten)** hinzugefügt
 - Standardwert 20 Minuten
@@ -187,7 +190,7 @@ Der kombinierte Filter verbindet:
 
 ## 👨‍💻 Autoren
 
-- **Chris** (<besterquester@live.at>) – ursprünglicher Entwickler
+- **Chris-656** (<besterquester@live.at>) – ursprünglicher Entwickler
 - **Pocky2507** – Fork & Erweiterungen (SmartSleep, Frühschlaf, Nickerchen, Intraday, Realtime, Debug, Sleep Stability)
 
 ---
@@ -195,7 +198,7 @@ Der kombinierte Filter verbindet:
 ## 📜 Lizenz
 
 MIT License
-© 2025 Chris & Pocky2507
+© 2025 Chris-656 & Pocky2507
 Software wird „wie besehen“ bereitgestellt, ohne Garantie.
 Verwendung auf eigene Verantwortung.
 
@@ -207,8 +210,8 @@ Verwendung auf eigene Verantwortung.
 
 ## 🧠 About this fork (English)
 
-This adapter is an **enhanced and modernized version** of the original ioBroker Fitbit adapter by *besterquester*.  
-The **Pocky2507** fork introduces new features, improved stability, and advanced debug options  
+This adapter is an **enhanced and modernized version** of the original ioBroker Fitbit adapter by *besterquester*.
+The **Pocky2507** fork introduces new features, improved stability, and advanced debug options
 to deliver Fitbit data more reliably, accurately, and in real-time within ioBroker.
 
 **Key improvements in this fork:**
@@ -218,14 +221,14 @@ to deliver Fitbit data more reliably, accurately, and in real-time within ioBrok
 - Reworked **Admin UI** with Debug & Developer tabs
 - Improved **OAuth2 handling** with automatic refresh and introspection
 
-> 💡 The goal of this fork is to analyze Fitbit data *intelligently and context-aware*,  
+> 💡 The goal of this fork is to analyze Fitbit data *intelligently and context-aware*,
 > focusing on real-time sleep and heart-rate patterns.
 
 ---
 
 ## 🧾 Installation Note
 
-> ⚠️ **Important:**  
+> ⚠️ **Important:**
 > Install this adapter **only from GitHub** to ensure the correct version and updates.
 >
 > Use this exact command for that!
@@ -238,11 +241,11 @@ to deliver Fitbit data more reliably, accurately, and in real-time within ioBrok
 
 ---
 
-## 🩺 Fitbit Adapter for ioBroker (v0.5.6)
+## 🩺 Fitbit Adapter for ioBroker (v0.5.7)
 
 This adapter retrieves **Fitbit data** into ioBroker and provides structured datapoints.
 Based on the original **fitbit-api** by *@GermanBluefox*,
-extended and modernized by **Chris** and **Pocky2507**.
+extended and modernized by **Chris-656** and **Pocky2507**.
 
 ---
 
@@ -263,14 +266,14 @@ To use this adapter, you need a **Fitbit Developer Account**.
 
 ---
 
-## ✨ New in Version 0.5.6
+## ✨ New in Version 0.5.7
 
 - Added **Sleep Stability (Minutes)** option for main sleep detection
 - Default set to **20 minutes**
 - Debug output now shown **once on startup only**
 - Improved layout and structure of the **Debug tab**
 - Internal optimizations for configuration and logging
-- Backward compatible with v0.5.5
+- Backward compatible with v0.5.6
 
 ---
 
@@ -352,6 +355,9 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 
 ## 🧾 Changelog
 
+### **0.5.7 (2025-11-05)**
+- Fine-tuning the "Couchtimes"
+
 ### **0.5.6 (2025-10-30)**
 - Added **Sleep Stability (Minutes)** configuration
 - Default value 20 minutes
@@ -374,7 +380,7 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 
 ## 👨‍💻 Authors
 
-- **Chris** (<besterquester@live.at>) – original developer
+- **Chris-656** (<besterquester@live.at>) – original developer
 - **Pocky2507** – extensions (SmartSleep, EarlySleep, Realtime, Debug, Naps, Intraday, Sleep Stability)
 
 ---
@@ -382,6 +388,6 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 ## 📜 License
 
 MIT License
-© 2025 Chris & Pocky2507
+© 2025 Chris-656 & Pocky2507
 Software provided *as is*, without warranty.
 Use at your own risk.
