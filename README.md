@@ -35,7 +35,7 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 > ⚠️ **Wichtiger Installationshinweis**  
 > Bitte installiere diesen Adapter **direkt von GitHub**, um korrekte Updates zu erhalten:
 >
-> Dieser Adapter muss neu installliert werden falls der alte Adapter schon installiert ist
+> Dieser Adapter muss neu installliert werden falls der alte Adapter von Chris-656 schon installiert ist
 > ```
 > iobroker del fitbit-fitness
 > ```
@@ -235,7 +235,7 @@ to deliver Fitbit data more reliably, accurately, and in real-time within ioBrok
 > ⚠️ **Important:**  
 > Install this adapter **only from GitHub** to ensure the correct version and updates.
 >
-> This adapter must be reinstalled if the old adapter is already installed
+> This adapter must be reinstalled if the old adapter from Chris-656 is already installed
 > ```
 > iobroker del fitbit-fitness
 > ```
