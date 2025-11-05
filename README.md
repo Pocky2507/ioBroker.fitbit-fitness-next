@@ -232,7 +232,7 @@ to deliver Fitbit data more reliably, accurately, and in real-time within ioBrok
 
 ## 🧾 Installation Note
 
-> ⚠️ **Important:**
+> ⚠️ **Important:**  
 > Install this adapter **only from GitHub** to ensure the correct version and updates.
 >
 > This adapter must be reinstalled if the old adapter is already installed
