@@ -125,7 +125,7 @@
     "sleeprecords": false,
     "sleeprecordsschedule": false,
     "foodrecords": false,
-    "devicerecords": false,
+    "devicerecords": true,
     "intraday": true,
     "showLastOrFirstNap": true,
     "clearNapListAtNight": true,
