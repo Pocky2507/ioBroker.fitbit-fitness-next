@@ -133,6 +133,41 @@ class FitBit extends utils.Adapter {
         },
         native: {},
       });
+      await this.setObjectNotExistsAsync("info.apiCalls.used", {
+        type: "state",
+        common: {
+          name: "API calls used (this hour)",
+          type: "number",
+          role: "value",
+          read: true,
+          write: false,
+        },
+        native: {},
+      });
+      await this.setObjectNotExistsAsync("info.apiCalls.percentFree", {
+        type: "state",
+        common: {
+          name: "API free in percent",
+          type: "number",
+          role: "value",
+          unit: "%",
+          read: true,
+          write: false,
+        },
+        native: {},
+      });
+      await this.setObjectNotExistsAsync("info.apiCalls.minutesToReset", {
+        type: "state",
+        common: {
+          name: "Minutes until API reset",
+          type: "number",
+          role: "value",
+          unit: "min",
+          read: true,
+          write: false,
+        },
+        native: {},
+      });
 
       // API Call Counter: Bestehende Werte übernehmen, falls vorhanden
       const sToday = await this.getStateAsync("info.apiCalls.todayTotal");
@@ -693,6 +728,24 @@ class FitBit extends utils.Adapter {
           val: this.apiCallsToday,
           ack: true,
         });
+        // === Erweiterte API-Infos berechnen ===
+        const used = lim > 0 ? lim - rem : 0;
+        const percentFree = lim > 0 ? Math.round((rem / lim) * 100) : 0;
+        let minutesToReset = 0;
+        if (reset && Number(reset) > 1000000000) {
+          const resetTime = new Date(Number(reset) * 1000);
+          const diffMin = Math.round((resetTime - new Date()) / 60000);
+          minutesToReset = diffMin > 0 ? diffMin : 0;
+        }
+
+        await this.setStateAsync("info.apiCalls.used", { val: used, ack: true });
+        await this.setStateAsync("info.apiCalls.percentFree", { val: percentFree, ack: true });
+        await this.setStateAsync("info.apiCalls.minutesToReset", { val: minutesToReset, ack: true });
+
+        this.dlog(
+          "debug",
+          `API usage: limit=${lim}, used=${used}, remaining=${rem}, free=${percentFree}%, reset in ${minutesToReset}min`
+        );
       }
     } catch (err) {
       this.log.error(`Error in getHeartRateTimeSeries: ${err}`);
@@ -1003,6 +1056,7 @@ class FitBit extends utils.Adapter {
             `Aktuellster Sync stammt von: ${lastSyncDevice.deviceVersion || "unknown"} (${this.formatDE_Short(syncTime)})`
         );
     }
+  }
 
   // =========================================================================
   // Körper
@@ -1705,6 +1759,21 @@ class FitBit extends utils.Adapter {
 
       } catch (err) {
         this.dlog("warn", `Auto activity correction failed: ${err.message}`);
+      }
+    }
+
+    // --- Zusatzfilter: Frühe Leichtschlaf- oder Couch-Phasen trimmen ---
+    if (block.isMainSleep && segs.length > 0) {
+      const firstDeepRem = segs.find(s => s.level === "deep" || s.level === "rem");
+      if (firstDeepRem) {
+        const start = new Date(block.startTime);
+        const delayMin = (new Date(firstDeepRem.dateTime) - start) / 60000;
+        if (delayMin > 10 && delayMin < 180) { // Couch- oder Dösenphase erkannt
+          this.dlog("info",
+                    `[TRIM-FILTER] Main sleep start delayed by ${Math.round(delayMin)}min → real sleep starts ${firstDeepRem.dateTime}`
+          );
+          return new Date(firstDeepRem.dateTime);
+        }
       }
     }
 
