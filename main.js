@@ -64,10 +64,35 @@ class FitBit extends utils.Adapter {
     this._recalcInProgress = false;
     this._renewInProgress = false;
     this.FORBIDDEN_CHARS = /[.\[\],]/g;
+
+    // Verbesserte Logik – keine doppelten Ausgaben mehr
     this.dlog = (lvl, msg) => {
-      if (DEBUG_SLEEP_LOG && this.log && typeof this.log[lvl] === "function") {
+      if (!this.log || typeof this.log[lvl] !== "function") return;
+
+      // Fehler und Warnungen immer anzeigen
+      if (["warn", "error"].includes(lvl)) {
         this.log[lvl](msg);
+        return;
       }
+
+      // Info nur, wenn Debug nicht aktiv (vermeidet Dopplung)
+      if (lvl === "info") {
+        if (!DEBUG_SLEEP_LOG && !this.effectiveConfig?.debugEnabled) {
+          this.log.info(msg);
+        }
+        return;
+      }
+
+      // Debug nur, wenn explizit aktiviert
+      if (lvl === "debug") {
+        if (DEBUG_SLEEP_LOG || this.effectiveConfig?.debugEnabled) {
+          this.log.debug(msg);
+        }
+        return;
+      }
+
+      // Fallback für unbekannte Level
+      this.log.info(msg);
     };
   }
 
@@ -278,6 +303,7 @@ class FitBit extends utils.Adapter {
         "info",
         `Intervals → refresh every ${this.effectiveConfig.refresh} min; scheduled sleep fetch=${this.effectiveConfig.sleeprecordsschedule ? "on" : "off"}`,
       );
+      this.log.info("[INIT] Sleep processor (Debug-Extended) active")
 
       await this.login();
 
@@ -893,7 +919,10 @@ class FitBit extends utils.Adapter {
             value: lastEntry.value,
           });
 
-          this.recentHeartData = this.recentHeartData.slice(-60);
+          // 🧠 Dynamischer Verlaufspuffer – abhängig vom Refresh-Intervall
+          const refresh = Math.max(1, this.effectiveConfig.refresh || 5);
+          const bufferSize = refresh <= 1 ? 300 : refresh <= 5 ? 200 : 100;
+          this.recentHeartData = this.recentHeartData.slice(-bufferSize);
 
           if (DEBUG_SLEEP_LOG) {
             const prev =
@@ -1180,364 +1209,114 @@ class FitBit extends utils.Adapter {
     }
   }
 
-  // =========================================================================
-  // Sleep – Schreiblogik (inkl. Segmentanalyse + Filter)
-  // =========================================================================
-  async setSleepStates(data, options = {}) {
-      // Relaxed mode → Analyse-Filter abschalten
-      if (options.relaxed) {
-          this.dlog("info", "Relaxed mode active → disabling strict sleep filters");
-          this.effectiveConfig.ignoreEarlyMainSleepEnabled = false;
-          this.effectiveConfig.smartEarlySleepEnabled = false;
-      }
+  // ===========================================================================
+  //  FITBIT SLEEP PROCESSING — Modular + Debug-Extended
+  // ===========================================================================
 
-    const blocks = data && data.sleep ? data.sleep : [];
-    if (blocks.length === 0) return false;
+  // ---- 1. zentrale Filterkette ----------------------------------------------
+  filterSleepBlocks(blocks, cfg, options = {}) {
+    if (!Array.isArray(blocks) || blocks.length === 0) return [];
 
-    if (
-      this.effectiveConfig.ignoreEarlyMainSleepEnabled &&
-      this.effectiveConfig.ignoreEarlyMainSleepTime
-    ) {
-      try {
-        const [h, m] = String(this.effectiveConfig.ignoreEarlyMainSleepTime)
-          .split(":")
-          .map((n) => parseInt(n, 10));
+    let arr = blocks.slice();
+    const dbg = msg => this.dlog("debug", msg);
 
-        const now = new Date();
-        const tooEarlyNow =
-          now.getHours() < h || (now.getHours() === h && now.getMinutes() < m);
+    // === Early Sleep Filter ===
+    if (cfg.ignoreEarlyMainSleepEnabled && cfg.ignoreEarlyMainSleepTime) {
+      const [h, m] = String(cfg.ignoreEarlyMainSleepTime).split(":").map(Number);
+      const cutoff = h * 60 + m;
+      dbg(`[FILTER] Early sleep cutoff ${cfg.ignoreEarlyMainSleepTime}`);
 
-        if (tooEarlyNow) {
-          const hasCompleteMainSleep =
-            Array.isArray(blocks) &&
-            blocks.some(
-              (b) =>
-                b &&
-                b.isMainSleep &&
-                b.startTime &&
-                b.endTime &&
-                new Date(b.endTime).getTime() < Date.now(),
-            );
+      arr = arr.filter(b => {
+        if (!b?.isMainSleep || !b.startTime) return true;
+        const st = new Date(b.startTime);
+        const mins = st.getHours() * 60 + st.getMinutes();
+        if (mins >= cutoff) return true;
 
-          if (hasCompleteMainSleep) {
-            this.dlog(
-              "debug",
-              `It’s currently early (${now.toTimeString().slice(0, 5)} < ${this.effectiveConfig.ignoreEarlyMainSleepTime}), ` +
-                `but Fitbit already reports a complete main sleep → proceed with analysis.`,
-            );
-          } else {
-            this.dlog(
-              "debug",
-              `It’s currently too early (${now.toTimeString().slice(0, 5)} < ${this.effectiveConfig.ignoreEarlyMainSleepTime}) → skip nightly sleep analysis.`,
-            );
-            return false;
-          }
-        } else if (DEBUG_SLEEP_LOG) {
-          this.log.debug(
-            `Current time ${now.toTimeString().slice(0, 5)} >= ${this.effectiveConfig.ignoreEarlyMainSleepTime} → proceed with sleep analysis.`,
-          );
-        }
-      } catch (err) {
-        this.log.warn(`Real-time night check failed: ${err.message}`);
-      }
-    }
-
-    let filteredBlocks = blocks;
-
-    if (this.effectiveConfig.ignoreEarlyMainSleepEnabled) {
-      const [h, m] = String(this.effectiveConfig.ignoreEarlyMainSleepTime)
-        .split(":")
-        .map((n) => parseInt(n, 10));
-
-      if (Number.isInteger(h) && Number.isInteger(m)) {
-        filteredBlocks = filteredBlocks.filter((b) => {
-          if (b && b.isMainSleep && b.startTime) {
-            const start = new Date(b.startTime);
-            const sh = start.getHours();
-            const sm = start.getMinutes();
-            const before = sh < h || (sh === h && sm < m);
-
-            if (before) {
-              if (this.effectiveConfig.smartEarlySleepEnabled && b.endTime) {
-                const dur = new Date(b.endTime).getTime() - start.getTime();
-                const minMs =
-                  Math.max(
-                    0.5,
-                    Number(this.effectiveConfig.minMainSleepHours) || 3,
-                  ) *
-                  60 *
-                  60 *
-                  1000;
-
-                if (dur >= minMs) {
-                  this.dlog(
-                    "info",
-                    `Main sleep accepted (starts ${start.toISOString()} < ${this.effectiveConfig.ignoreEarlyMainSleepTime}, duration ${Math.round(dur / 60000)}min ≥ ${Math.round(minMs / 60000)}min)`,
-                  );
-                  return true;
-                }
-              }
-
-              this.dlog(
-                "info",
-                `Main sleep ignored (starts ${start.toISOString()} < ${this.effectiveConfig.ignoreEarlyMainSleepTime})`,
-              );
-              return false;
-            }
-          }
-          return true;
-        });
-      }
-    }
-
-    if (
-      this.effectiveConfig.smartEarlySleepEnabled &&
-      !this.effectiveConfig.ignoreEarlyMainSleepEnabled
-    ) {
-      const minMs =
-        Math.max(0.5, Number(this.effectiveConfig.minMainSleepHours) || 3) *
-        60 *
-        60 *
-        1000;
-      filteredBlocks = filteredBlocks.filter((b) => {
-        if (b && b.isMainSleep && b.startTime && b.endTime) {
-          const dur =
-            new Date(b.endTime).getTime() - new Date(b.startTime).getTime();
-          if (dur > 0 && dur < minMs) {
-            this.dlog(
-              "info",
-              `Main sleep ignored (duration ${Math.round(dur / 60000)}min < ${Math.round(minMs / 60000)}min)`,
-            );
-            return false;
+        // SmartSleep ergänzt EarlySleep: lange Blöcke vor Grenzzeit dürfen bleiben
+        if (cfg.smartEarlySleepEnabled && b.endTime) {
+          const durMs = new Date(b.endTime) - new Date(b.startTime);
+          const minMs = (cfg.minMainSleepHours || 3) * 3600000;
+          if (durMs >= minMs) {
+            dbg(`[FILTER] Early block kept (${Math.round(durMs / 60000)} min ≥ ${minMs / 60000})`);
+            return true;
           }
         }
-        return true;
-      });
-    }
-
-    if (filteredBlocks.length === 0) {
-      const naps = blocks.filter((b) => !b.isMainSleep);
-      if (naps.length > 0) {
-        this.dlog(
-          "info",
-          `Main sleep ignored, but ${naps.length} nap(s) found → using those.`,
-        );
-        filteredBlocks = naps;
-      } else {
-        this.dlog(
-          "debug",
-          "All sleep blocks ignored by filters (no naps or main sleep)",
-        );
+        dbg(`[FILTER] Early main sleep ignored (${st.toTimeString().slice(0,5)} < ${cfg.ignoreEarlyMainSleepTime})`);
         return false;
+      });
+    }
+
+    // === Mindestdauer für Hauptschlaf ===
+    if (cfg.smartEarlySleepEnabled && !cfg.ignoreEarlyMainSleepEnabled) {
+      const minMs = (cfg.minMainSleepHours || 3) * 3600000;
+      dbg(`[FILTER] SmartSleep min main duration ≥ ${minMs / 60000} min`);
+      arr = arr.filter(b => {
+        if (!b?.isMainSleep || !b.endTime) return true;
+        const dur = new Date(b.endTime) - new Date(b.startTime);
+        return dur >= minMs;
+      });
+    }
+
+    // === Fallback: Wenn alles rausgefiltert wurde, Naps behalten ===
+    if (arr.length === 0) {
+      const naps = blocks.filter(b => !b.isMainSleep);
+      if (naps.length) {
+        dbg(`[FILTER] No main sleep left → using ${naps.length} nap(s)`);
+        return naps;
       }
     }
+    return arr;
+  }
 
-    let totalAsleep = 0;
-    let totalInBed = 0;
-    let napsAsleep = 0;
-    let napsInBed = 0;
-    let napsCount = 0;
+  // ---- 2. Hauptfunktion -----------------------------------------------------
+  async setSleepStates(data, options = {}) {
+    const blocks = data?.sleep || [];
+    if (!blocks.length) return false;
 
-    let mainDeep = 0,
-      mainLight = 0,
-      mainRem = 0,
-      mainWake = 0;
-    const napList = [];
-
-    for (const block of filteredBlocks) {
-      totalAsleep += block.minutesAsleep || 0;
-      totalInBed += block.timeInBed || 0;
-
-      if (block.isMainSleep) {
-        const s =
-          block.levels && block.levels.summary ? block.levels.summary : {};
-        mainDeep = (s.deep && s.deep.minutes) || 0;
-        mainLight = (s.light && s.light.minutes) || 0;
-        mainRem = (s.rem && s.rem.minutes) || 0;
-        mainWake = (s.wake && s.wake.minutes) || 0;
-
-        this.setState("sleep.Deep", mainDeep, true);
-        this.setState("sleep.Light", mainLight, true);
-        this.setState("sleep.Rem", mainRem, true);
-        this.setState("sleep.Wake", mainWake, true);
-      } else {
-        const napFell = this.computeFellAsleepAt(block);
-        const napWoke = this.computeWokeUpAt(block);
-
-        napsAsleep += block.minutesAsleep || 0;
-        napsInBed += block.timeInBed || 0;
-        napsCount++;
-
-        napList.push({
-          startISO: napFell ? napFell.toISOString() : "",
-          endISO: napWoke ? napWoke.toISOString() : "",
-          startDE: napFell ? this.formatDE_Short(napFell) : "",
-          endDE: napWoke ? this.formatDE_Short(napWoke) : "",
-          minutesAsleep: block.minutesAsleep || 0,
-          timeInBed: block.timeInBed || 0,
-        });
-      }
+    const effectiveOptions = { ...options };
+    const filtered = this.filterSleepBlocks(blocks, this.effectiveConfig, effectiveOptions);
+    if (!filtered.length) {
+      this.dlog("debug", "[FILTER] No sleep blocks left after filtering.");
+      return false;
     }
 
-    let realSleepMinutes = totalAsleep;
-    const mainBlockForTotal = filteredBlocks.find((b) => b.isMainSleep);
+    // Hauptschlaf und Naps trennen
+    const mainBlocks = filtered.filter(b => b.isMainSleep);
+    const napBlocks  = filtered.filter(b => !b.isMainSleep);
+    const main = mainBlocks.sort((a,b)=> new Date(b.endTime)-new Date(a.endTime))[0];
 
-    if (mainBlockForTotal) {
-      const fell = this.computeFellAsleepAt(mainBlockForTotal);
-      const woke = this.computeWokeUpAt(mainBlockForTotal);
-
-      if (fell && woke) {
-        realSleepMinutes = Math.round(
-          (woke.getTime() - fell.getTime()) / 60000,
-        );
-        this.dlog(
-          "info",
-          `Gesamtschlafzeit (berechnet): ${realSleepMinutes}min (Fitbit meldet ${totalAsleep}min)`,
-        );
-      } else {
-        this.dlog(
-          "warn",
-          "Konnte keine gültigen Ein-/Aufwachzeiten berechnen – benutze Fitbit-Wert.",
-        );
-      }
-    } else {
-      this.dlog(
-        "warn",
-        "Kein Hauptschlafblock gefunden – benutze Fitbit-Wert.",
-      );
+    if (!main) {
+      this.dlog("warn", "[SLEEP] No main sleep block found.");
+      return false;
     }
 
-    const totalWithNaps = realSleepMinutes + (napsAsleep || 0);
+    // Berechnete Zeiten
+    const fell = this.computeFellAsleepAt(main, effectiveOptions);
+    const woke = this.computeWokeUpAt(main);
+    const asleepMin = main.minutesAsleep || 0;
+    const inBedMin  = main.timeInBed || 0;
 
-    await this.setStateAsync("sleep.AsleepTotal", totalWithNaps, true);
-    await this.setStateAsync("sleep.InBedTotal", totalInBed, true);
+    // Naps
+    const napsAsleep = napBlocks.reduce((a,b)=> a+(b.minutesAsleep||0),0);
+    const napsInBed  = napBlocks.reduce((a,b)=> a+(b.timeInBed||0),0);
 
-    this.dlog(
-      "info",
-      `Gesamtschlaf inkl. Naps: ${totalWithNaps}min (Hauptschlaf ${realSleepMinutes}min + Naps ${napsAsleep}min)`,
-    );
-
-    await this.setStateAsync("sleep.Naps.Asleep", napsAsleep, true);
-    await this.setStateAsync("sleep.Naps.InBed", napsInBed, true);
-    await this.setStateAsync("sleep.Naps.Count", napsCount, true);
-
-    const mainBlock = filteredBlocks.find((b) => b.isMainSleep);
-    if (mainBlock) {
-      const fell = this.computeFellAsleepAt(mainBlock, options);
-      const woke = this.computeWokeUpAt(mainBlock);
-
-      this.dlog(
-        "info",
-        `Hauptschlaf erkannt → Eingeschlafen: ${this.formatDE_Short(fell)}, Aufgewacht: ${this.formatDE_Short(woke)}`
-      );
-
-      await this.setStateAsync("sleep.Main.FellAsleepAt", {
-        val: fell ? fell.toISOString() : "",
-        ack: true,
-      });
-      await this.setStateAsync("sleep.Main.FellAsleepAtLocal", {
-        val: fell ? this.formatDE_Short(fell) : "",
-        ack: true,
-      });
-      await this.setStateAsync("sleep.Main.WokeUpAt", {
-        val: woke ? woke.toISOString() : "",
-        ack: true,
-      });
-      await this.setStateAsync("sleep.Main.WokeUpAtLocal", {
-        val: woke ? this.formatDE_Short(woke) : "",
-        ack: true,
-      });
-    } else {
-      await this.setStateAsync("sleep.Main.FellAsleepAt", {
-        val: "",
-        ack: true,
-      });
-      await this.setStateAsync("sleep.Main.FellAsleepAtLocal", {
-        val: "",
-        ack: true,
-      });
-      await this.setStateAsync("sleep.Main.WokeUpAt", { val: "", ack: true });
-      await this.setStateAsync("sleep.Main.WokeUpAtLocal", {
-        val: "",
-        ack: true,
-      });
-    }
-
-    napList.sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
-
-    if (napList.length > 0) {
-      const napBlock = this.effectiveConfig.showLastOrFirstNap
-        ? napList[napList.length - 1]
-        : napList[0];
-      await this.setStateAsync("sleep.Naps.FellAsleepAt", {
-        val: napBlock.startISO,
-        ack: true,
-      });
-      await this.setStateAsync("sleep.Naps.FellAsleepAtLocal", {
-        val: napBlock.startDE,
-        ack: true,
-      });
-      await this.setStateAsync("sleep.Naps.WokeUpAt", {
-        val: napBlock.endISO,
-        ack: true,
-      });
-      await this.setStateAsync("sleep.Naps.WokeUpAtLocal", {
-        val: napBlock.endDE,
-        ack: true,
-      });
-    } else {
-      await this.setStateAsync("sleep.Naps.FellAsleepAt", {
-        val: "",
-        ack: true,
-      });
-      await this.setStateAsync("sleep.Naps.FellAsleepAtLocal", {
-        val: "",
-        ack: true,
-      });
-      await this.setStateAsync("sleep.Naps.WokeUpAt", { val: "", ack: true });
-      await this.setStateAsync("sleep.Naps.WokeUpAtLocal", {
-        val: "",
-        ack: true,
-      });
-    }
-
-    await this.setStateAsync("sleep.Naps.List", {
-      val: JSON.stringify(napList),
-      ack: true,
+    await this.writeSleepStates({
+      fell,woke,asleepMin,inBedMin,
+      napsAsleep,napsInBed,
+      napsCount: napBlocks.length,naps: napBlocks
     });
 
-    if (DEBUG_SLEEP_LOG) {
-      this.log.info(
-        `Sleep: totalAsleep=${totalAsleep}min, totalInBed=${totalInBed}min, naps=${napsCount}x (${napsAsleep}min)`,
-      );
-    }
+    this.dlog("info",
+              `[SLEEP] Main ${fell.toISOString()} → ${woke.toISOString()} (${asleepMin} min asleep, ${inBedMin} min in bed)`);
 
-    if (DEBUG_TEST_MODE) {
-      const mainBlock = filteredBlocks.find((b) => b.isMainSleep);
-      if (mainBlock) {
-        const fell = this.computeFellAsleepAt(mainBlock, options);
-        const woke = this.computeWokeUpAt(mainBlock);
-        const dur = woke && fell ? Math.round((woke - fell) / 60000) : 0;
-        const refined =
-          fell &&
-          woke &&
-          Math.abs(new Date(mainBlock.startTime) - fell) > 120000;
-        const source = refined ? "refined" : "fallback";
-
-        this.log.info(
-          `MainSleep (${source}) → Fell: ${this.formatDE_Short(fell)}, Wake: ${this.formatDE_Short(woke)}, Duration: ${dur}min`,
-        );
-      }
-
-      if (napsCount > 0 && napList.length > 0) {
-        napList
-          .filter((n) => n.minutesAsleep >= 10)
-          .forEach((nap, idx) => {
-            this.log.info(
-              `Nap ${idx + 1}/${napList.length} → ${nap.startDE} – ${nap.endDE} (${nap.minutesAsleep}min)`,
-            );
-          });
-      }
+    // ---- DEBUG/TEST ----
+    if (DEBUG_SLEEP_LOG || this.effectiveConfig.debugEnabled) {
+      const dur = Math.round((woke - fell) / 60000);
+      this.dlog("debug", `[SLEEP-DETAIL] Naps=${napBlocks.length} (${napsAsleep} asleep/${napsInBed} in bed)`);
+      this.dlog("debug", `MainSleep → ${fell.toLocaleTimeString()} – ${woke.toLocaleTimeString()} (${dur} min)`);
+      napBlocks.forEach((n, i) => {
+        this.dlog("debug", `Nap ${i+1}: ${n.startTime} – ${n.endTime} (${n.minutesAsleep} min)`);
+      });
     }
 
     return true;
@@ -1548,303 +1327,159 @@ class FitBit extends utils.Adapter {
   // -------------------------------------------------------------------------
   getLevelSegments(block) {
     const a =
-      block && block.levels && Array.isArray(block.levels.data)
-        ? block.levels.data
-        : [];
+    block && block.levels && Array.isArray(block.levels.data)
+    ? block.levels.data
+    : [];
     const b =
-      block && block.levels && Array.isArray(block.levels.shortData)
-        ? block.levels.shortData
-        : [];
+    block && block.levels && Array.isArray(block.levels.shortData)
+    ? block.levels.shortData
+    : [];
     const segs = [...a, ...b].filter((s) => s && s.dateTime && s.level);
     segs.sort((x, y) => new Date(x.dateTime) - new Date(y.dateTime));
     return segs;
   }
 
+  // ---- 3. Fell-Asleep-Erkennung --------------------------------------------
   computeFellAsleepAt(block, options = {}) {
     const segs = this.getLevelSegments(block);
-    const SLEEP_LEVELS = new Set(["asleep", "light", "deep", "rem"]);
+    if (!segs.length) return this._parseISO(block?.startTime);
 
-    if (
-      block.isMainSleep &&
-      this.effectiveConfig.intraday &&
-      this.recentHeartData?.length > 10
-    ) {
-      const start = new Date(block.startTime);
-      const window60 = this.recentHeartData.filter(
-        (p) => Math.abs(start - p.ts) <= 60 * 60000
-      );
-      if (window60.length > 10) {
-        const mean = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
-        const before = mean(window60.filter(p => p.ts < start).map(p => p.value));
-        const after  = mean(window60.filter(p => p.ts >= start).map(p => p.value));
-        const drop = before - after;
+    const baseStable = Number(this.effectiveConfig?.sleepStabilityMinutes) || 20;
+    const stabilityMin = options.relaxed ? Math.max(5, baseStable / 2) : baseStable;
 
-        if (drop < 8) {
-          this.dlog(
-            "debug",
-            `[COUCH-FILTER] Heart-rate drop only ${drop.toFixed(1)} BPM around ${start.toISOString()} → likely not asleep (Couch phase).`
-          );
-          return this._parseISO(block.startTime);
-        } else {
-          this.dlog(
-            "debug",
-            `[COUCH-FILTER] Heart-rate dropped ${drop.toFixed(1)} BPM → likely real sleep.`
-          );
-        }
-      }
-    }
-
-    if (block.isMainSleep && segs.length > 0) {
-      const start = new Date(block.startTime);
-      const within180 = segs.filter(s => new Date(s.dateTime) - start <= 180 * 60000);
-      const hasDeepRem = within180.some(s => s.level === "deep" || s.level === "rem");
-      if (!hasDeepRem) {
-        const firstReal = segs.find(s => s.level === "deep" || s.level === "rem" || s.level === "light");
-        if (firstReal) {
-          this.dlog(
-            "debug",
-            `[COUCH-FILTER] No Deep/REM within 3 h after ${start.toISOString()} → adjusted start to ${firstReal.dateTime}`
-          );
-          return new Date(firstReal.dateTime);
-        }
-      }
-    }
-
-    if (block.isMainSleep && this.effectiveConfig.ignoreEarlyMainSleepEnabled) {
-      const [h, m] = this.effectiveConfig.ignoreEarlyMainSleepTime
-      .split(":")
-      .map(Number);
-      const earlyLimit = h + m / 60;
-      const stabilityMin = options?.relaxed ? 5 : (this.effectiveConfig?.sleepStabilityMinutes || 20);
-
-      if (segs.length > 0) {
-        const firstValid = segs.find((s) => {
-          const dt = new Date(s.dateTime);
-          const hour = dt.getHours() + dt.getMinutes() / 60;
-          const afterLimit = hour >= earlyLimit;
-          const isDeepOrRem = s.level === "deep" || s.level === "rem";
-          return afterLimit && isDeepOrRem;
-        });
-
-        if (firstValid) {
-          const idx = segs.indexOf(firstValid);
-          const next = segs[idx + 1]
-          ? new Date(segs[idx + 1].dateTime)
-          : new Date(firstValid.dateTime);
-          const durMin = (next - new Date(firstValid.dateTime)) / 60000;
-
-          if (durMin >= stabilityMin) {
-            this.dlog(
-              "info",
-              `[EARLY-FILTER] First stable Deep/REM found after ${this.effectiveConfig.ignoreEarlyMainSleepTime} → ${firstValid.dateTime} (${Math.round(durMin)}min ≥ ${stabilityMin}min)`
-            );
-            return new Date(firstValid.dateTime);
-          } else {
-            this.dlog(
-              "debug",
-              `[EARLY-FILTER] Deep/REM ${firstValid.dateTime} too short (${Math.round(durMin)}min < ${stabilityMin}min) → ignoring`
-            );
-          }
-        }
-      }
-    }
-
-    if (block.isMainSleep && this.effectiveConfig.ignoreEarlyMainSleepEnabled) {
-      const [h, m] = this.effectiveConfig.ignoreEarlyMainSleepTime
-        .split(":")
-        .map(Number);
-      const earlyLimit = h + m / 60;
-      if (!segs.length) return this._parseISO(block.startTime);
-
-      const firstSeg = new Date(segs[0].dateTime);
-      const startHour = firstSeg.getHours() + firstSeg.getMinutes() / 60;
-
-      if (startHour < earlyLimit) {
-        let firstLight = null,
-          firstDeep = null,
-          firstREM = null;
-
-        for (const s of segs) {
-          if (!firstLight && s.level === "light")
-            firstLight = new Date(s.dateTime);
-          if (!firstDeep && s.level === "deep")
-            firstDeep = new Date(s.dateTime);
-          if (!firstREM && s.level === "rem") firstREM = new Date(s.dateTime);
-        }
-
-        const firstReal = firstDeep || firstREM || firstLight;
-        if (firstReal && firstReal > firstSeg) {
-          this.dlog(
-            "debug",
-            `Adjusted early main sleep start from ${firstSeg.toISOString()} → ${firstReal.toISOString()}`,
-          );
-          return firstReal;
-        }
-      }
-    }
-
-    if (!segs.length) return this._parseISO(block && block.startTime);
-    const stabilityMin = options?.relaxed ? 5 : (this.effectiveConfig?.sleepStabilityMinutes || 20);
-
-    for (let i = 0; i < segs.length; i++) {
-      const s = segs[i];
-      if (SLEEP_LEVELS.has(s.level)) {
-        const start = this._parseISO(s.dateTime);
-        let sleepDurMin = 0;
-
-        for (
-          let j = i;
-          j < segs.length && SLEEP_LEVELS.has(segs[j].level);
-          j++
-        ) {
-          const next = segs[j + 1]
-            ? this._parseISO(segs[j + 1].dateTime)
-            : null;
-          if (next)
-            sleepDurMin += (next - this._parseISO(segs[j].dateTime)) / 60000;
-        }
-
-        const nextWake = segs[i + 1];
-        const nextWakeDur =
-          nextWake && !SLEEP_LEVELS.has(nextWake.level) && segs[i + 2]
-            ? (this._parseISO(segs[i + 2].dateTime) -
-                this._parseISO(nextWake.dateTime)) /
-              60000
-            : 0;
-
-        if (sleepDurMin >= stabilityMin && nextWakeDur < 15) {
-          this.dlog(
-            "debug",
-            `Refined sleep start detected at ${start?.toISOString() || "?"} (stable ${Math.round(sleepDurMin)} min ≥ ${stabilityMin} min)`,
-          );
-          return start;
-        }
-      }
-    }
-
-    if (block.isMainSleep) {
-      try {
-        let adjustedStart = start instanceof Date ? new Date(start) : this._parseISO(block?.startTime);
-
-        const devices = this.fitbit?.devices || [];
-
-        if ((this.effectiveConfig.intraday || this.recentHeartData?.length > 0) && devices.length > 0) {
-
-          const lastHR = this.recentHeartData
-          .filter(h => h.ts instanceof Date && h.ts < adjustedStart)
-          .sort((a, b) => b.ts - a.ts)[0];
-
-          const lastSyncDevice = devices.find(d => d.lastSyncTime);
-          const lastSync = lastSyncDevice ? new Date(lastSyncDevice.lastSyncTime) : null;
-
-          const lastActivity = [lastHR?.ts, lastSync]
-          .filter(Boolean)
-          .sort((a, b) => b - a)[0];
-
-          if (lastActivity) {
-            const bufferMinutes = this.effectiveConfig.smartEarlySleepEnabled ? 15 : 10;
-            const minSleepStart = new Date(lastActivity.getTime() + bufferMinutes * 60000);
-
-            if (adjustedStart < minSleepStart) {
-              this.dlog(
-                "info",
-                `Auto-corrected sleep start: ${adjustedStart.toLocaleTimeString("de-DE")} → ${minSleepStart.toLocaleTimeString("de-DE")} (last activity: ${lastActivity.toLocaleTimeString("de-DE")})`
-              );
-              adjustedStart = minSleepStart;
-            }
-          }
-        }
-
-        if (adjustedStart) return adjustedStart;
-
-      } catch (err) {
-        this.dlog("warn", `Auto activity correction failed: ${err.message}`);
-      }
-    }
-
-    // --- Zusatzfilter: Frühe Leichtschlaf- oder Couch-Phasen trimmen ---
-    if (block.isMainSleep && segs.length > 0) {
-      const firstDeepRem = segs.find(s => s.level === "deep" || s.level === "rem");
-      if (firstDeepRem) {
+    // 🧠 Dynamischer Herzfrequenz-"Couch"-Check (informativ)
+    try {
+      if (block.isMainSleep && this.effectiveConfig.intraday && this.recentHeartData?.length > 0) {
         const start = new Date(block.startTime);
-        const delayMin = (new Date(firstDeepRem.dateTime) - start) / 60000;
-        if (delayMin > 10 && delayMin < 180) { // Couch- oder Dösenphase erkannt
-          this.dlog("info",
-                    `[TRIM-FILTER] Main sleep start delayed by ${Math.round(delayMin)}min → real sleep starts ${firstDeepRem.dateTime}`
-          );
-          return new Date(firstDeepRem.dateTime);
+
+        // Fenstergröße automatisch an Refresh-Intervall anpassen
+        const refresh = Math.max(1, this.effectiveConfig.refresh || 5);
+        const preWindow = refresh <= 1 ? 45 : 60;   // Minuten vor Einschlafen
+        const postWindow = refresh <= 1 ? 60 : 90;  // Minuten nach Einschlafen
+        const minPoints = refresh <= 5 ? 10 : 6;    // Mindestanzahl HR-Werte
+
+        const window = this.recentHeartData.filter(p =>
+        p.ts >= new Date(start.getTime() - preWindow * 60000) &&
+        p.ts <= new Date(start.getTime() + postWindow * 60000)
+        );
+
+        if (window.length >= minPoints) {
+          const mean = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+          const before = mean(window.filter(p => p.ts < start).map(p=>p.value));
+          const after  = mean(window.filter(p => p.ts >= start).map(p=>p.value));
+          const drop = before - after;
+          this.dlog("debug", `[COUCH] HR drop ${drop.toFixed(1)} BPM (${window.length} pts, refresh=${refresh} m)`);
+        } else {
+          this.dlog("debug", `[COUCH] HR check skipped – only ${window.length} pts`);
+        }
+      }
+    } catch(e) {
+      this.dlog("warn", `HR check failed: ${e.message}`);
+    }
+
+    const SLEEP = new Set(["asleep","light","deep","rem"]);
+    const startDT = new Date(block.startTime);
+    const candidate = s => SLEEP.has(s.level);
+
+    const findStable = idx => {
+      const s = segs[idx]; if (!candidate(s)) return null;
+      const start = new Date(s.dateTime);
+      let durMin = 0;
+      for (let j=idx;j<segs.length && candidate(segs[j]);j++){
+        const cur=new Date(segs[j].dateTime);
+        const next=segs[j+1]?new Date(segs[j+1].dateTime):null;
+        if(next) durMin+=(next-cur)/60000;
+      }
+      return durMin>=stabilityMin?start:null;
+    };
+
+    // bevorzugt: Deep/REM innerhalb 3 h ab Start
+    const firstDeepRem = segs.find(s=>{
+      const t=new Date(s.dateTime);
+      return (t-startDT)<=10800000 && (s.level==="deep"||s.level==="rem");
+    });
+
+    if (firstDeepRem) {
+      const idx = segs.indexOf(firstDeepRem);
+      const stable = findStable(idx);
+      if (stable) {
+        this.dlog("debug", `[START] Deep/REM stable @ ${stable.toISOString()}`);
+        return stable;
+      }
+    }
+
+    // sonst: erster stabiler Light/Asleep
+    for (let i=0;i<segs.length;i++){
+      if (candidate(segs[i])) {
+        const stable = findStable(i);
+        if (stable) {
+          const diff = Math.round((stable - startDT)/60000);
+          if (diff>10) this.dlog("debug", `[TRIM] Start delayed ${diff} min`);
+          return stable;
         }
       }
     }
 
-    this.dlog(
-      "debug",
-      "No refined sleep phase found → fallback to block.startTime",
-    );
-    return this._parseISO(block && block.startTime);
+    this.dlog("debug", "[START] Fallback to block.startTime");
+    return this._parseISO(block.startTime);
   }
 
+  // ---- 4. Wake-Up-Erkennung -------------------------------------------------
   computeWokeUpAt(block) {
     const segs = this.getLevelSegments(block);
-    const SLEEP_LEVELS = new Set(["asleep", "light", "deep", "rem"]);
-
-    if (!segs.length) return this._parseISO(block && block.endTime);
+    const SLEEP = new Set(["asleep","light","deep","rem"]);
+    if (!segs.length) return this._parseISO(block?.endTime);
 
     let lastSleepIdx = -1;
-    for (let i = segs.length - 1; i >= 0; i--) {
-      if (SLEEP_LEVELS.has(segs[i].level)) {
-        lastSleepIdx = i;
-        break;
-      }
-    }
-    if (lastSleepIdx === -1) return this._parseISO(block && block.endTime);
+    for (let i=segs.length-1;i>=0;i--) if (SLEEP.has(segs[i].level)) { lastSleepIdx=i; break; }
+    if (lastSleepIdx===-1) return this._parseISO(block?.endTime);
 
     const s = segs[lastSleepIdx];
     const segStart = this._parseISO(s.dateTime);
+    const endOfSleep = s.seconds ? this._addSeconds(segStart,s.seconds)
+    : (segs[lastSleepIdx+1]?this._parseISO(segs[lastSleepIdx+1].dateTime)
+    : this._parseISO(block?.endTime));
 
-    let endOfLastSleep = null;
-    if (typeof s.seconds === "number") {
-      endOfLastSleep = this._addSeconds(segStart, s.seconds);
-    } else if (segs[lastSleepIdx + 1]) {
-      endOfLastSleep = this._parseISO(segs[lastSleepIdx + 1].dateTime);
-    } else {
-      endOfLastSleep = this._parseISO(block && block.endTime) || segStart;
+    const base = Number(this.effectiveConfig?.sleepStabilityMinutes) || 20;
+    const wakeStable = Math.min(base,15);
+    let wakeDur = 0;
+
+    for (let j=lastSleepIdx+1;j<segs.length && !SLEEP.has(segs[j].level);j++){
+      const wStart=this._parseISO(segs[j].dateTime);
+      const wNext = segs[j+1]?this._parseISO(segs[j+1].dateTime):null;
+      const endRef=wNext||this._parseISO(block?.endTime);
+      wakeDur += (endRef - wStart)/60000;
     }
 
-    const wakeStableMin = this.effectiveConfig?.sleepStabilityMinutes || 20;
-    let wakeDurMin = 0;
-
-    for (
-      let j = lastSleepIdx + 1;
-      j < segs.length && !SLEEP_LEVELS.has(segs[j].level);
-      j++
-    ) {
-      const wStart = this._parseISO(segs[j].dateTime);
-      const wNext = segs[j + 1] ? this._parseISO(segs[j + 1].dateTime) : null;
-      if (wNext) {
-        wakeDurMin += (wNext - wStart) / 60000;
-      } else {
-        const endTime =
-          this._parseISO(block && block.endTime) || endOfLastSleep;
-        wakeDurMin += (endTime - wStart) / 60000;
-      }
+    if (wakeDur < wakeStable) {
+      this.dlog("debug", `[WAKE] Short wake (${wakeDur} m) → early end`);
+      return endOfSleep;
     }
+    this.dlog("debug", `[WAKE] Stable wake detected (${wakeDur} m)`);
+    return endOfSleep;
+  }
 
-    if (wakeDurMin < wakeStableMin) {
-      const fallback = this._parseISO(block && block.endTime);
-      this.dlog(
-        "debug",
-        `Wake stability only ${Math.round(wakeDurMin)} min < ${wakeStableMin} min → fallback to block.endTime ${fallback?.toISOString() || "?"}`,
-      );
-      return fallback || endOfLastSleep;
-    }
+  // ---- 5. States schreiben ---------------------------------------------------
+  async writeSleepStates({fell,woke,asleepMin,inBedMin,napsAsleep,napsInBed,napsCount,naps}) {
+    const fellIso = fell instanceof Date ? fell.toISOString() : String(fell);
+    const wokeIso = woke instanceof Date ? woke.toISOString() : String(woke);
+    const fellLocal = new Date(fellIso).toLocaleString("de-DE");
+    const wokeLocal = new Date(wokeIso).toLocaleString("de-DE");
 
-    this.dlog(
-      "debug",
-      `Final wake at end of last sleep seg: ${endOfLastSleep?.toISOString() || "?"} (stable wake ${Math.round(wakeDurMin)} min ≥ ${wakeStableMin} min)`,
-    );
-
-    return endOfLastSleep;
+    await Promise.all([
+      this.setStateAsync("sleep.AsleepTotal",{val:asleepMin+napsAsleep,ack:true}),
+                      this.setStateAsync("sleep.InBedTotal",{val:inBedMin+napsInBed,ack:true}),
+                      this.setStateAsync("sleep.Main.FellAsleepAt",{val:fellIso,ack:true}),
+                      this.setStateAsync("sleep.Main.FellAsleepAtLocal",{val:fellLocal,ack:true}),
+                      this.setStateAsync("sleep.Main.WokeUpAt",{val:wokeIso,ack:true}),
+                      this.setStateAsync("sleep.Main.WokeUpAtLocal",{val:wokeLocal,ack:true}),
+                      this.setStateAsync("sleep.Naps.Asleep",{val:napsAsleep,ack:true}),
+                      this.setStateAsync("sleep.Naps.InBed",{val:napsInBed,ack:true}),
+                      this.setStateAsync("sleep.Naps.Count",{val:napsCount,ack:true}),
+                      this.setStateAsync("sleep.Naps.List",{val:JSON.stringify(naps.map(n=>({
+                        start:n.startTime,end:n.endTime,minutesAsleep:n.minutesAsleep
+                      }))),ack:true})
+    ]);
   }
 
   // =========================================================================
