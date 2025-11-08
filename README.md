@@ -49,7 +49,7 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 
 ---
 
-## 🩺 ioBroker Fitbit Adapter (v0.5.7)
+## 🩺 ioBroker Fitbit Adapter (v1.0.0)
 
 Dieser Adapter ruft **Fitbit-Daten** in ioBroker ab und stellt sie als strukturierte Datenpunkte bereit.
 Er basiert auf dem ursprünglichen Projekt von **@GermanBluefox** (*fitbit-api*)
@@ -77,14 +77,17 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 
 ---
 
-## ✨ Neue Funktionen in Version 0.5.7
+## ✨ Neue Funktionen in Version 1.0.0
 
+- Code komplett aufgeräumt, sortiert und neu Verschachtelt.
+- Nochmaliges Feintuning der Schlaflogik.
+- Fertig für Finale Version auf 1.0.0
 - Neue Option **Schlaf-Stabilität (Minuten)** zur Definition, wie lange ein Schlaf stabil sein muss, bevor er als Hauptschlaf zählt
 - Standardwert: **20 Minuten**
 - **Debug-Ausgabe** wird jetzt nur noch **einmalig beim Adapterstart** angezeigt
 - Verbesserte Struktur und Darstellung des **Debug-Tabs**
 - Interne Optimierungen für Konfigurations- und Logverhalten
-- Rückwärtskompatibel zu v0.5.6
+- Rückwärtskompatibel zu v0.5.7
 
 ---
 
@@ -169,23 +172,28 @@ Der kombinierte Filter verbindet:
 
 ## 🧾 Changelog
 
-### **0.5.7 (2025-11-05)**
+## **1.0.0 (2025-11-08)**
+- Code komplett aufgeräumt, sortiert und neu Verschachtelt.
+- Nochmaliges Feintuning der Schlaflogik.
+- Fertig für Finale Version auf 1.0.0
+
+## **0.5.7 (2025-11-05)**
 - Feintuning der "Sofazeiten"
 
-### **0.5.6 (2025-10-30)**
+## **0.5.6 (2025-10-30)**
 - Neue Einstellung **Schlaf-Stabilität (Minuten)** hinzugefügt
 - Standardwert 20 Minuten
 - Debug-Ausgabe nur noch einmalig beim Adapterstart
 - Verbesserte Darstellung im Debug-Tab
 - Optimierungen der Konfiguration und internen Logik
 
-### **0.5.5 (2025-10-28)**
+## **0.5.5 (2025-10-28)**
 - Kombinierter **Echtzeit-Frühschlaf- & SmartSleep-Filter**
 - Lange Hauptschlafphasen vor der Grenze werden akzeptiert
 - Verbesserte Debug-Ausgabe und Stabilität
 - Erweiterte Nap-Summen und Gesamtschlaf-Datenpunkte
 
-### **0.5.4 (2025-10-27)**
+## **0.5.4 (2025-10-27)**
 - Neuer **Debug- & Erweiterte-Optionen-Tab**
 - SmartSleep-Erkennung (Mindestdauer z. B. 3 h)
 - Mehrsprachige UI-Anpassungen
@@ -249,7 +257,7 @@ to deliver Fitbit data more reliably, accurately, and in real-time within ioBrok
 
 ---
 
-## 🩺 Fitbit Adapter for ioBroker (v0.5.7)
+## 🩺 Fitbit Adapter for ioBroker (v1.0.0)
 
 This adapter retrieves **Fitbit data** into ioBroker and provides structured datapoints.
 Based on the original **fitbit-api** by *@GermanBluefox*,
@@ -274,8 +282,11 @@ To use this adapter, you need a **Fitbit Developer Account**.
 
 ---
 
-## ✨ New in Version 0.5.7
+## ✨ New in Version 1.0.0
 
+- Code completely cleaned up, sorted and re-nested.
+- Further fine-tuning of the sleep logic.
+- Ready for final version to 1.0.0
 - Added **Sleep Stability (Minutes)** option for main sleep detection
 - Default set to **20 minutes**
 - Debug output now shown **once on startup only**
@@ -363,23 +374,28 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 
 ## 🧾 Changelog
 
-### **0.5.7 (2025-11-05)**
+## **1.0.0 (2025-11-08)**
+- Code completely cleaned up, sorted and re-nested.
+- Further fine-tuning of the sleep logic.
+- Ready for final version to 1.0.0
+
+## **0.5.7 (2025-11-05)**
 - Fine-tuning the "Couchtimes"
 
-### **0.5.6 (2025-10-30)**
+## **0.5.6 (2025-10-30)**
 - Added **Sleep Stability (Minutes)** configuration
 - Default value 20 minutes
 - Debug output only once on startup
 - Improved Admin UI for Debug tab
 - Configuration and logging optimized
 
-### **0.5.5 (2025-10-28)**
+## **0.5.5 (2025-10-28)**
 - Added **combined real-time EarlySleep & SmartSleep filter**
 - Long main sleeps before cutoff are now accepted
 - Improved debug output and stability
 - Added total sleep and nap summaries
 
-### **0.5.4 (2025-10-27)**
+## **0.5.4 (2025-10-27)**
 - Added **Debug & Advanced Options Tab**
 - SmartSleep detection with minimum duration setting
 - UI and translation improvements
