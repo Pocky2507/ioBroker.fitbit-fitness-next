@@ -47,6 +47,7 @@ const DEFAULTS = {
 class FitBit extends utils.Adapter {
   constructor(options) {
     super({ ...options, name: "fitbit-fitness" });
+
     this.on("ready", this.onReady.bind(this));
     this.on("stateChange", this.onStateChange.bind(this));
     this.on("unload", this.onUnload.bind(this));
@@ -65,34 +66,11 @@ class FitBit extends utils.Adapter {
     this._renewInProgress = false;
     this.FORBIDDEN_CHARS = /[.\[\],]/g;
 
-    // Verbesserte Logik – keine doppelten Ausgaben mehr
+    // 🧠 Einfaches Debug – wieder wie vorher
     this.dlog = (lvl, msg) => {
-      if (!this.log || typeof this.log[lvl] !== "function") return;
-
-      // Fehler und Warnungen immer anzeigen
-      if (["warn", "error"].includes(lvl)) {
+      if (DEBUG_SLEEP_LOG && this.log && typeof this.log[lvl] === "function") {
         this.log[lvl](msg);
-        return;
       }
-
-      // Info nur, wenn Debug nicht aktiv (vermeidet Dopplung)
-      if (lvl === "info") {
-        if (!DEBUG_SLEEP_LOG && !this.effectiveConfig?.debugEnabled) {
-          this.log.info(msg);
-        }
-        return;
-      }
-
-      // Debug nur, wenn explizit aktiviert
-      if (lvl === "debug") {
-        if (DEBUG_SLEEP_LOG || this.effectiveConfig?.debugEnabled) {
-          this.log.debug(msg);
-        }
-        return;
-      }
-
-      // Fallback für unbekannte Level
-      this.log.info(msg);
     };
   }
 
@@ -100,6 +78,7 @@ class FitBit extends utils.Adapter {
   // Adapter Start
   // =========================================================================
   async onReady() {
+
     try {
       await this.setStateAsync("info.connection", { val: false, ack: true });
       // === API Call Counter: Initialisierung ===
@@ -285,6 +264,10 @@ class FitBit extends utils.Adapter {
       };
 
       DEBUG_SLEEP_LOG = !!this.effectiveConfig.debugEnabled;
+      if (DEBUG_SLEEP_LOG) {
+        this.log.info("[DEBUG] Erweiterter Debugmodus aktiv – detaillierte Logausgaben eingeschaltet.");
+        this.dlog("debug", "[DEBUGTEST] dlog() funktioniert – Debug-Ausgaben aktiv");
+      }
 
       // --- Nur Konfiguration immer loggen (einmalig beim Start) ---
       this.log.info(
@@ -1460,26 +1443,62 @@ class FitBit extends utils.Adapter {
   }
 
   // ---- 5. States schreiben ---------------------------------------------------
-  async writeSleepStates({fell,woke,asleepMin,inBedMin,napsAsleep,napsInBed,napsCount,naps}) {
+  async writeSleepStates({fell, woke, asleepMin, inBedMin, napsAsleep, napsInBed, napsCount, naps}) {
     const fellIso = fell instanceof Date ? fell.toISOString() : String(fell);
     const wokeIso = woke instanceof Date ? woke.toISOString() : String(woke);
-    const fellLocal = new Date(fellIso).toLocaleString("de-DE");
-    const wokeLocal = new Date(wokeIso).toLocaleString("de-DE");
+
+    // ✳️ Neue lokale Formatierung: 08.11.2025 - 07:53 (keine Sekunden)
+    const fellLocal = this.formatLocalShort(fellIso);
+    const wokeLocal = this.formatLocalShort(wokeIso);
+
+    // Naps-Details vorbereiten
+    const napsFormatted = naps.map(n => ({
+      start: this.formatLocalShort(n.startTime),
+                                         end: this.formatLocalShort(n.endTime),
+                                         minutesAsleep: n.minutesAsleep,
+    }));
+
+    // Erstnap / Letzter Nap (abhängig von Config)
+    const napRef = naps.length
+    ? (this.effectiveConfig.showLastOrFirstNap ? naps[naps.length - 1] : naps[0])
+    : null;
+
+    const napFellLocal = napRef ? this.formatLocalShort(napRef.startTime) : "";
+    const napWokeLocal = napRef ? this.formatLocalShort(napRef.endTime) : "";
 
     await Promise.all([
-      this.setStateAsync("sleep.AsleepTotal",{val:asleepMin+napsAsleep,ack:true}),
-                      this.setStateAsync("sleep.InBedTotal",{val:inBedMin+napsInBed,ack:true}),
-                      this.setStateAsync("sleep.Main.FellAsleepAt",{val:fellIso,ack:true}),
-                      this.setStateAsync("sleep.Main.FellAsleepAtLocal",{val:fellLocal,ack:true}),
-                      this.setStateAsync("sleep.Main.WokeUpAt",{val:wokeIso,ack:true}),
-                      this.setStateAsync("sleep.Main.WokeUpAtLocal",{val:wokeLocal,ack:true}),
-                      this.setStateAsync("sleep.Naps.Asleep",{val:napsAsleep,ack:true}),
-                      this.setStateAsync("sleep.Naps.InBed",{val:napsInBed,ack:true}),
-                      this.setStateAsync("sleep.Naps.Count",{val:napsCount,ack:true}),
-                      this.setStateAsync("sleep.Naps.List",{val:JSON.stringify(naps.map(n=>({
-                        start:n.startTime,end:n.endTime,minutesAsleep:n.minutesAsleep
-                      }))),ack:true})
+      // Hauptschlaf
+      this.setStateAsync("sleep.AsleepTotal", { val: asleepMin + napsAsleep, ack: true }),
+                      this.setStateAsync("sleep.InBedTotal", { val: inBedMin + napsInBed, ack: true }),
+                      this.setStateAsync("sleep.Main.FellAsleepAt", { val: fellIso, ack: true }),
+                      this.setStateAsync("sleep.Main.FellAsleepAtLocal", { val: fellLocal, ack: true }),
+                      this.setStateAsync("sleep.Main.WokeUpAt", { val: wokeIso, ack: true }),
+                      this.setStateAsync("sleep.Main.WokeUpAtLocal", { val: wokeLocal, ack: true }),
+
+                      // Naps zusammengefasst
+                      this.setStateAsync("sleep.Naps.Asleep", { val: napsAsleep, ack: true }),
+                      this.setStateAsync("sleep.Naps.InBed", { val: napsInBed, ack: true }),
+                      this.setStateAsync("sleep.Naps.Count", { val: napsCount, ack: true }),
+                      this.setStateAsync("sleep.Naps.List", { val: JSON.stringify(napsFormatted), ack: true }),
+
+                      // ✳️ Neue Einzelstates für Nap Start/Ende
+                      this.setStateAsync("sleep.Naps.FellAsleepAtLocal", { val: napFellLocal, ack: true }),
+                      this.setStateAsync("sleep.Naps.WokeUpAtLocal", { val: napWokeLocal, ack: true }),
     ]);
+  }
+
+  // ============================================================
+  // Formatierungshilfe: 08.11.2025 - 07:53 (ohne Sekunden)
+  // ============================================================
+  formatLocalShort(isoStr) {
+    const dt = new Date(isoStr);
+    if (isNaN(dt)) return "";
+    const dd = String(dt.getDate()).padStart(2, "0");
+    const mm = String(dt.getMonth() + 1).padStart(2, "0");
+    const yyyy = dt.getFullYear();
+    const hh = String(dt.getHours()).padStart(2, "0");
+    const mi = String(dt.getMinutes()).padStart(2, "0");
+    return `${dd}.${mm}.${yyyy} - ${hh}:${mi}`;
   }
 
   // =========================================================================
