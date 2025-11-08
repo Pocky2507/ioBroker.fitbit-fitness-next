@@ -1443,47 +1443,56 @@ class FitBit extends utils.Adapter {
   }
 
   // ---- 5. States schreiben ---------------------------------------------------
-  async writeSleepStates({fell, woke, asleepMin, inBedMin, napsAsleep, napsInBed, napsCount, naps}) {
+  async writeSleepStates({ fell, woke, asleepMin, inBedMin, napsAsleep, napsInBed, napsCount, naps }) {
     const fellIso = fell instanceof Date ? fell.toISOString() : String(fell);
     const wokeIso = woke instanceof Date ? woke.toISOString() : String(woke);
 
-    // ✳️ Neue lokale Formatierung: 08.11.2025 - 07:53 (keine Sekunden)
+    // ✳️ Lokale Formatierung (08.11.2025 - 07:53)
     const fellLocal = this.formatLocalShort(fellIso);
     const wokeLocal = this.formatLocalShort(wokeIso);
 
-    // Naps-Details vorbereiten
+    // Nap-Zeitpunkte (Config: first/last Nap)
+    const napFellIso = naps.length
+    ? (this.effectiveConfig.showLastOrFirstNap
+    ? naps[naps.length - 1].startTime
+    : naps[0].startTime)
+    : null;
+    const napWokeIso = naps.length
+    ? (this.effectiveConfig.showLastOrFirstNap
+    ? naps[naps.length - 1].endTime
+    : naps[0].endTime)
+    : null;
+
+    const napFellLocal = napFellIso ? this.formatLocalShort(napFellIso) : "";
+    const napWokeLocal = napWokeIso ? this.formatLocalShort(napWokeIso) : "";
+
+    // Nap-Liste formatiert (für Anzeige)
     const napsFormatted = naps.map(n => ({
       start: this.formatLocalShort(n.startTime),
                                          end: this.formatLocalShort(n.endTime),
                                          minutesAsleep: n.minutesAsleep,
+                                         timeInBed: n.timeInBed
     }));
 
-    // Erstnap / Letzter Nap (abhängig von Config)
-    const napRef = naps.length
-    ? (this.effectiveConfig.showLastOrFirstNap ? naps[naps.length - 1] : naps[0])
-    : null;
-
-    const napFellLocal = napRef ? this.formatLocalShort(napRef.startTime) : "";
-    const napWokeLocal = napRef ? this.formatLocalShort(napRef.endTime) : "";
-
+    // --- Alles schreiben ---
     await Promise.all([
-      // Hauptschlaf
-      this.setStateAsync("sleep.AsleepTotal", { val: asleepMin + napsAsleep, ack: true }),
-                      this.setStateAsync("sleep.InBedTotal", { val: inBedMin + napsInBed, ack: true }),
-                      this.setStateAsync("sleep.Main.FellAsleepAt", { val: fellIso, ack: true }),
+      this.setStateAsync("sleep.AsleepTotal",        { val: asleepMin + napsAsleep, ack: true }),
+                      this.setStateAsync("sleep.InBedTotal",         { val: inBedMin + napsInBed,   ack: true }),
+                      this.setStateAsync("sleep.Main.FellAsleepAt",  { val: fellIso,   ack: true }),
                       this.setStateAsync("sleep.Main.FellAsleepAtLocal", { val: fellLocal, ack: true }),
-                      this.setStateAsync("sleep.Main.WokeUpAt", { val: wokeIso, ack: true }),
+                      this.setStateAsync("sleep.Main.WokeUpAt",      { val: wokeIso,   ack: true }),
                       this.setStateAsync("sleep.Main.WokeUpAtLocal", { val: wokeLocal, ack: true }),
 
-                      // Naps zusammengefasst
-                      this.setStateAsync("sleep.Naps.Asleep", { val: napsAsleep, ack: true }),
-                      this.setStateAsync("sleep.Naps.InBed", { val: napsInBed, ack: true }),
-                      this.setStateAsync("sleep.Naps.Count", { val: napsCount, ack: true }),
-                      this.setStateAsync("sleep.Naps.List", { val: JSON.stringify(napsFormatted), ack: true }),
+                      // 💤 Nap-States (ISO + Local)
+                      this.setStateAsync("sleep.Naps.FellAsleepAt",       { val: napFellIso,   ack: true }),
+                      this.setStateAsync("sleep.Naps.FellAsleepAtLocal",  { val: napFellLocal, ack: true }),
+                      this.setStateAsync("sleep.Naps.WokeUpAt",           { val: napWokeIso,   ack: true }),
+                      this.setStateAsync("sleep.Naps.WokeUpAtLocal",      { val: napWokeLocal, ack: true }),
 
-                      // ✳️ Neue Einzelstates für Nap Start/Ende
-                      this.setStateAsync("sleep.Naps.FellAsleepAtLocal", { val: napFellLocal, ack: true }),
-                      this.setStateAsync("sleep.Naps.WokeUpAtLocal", { val: napWokeLocal, ack: true }),
+                      this.setStateAsync("sleep.Naps.Asleep", { val: napsAsleep, ack: true }),
+                      this.setStateAsync("sleep.Naps.InBed",  { val: napsInBed,  ack: true }),
+                      this.setStateAsync("sleep.Naps.Count",  { val: napsCount,  ack: true }),
+                      this.setStateAsync("sleep.Naps.List",   { val: JSON.stringify(napsFormatted), ack: true })
     ]);
   }
 
