@@ -4,8 +4,15 @@
     ## **WORK IN PROGRESS**
 -->
 
+## **1.0.0 (2025-11-05)**
+- Code completely cleaned up, sorted and re-nested.
+- Further fine-tuning of the sleep logic.
+- Ready for final version to 1.0.0
+
+----------------------------------
+
 ## **0.5.7 (2025-11-05)**
-- Fine-tuning the "Couchtimes""
+- Fine-tuning the "Couchtimes"
 
 ## **0.5.6 (2025-10-30)**
 - Added a new setting for sleep stability (minutes)
