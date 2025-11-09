@@ -19,8 +19,8 @@
     },
     "news": {
       "1.0.0": {
-        "en": "Code completely cleaned up, sorted and re-nested, further fine-tuning of the sleep logic, ready for final version to 1.0.0"",
-        "de": "Code komplett aufgeräumt, sortiert und neu Verschachtelt, Nochmaliges Feintuning der Schlaflogik, Fertig für Finale Version auf 1.0.0"
+        "en": "Code completely cleaned up, sorted and re-nested, further fine-tuning of the sleep logic, ready for final version to 1.0.0",
+        "de": "Code komplett aufgeräumt, sortiert und neu verschachtelt, nochmaliges Feintuning der Schlaflogik, fertig für finale Version 1.0.0"
       },
       "0.5.7": {
         "en": "Feintuning der Sofazeiten",
