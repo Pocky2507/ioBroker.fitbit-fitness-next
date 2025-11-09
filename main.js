@@ -603,8 +603,26 @@ class FitBit extends utils.Adapter {
           if (renewed) return this.getFitbitRecords(true);
         }
         this.log.error("Still 401 after renew attempt. Manual re-auth may be required.");
-      } else {
-        this.log.error(`Data retrieval error: ${err}`);
+      }
+
+      // 429 → Too Many Requests (Rate Limit)
+      else if (err && err.response && err.response.status === 429) {
+        const retryAfter = Number(err.response.headers?.["retry-after"] || 120); // meist Sekunden
+        const waitMs = Math.min(retryAfter * 1000, 5 * 60 * 1000); // max. 5 Min pausieren
+        this.log.warn(`⚠️ Fitbit API rate limit hit (429). Pausing requests for ${Math.round(waitMs / 1000)} seconds.`);
+        await this.setStateAsync("info.connection", { val: false, ack: true });
+
+        // Pause, damit Fitbit sich wieder fängt
+        await new Promise(res => setTimeout(res, waitMs));
+
+        await this.setStateAsync("info.connection", { val: true, ack: true });
+        this.log.info("Resuming Fitbit requests after rate-limit pause.");
+      }
+
+      // Sonstige Fehler
+      else {
+        const msg = err?.message || JSON.stringify(err);
+        this.log.error(`Data retrieval error: ${msg}`);
       }
     }
   }
@@ -1283,10 +1301,60 @@ class FitBit extends utils.Adapter {
     const napsAsleep = napBlocks.reduce((a,b)=> a+(b.minutesAsleep||0),0);
     const napsInBed  = napBlocks.reduce((a,b)=> a+(b.timeInBed||0),0);
 
+    // ===========================================================
+    // 💤 Fitbit-Schlafphasen (Deep/Light/REM/Wake) 1:1 übernehmen
+    // ===========================================================
+    try {
+      if (main.levels?.summary) {
+        const s = main.levels.summary;
+        const deepMin  = s.deep?.minutes  || 0;
+        const lightMin = s.light?.minutes || 0;
+        const remMin   = s.rem?.minutes   || 0;
+        const wakeMin  = s.wake?.minutes  || 0;
+
+        await Promise.all([
+          this.setObjectNotExistsAsync("sleep.Deep", {
+            type: "state",
+            common: { name: "Deep Sleep (minutes)", type: "number", role: "value", unit: "min", read: true, write: false },
+                                       native: {},
+          }),
+          this.setObjectNotExistsAsync("sleep.Light", {
+            type: "state",
+            common: { name: "Light Sleep (minutes)", type: "number", role: "value", unit: "min", read: true, write: false },
+                                       native: {},
+          }),
+          this.setObjectNotExistsAsync("sleep.Rem", {
+            type: "state",
+            common: { name: "REM Sleep (minutes)", type: "number", role: "value", unit: "min", read: true, write: false },
+                                       native: {},
+          }),
+          this.setObjectNotExistsAsync("sleep.Wake", {
+            type: "state",
+            common: { name: "Awake (minutes)", type: "number", role: "value", unit: "min", read: true, write: false },
+                                       native: {},
+          })
+        ]);
+
+        await Promise.all([
+          this.setStateAsync("sleep.Deep",  { val: deepMin,  ack: true }),
+                          this.setStateAsync("sleep.Light", { val: lightMin, ack: true }),
+                          this.setStateAsync("sleep.Rem",   { val: remMin,   ack: true }),
+                          this.setStateAsync("sleep.Wake",  { val: wakeMin,  ack: true })
+        ]);
+
+        this.dlog("debug", `[SLEEP] Fitbit phases → deep=${deepMin}, light=${lightMin}, rem=${remMin}, wake=${wakeMin}`);
+      } else {
+        this.dlog("warn", "[SLEEP] No summary levels found in main block → skipping phase update");
+      }
+    } catch (err) {
+      this.log.warn(`Sleep phase update failed: ${err.message}`);
+    }
+
+    // Danach die bisherigen States schreiben
     await this.writeSleepStates({
-      fell,woke,asleepMin,inBedMin,
-      napsAsleep,napsInBed,
-      napsCount: napBlocks.length,naps: napBlocks
+      fell, woke, asleepMin, inBedMin,
+      napsAsleep, napsInBed,
+      napsCount: napBlocks.length, naps: napBlocks
     });
 
     this.dlog("info",
