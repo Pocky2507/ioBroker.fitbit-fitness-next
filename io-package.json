@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "fitbit-fitness",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "nonNpm": true,
     "installedFrom": "https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main",
     "desc": {
@@ -18,6 +18,10 @@
     "url": "https://github.com/Pocky2507/ioBroker.fitbit-fitness"
     },
     "news": {
+      "1.0.1": {
+        "en": "Added configurable late wake correction (optional time buffer for too-early wake detection).",
+        "de": "Optionale Korrektur für zu früh erkannte Aufwachzeiten hinzugefügt (konfigurierbarer Minutenpuffer)."
+      },
       "1.0.0": {
         "en": "Code completely cleaned up, sorted and re-nested, further fine-tuning of the sleep logic, ready for final version to 1.0.0",
         "de": "Code komplett aufgeräumt, sortiert und neu verschachtelt, nochmaliges Feintuning der Schlaflogik, fertig für finale Version 1.0.0"
@@ -143,7 +147,8 @@
     "debugEnabled": false,
     "smartEarlySleepEnabled": true,
     "minMainSleepHours": 3,
-    "sleepStabilityMinutes": 20
+    "sleepStabilityMinutes": 20,
+    "sleepLateWakeCorrectionMinutes": 0
   },
   "objects": [],
   "instanceObjects": [
