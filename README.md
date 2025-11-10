@@ -22,7 +22,7 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 
 **Neue Schwerpunkte dieses Forks:**
 - Erweiterte **Schlafanalyse** mit *SmartSleep*, *EarlySleep* und *Nap-Erkennung*
-- **Intraday-Modus** für 1-Minuten-Herzfrequenzwerte
+- **Intraday-Modus** Abruf mit eingestellten Refresh für die Herzfrequenzwerte
 - **Stabilitäts- und Fehler-Filter** zur Datenvalidierung
 - Überarbeitete **Admin-Oberfläche** mit Debug- und Entwickler-Tab
 - Verbesserte **Token-Verwaltung** (automatischer Refresh, Introspect-Prüfung)
@@ -233,7 +233,7 @@ to deliver Fitbit data more reliably, accurately, and in real-time within ioBrok
 
 **Key improvements in this fork:**
 - Advanced **sleep analysis** with *SmartSleep*, *EarlySleep*, and *nap detection*
-- **Intraday mode** for 1-minute heart-rate data
+- **Intraday mode** Retrieval with set refresh for the heart-rate values
 - **Stability filters** and smarter error handling
 - Reworked **Admin UI** with Debug & Developer tabs
 - Improved **OAuth2 handling** with automatic refresh and introspection
