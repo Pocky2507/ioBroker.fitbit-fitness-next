@@ -1,274 +1,323 @@
 <html>
-<head>
-  <link rel="stylesheet" type="text/css" href="../../css/adapter.css" />
-  <link rel="stylesheet" type="text/css" href="../../lib/css/materialize.css">
-  <script type="text/javascript" src="../../lib/js/jquery-3.2.1.min.js"></script>
-  <script type="text/javascript" src="../../socket.io/socket.io.js"></script>
-  <script type="text/javascript" src="../../js/translate.js"></script>
-  <script type="text/javascript" src="../../lib/js/materialize.js"></script>
-  <script type="text/javascript" src="../../js/adapter-settings.js"></script>
-  <link rel="stylesheet" type="text/css" href="style.css" />
-  <script type="text/javascript" src="words.js"></script>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="../../css/adapter.css" />
+    <link rel="stylesheet" type="text/css" href="../../lib/css/materialize.css" />
+    <script type="text/javascript" src="../../lib/js/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../../socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="../../js/translate.js"></script>
+    <script type="text/javascript" src="../../lib/js/materialize.js"></script>
+    <script type="text/javascript" src="../../js/adapter-settings.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <script type="text/javascript" src="words.js"></script>
 
-  <script type="text/javascript">
-    var oauthPopup = null;
-    function openAuthPopup(url) {
-      try { if (oauthPopup && !oauthPopup.closed) oauthPopup.close(); } catch(e) {}
-      oauthPopup = window.open(url, "fitbitAuth", "width=850,height=850,menubar=no,toolbar=no,location=yes,status=no");
-    }
-    function closeAuthPopup(hintWin) {
-      try { if (hintWin && typeof hintWin.close === 'function') hintWin.close(); } catch(e){}
-      try { if (oauthPopup && !oauthPopup.closed) oauthPopup.close(); } catch(e){}
-      oauthPopup = null;
-    }
-    function valid(s){ return s && typeof s === 'string' && s.trim() !== ''; }
+    <script type="text/javascript">
+      var oauthPopup = null;
+      function openAuthPopup(url) {
+        try {
+          if (oauthPopup && !oauthPopup.closed) oauthPopup.close();
+        } catch (e) {}
+        oauthPopup = window.open(
+          url,
+          "fitbitAuth",
+          "width=850,height=850,menubar=no,toolbar=no,location=yes,status=no"
+        );
+      }
+      function closeAuthPopup(hintWin) {
+        try {
+          if (hintWin && typeof hintWin.close === "function") hintWin.close();
+        } catch (e) {}
+        try {
+          if (oauthPopup && !oauthPopup.closed) oauthPopup.close();
+        } catch (e) {}
+        oauthPopup = null;
+      }
+      function valid(s) {
+        return s && typeof s === "string" && s.trim() !== "";
+      }
 
-    function load(settings, onChange) {
-      if (!settings) return;
-      $('.value').each(function () {
-        var $el = $(this), id = $el.attr('id');
-        if ($el.attr('type') === 'checkbox') {
-          $el.prop('checked', settings[id]).on('change', () => onChange());
-        } else {
-          $el.val(settings[id]).on('change', () => onChange()).on('keyup', () => onChange());
-        }
-      });
-      $('.table-button-do').on('click', function () {
-        var clientId = $('#clientId').val().trim();
-        var clientSecret = $('#clientSecret').val().trim();
-        var redirectUri = $('#redirectUri').val().trim();
+      function load(settings, onChange) {
+        if (!settings) return;
+        $(".value").each(function () {
+          var $el = $(this),
+            id = $el.attr("id");
+          if ($el.attr("type") === "checkbox") {
+            $el.prop("checked", settings[id]).on("change", () => onChange());
+          } else {
+            $el
+              .val(settings[id])
+              .on("change", () => onChange())
+              .on("keyup", () => onChange());
+          }
+        });
+        $(".table-button-do").on("click", function () {
+          var clientId = $("#clientId").val().trim();
+          var clientSecret = $("#clientSecret").val().trim();
+          var redirectUri = $("#redirectUri").val().trim();
 
-        if (!valid(clientId) || !valid(clientSecret) || !valid(redirectUri)) {
-          alert('Bitte Client ID, Client Secret und Redirect URL zuerst speichern.');
-          return;
-        }
+          if (!valid(clientId) || !valid(clientSecret) || !valid(redirectUri)) {
+            alert("Bitte Client ID, Client Secret und Redirect URL zuerst speichern.");
+            return;
+          }
 
-        var url = 'https://www.fitbit.com/oauth2/authorize'
-          + '?response_type=code'
-          + '&client_id=' + encodeURIComponent(clientId)
-          + '&redirect_uri=' + encodeURIComponent(redirectUri)
-          + '&scope=' + encodeURIComponent('activity heartrate location nutrition profile settings sleep social weight')
-          + '&expires_in=2592000000';
-        openAuthPopup(url);
-      });
-      onChange(false);
-      if (M) M.updateTextFields();
-    }
+          var url =
+            "https://www.fitbit.com/oauth2/authorize" +
+            "?response_type=code" +
+            "&client_id=" +
+            encodeURIComponent(clientId) +
+            "&redirect_uri=" +
+            encodeURIComponent(redirectUri) +
+            "&scope=" +
+            encodeURIComponent(
+              "activity heartrate location nutrition profile settings sleep social weight"
+            ) +
+            "&expires_in=2592000000";
+          openAuthPopup(url);
+        });
+        onChange(false);
+        if (M) M.updateTextFields();
+      }
 
-    function save(callback) {
-      var obj = {};
-      $('.value').each(function () {
-        var $this = $(this);
-        if ($this.attr('type') === 'checkbox') {
-          obj[$this.attr('id')] = $this.prop('checked');
-        } else if ($this.attr('type') === 'number') {
-          obj[$this.attr('id')] = parseFloat($this.val());
-        } else {
-          obj[$this.attr('id')] = $this.val();
-        }
-      });
-      callback(obj);
-    }
-  </script>
-</head>
+      function save(callback) {
+        var obj = {};
+        $(".value").each(function () {
+          var $this = $(this);
+          if ($this.attr("type") === "checkbox") {
+            obj[$this.attr("id")] = $this.prop("checked");
+          } else if ($this.attr("type") === "number") {
+            obj[$this.attr("id")] = parseFloat($this.val());
+          } else {
+            obj[$this.attr("id")] = $this.val();
+          }
+        });
+        callback(obj);
+      }
+    </script>
+  </head>
 
-<body>
-  <div class="m adapter-container">
-    <div class="row">
-      <div class="col s12">
-        <ul class="tabs">
-          <li class="tab col s2"><a href="#tab-main" class="translate active">Haupteinstellungen</a></li>
-          <li class="tab col s2"><a href="#tab-services" class="translate">Dienste</a></li>
-          <li class="tab col s2"><a href="#tab-mainsleep" class="translate">Hauptschlaf</a></li>
-          <li class="tab col s2"><a href="#tab-naps" class="translate">Nickerchen</a></li>
-          <li class="tab col s2"><a href="#tab-debug" class="translate">Debug</a></li>
-        </ul>
-      </div>
-
-      <!-- MAIN TAB -->
-      <div id="tab-main" class="col s12 page">
-        <div class="row"><div class="col s6"><img src="fitbit-fitness.png" class="logo"></div></div>
-        <div class="row">
-          <div class="input-field col s12 m6">
-            <input class="value" id="clientId" type="text" placeholder="Deine Client ID">
-            <label for="clientId">Client ID</label>
-          </div>
-          <div class="input-field col s12 m6">
-            <input class="value" id="clientSecret" type="text" placeholder="Dein Client Secret">
-            <label for="clientSecret">Client Secret</label>
-          </div>
-        </div>
-        <div class="row">
-          <div class="input-field col s12">
-            <input class="value" id="redirectUri" type="text" placeholder="https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html">
-            <label for="redirectUri">Redirect URL</label>
-          </div>
-        </div>
-        <div class="row generate no-iframe">
-          <a class="waves-effect waves-light btn blue table-button-do">
-            <i class="material-icons">add</i><span class="translate">Authorize</span>
-          </a>
-        </div>
-      </div>
-
-      <!-- SERVICES TAB -->
-      <div id="tab-services" class="col s12 page">
-        <div class="row"><div class="col s6"><img src="fitbit-fitness.png" class="logo"></div></div>
-
-        <div class="row no-iframe">
-          <div class="input-field col s3">
-            <i class="material-icons prefix">refresh</i>
-            <input class="value" id="refresh" type="number" placeholder="10">
-            <label for="refresh" class="translate">Abfrageintervall (Minuten)</label>
-          </div>
+  <body>
+    <div class="m adapter-container">
+      <div class="row">
+        <div class="col s12">
+          <ul class="tabs">
+            <li class="tab col s2"><a href="#tab-main" class="translate active">Haupteinstellungen</a></li>
+            <li class="tab col s2"><a href="#tab-services" class="translate">Dienste</a></li>
+            <li class="tab col s2"><a href="#tab-mainsleep" class="translate">Hauptschlaf</a></li>
+            <li class="tab col s2"><a href="#tab-naps" class="translate">Nickerchen</a></li>
+            <li class="tab col s2"><a href="#tab-debug" class="translate">Debug</a></li>
+          </ul>
         </div>
 
-        <div class="row"><div class="col s12"><h6>💾 Datendienste</h6></div></div>
-
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <input class="value" id="bodyrecords" type="checkbox">
-            <span for="bodyrecords" class="translate">Körperdaten abrufen (bodyrecords)</span>
+        <!-- MAIN TAB -->
+        <div id="tab-main" class="col s12 page">
+          <div class="row"><div class="col s6"><img src="fitbit-fitness.png" class="logo" /></div></div>
+          <div class="row">
+            <div class="input-field col s12 m6">
+              <input class="value" id="clientId" type="text" placeholder="Deine Client ID" />
+              <label for="clientId">Client ID</label>
+            </div>
+            <div class="input-field col s12 m6">
+              <input class="value" id="clientSecret" type="text" placeholder="Dein Client Secret" />
+              <label for="clientSecret">Client Secret</label>
+            </div>
           </div>
-        </div>
-
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <input class="value" id="activityrecords" type="checkbox">
-            <span for="activityrecords" class="translate">Aktivitätsdaten abrufen (activityrecords)</span>
+          <div class="row">
+            <div class="input-field col s12">
+              <input
+                class="value"
+                id="redirectUri"
+                type="text"
+                placeholder="https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html"
+              />
+              <label for="redirectUri">Redirect URL</label>
+            </div>
           </div>
-        </div>
-
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <input class="value" id="intraday" type="checkbox">
-            <span for="intraday" class="translate">Intraday-Daten abrufen (mit dem eingestellten Intervall)</span>
+          <div class="row generate no-iframe">
+            <a class="waves-effect waves-light btn blue table-button-do">
+              <i class="material-icons">add</i><span class="translate">Authorize</span>
+            </a>
           </div>
         </div>
 
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <input class="value" id="foodrecords" type="checkbox">
-            <span for="foodrecords" class="translate">Ernährungsdaten abrufen (foodrecords)</span>
+        <!-- SERVICES TAB -->
+        <div id="tab-services" class="col s12 page">
+          <div class="row"><div class="col s6"><img src="fitbit-fitness.png" class="logo" /></div></div>
+
+          <div class="row no-iframe">
+            <div class="input-field col s3">
+              <i class="material-icons prefix">refresh</i>
+              <input class="value" id="refresh" type="number" placeholder="10" />
+              <label for="refresh" class="translate">Abfrageintervall (Minuten)</label>
+            </div>
+          </div>
+
+          <div class="row"><div class="col s12"><h6>💾 Datendienste</h6></div></div>
+
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <input class="value" id="bodyrecords" type="checkbox" />
+              <span for="bodyrecords" class="translate">Körperdaten abrufen (bodyrecords)</span>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <input class="value" id="activityrecords" type="checkbox" />
+              <span for="activityrecords" class="translate">Aktivitätsdaten abrufen (activityrecords)</span>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <input class="value" id="intraday" type="checkbox" />
+              <span for="intraday" class="translate">Intraday-Daten abrufen (mit dem eingestellten Intervall)</span>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <input class="value" id="foodrecords" type="checkbox" />
+              <span for="foodrecords" class="translate">Ernährungsdaten abrufen (foodrecords)</span>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <input class="value" id="devicerecords" type="checkbox" />
+              <span for="devicerecords" class="translate">Gerätedaten abrufen (devicerecords)</span>
+            </div>
           </div>
         </div>
 
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <input class="value" id="devicerecords" type="checkbox">
-            <span for="devicerecords" class="translate">Gerätedaten abrufen (devicerecords)</span>
+        <!-- MAIN SLEEP TAB -->
+        <div id="tab-mainsleep" class="col s12 page">
+          <div class="row"><div class="col s6"><img src="fitbit-fitness.png" class="logo" /></div></div>
+
+          <div class="row"><div class="col s12"><h6>🛏️ Hauptschlaf-Erfassung</h6></div></div>
+
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <input class="value" id="sleeprecords" type="checkbox" />
+              <span for="sleeprecords" class="translate">Schlafdaten regelmäßig per Intervall abrufen</span>
+            </div>
+            <div class="input-field sleepschedule col s6">
+              <input class="value" id="sleeprecordsschedule" type="checkbox" />
+              <span for="sleeprecordsschedule" class="translate">Nur einmaligen Schlafabruf durchführen</span>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <!-- MAIN SLEEP TAB -->
-      <div id="tab-mainsleep" class="col s12 page">
-        <div class="row"><div class="col s6"><img src="fitbit-fitness.png" class="logo"></div></div>
+          <div class="row"><div class="col s12"><h6>🌙 Frühschlaf-Filter</h6></div></div>
 
-        <div class="row"><div class="col s12"><h6>🛏️ Hauptschlaf-Erfassung</h6></div></div>
-
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <input class="value" id="sleeprecords" type="checkbox">
-            <span for="sleeprecords" class="translate">Schlafdaten regelmäßig per Intervall abrufen</span>
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <input class="value" id="ignoreEarlyMainSleepEnabled" type="checkbox" />
+              <span for="ignoreEarlyMainSleepEnabled" class="translate">Frühen Hauptschlaf ignorieren</span>
+            </div>
           </div>
-          <div class="input-field sleepschedule col s6">
-            <input class="value" id="sleeprecordsschedule" type="checkbox">
-            <span for="sleeprecordsschedule" class="translate">Nur einmaligen Schlafabruf durchführen</span>
+
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <i class="material-icons prefix">schedule</i>
+              <input class="value" id="ignoreEarlyMainSleepTime" type="text" placeholder="23:00" />
+              <label for="ignoreEarlyMainSleepTime" class="translate">Grenzzeit für Frühschlaf</label>
+            </div>
           </div>
-        </div>
 
-        <div class="row"><div class="col s12"><h6>🌙 Frühschlaf-Filter</h6></div></div>
+          <div class="row"><div class="col s12"><h6>🧠 Erweiterte Schlaflogik</h6></div></div>
 
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <input class="value" id="ignoreEarlyMainSleepEnabled" type="checkbox">
-            <span for="ignoreEarlyMainSleepEnabled" class="translate">Frühen Hauptschlaf ignorieren</span>
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <input class="value" id="smartEarlySleepEnabled" type="checkbox" />
+              <span for="smartEarlySleepEnabled" class="translate">Intelligente Frühschlaf-Erkennung aktivieren</span>
+            </div>
           </div>
-        </div>
 
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <i class="material-icons prefix">schedule</i>
-            <input class="value" id="ignoreEarlyMainSleepTime" type="text" placeholder="23:00">
-            <label for="ignoreEarlyMainSleepTime" class="translate">Grenzzeit für Frühschlaf</label>
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <i class="material-icons prefix">access_time</i>
+              <input class="value" id="minMainSleepHours" type="number" min="1" max="6" step="0.5" placeholder="3" />
+              <label for="minMainSleepHours" class="translate">Minimale Hauptschlafdauer (Stunden)</label>
+            </div>
           </div>
-        </div>
 
-        <div class="row"><div class="col s12"><h6>🧠 Erweiterte Schlaflogik</h6></div></div>
-
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <input class="value" id="smartEarlySleepEnabled" type="checkbox">
-            <span for="smartEarlySleepEnabled" class="translate">Intelligente Frühschlaf-Erkennung aktivieren</span>
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <i class="material-icons prefix">timelapse</i>
+              <input class="value" id="sleepStabilityMinutes" type="number" min="5" max="60" step="1" placeholder="20" />
+              <label for="sleepStabilityMinutes" class="translate">Schlaf-Stabilität (Minuten)</label>
+            </div>
           </div>
-        </div>
 
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <i class="material-icons prefix">access_time</i>
-            <input class="value" id="minMainSleepHours" type="number" min="1" max="6" step="0.5" placeholder="3">
-            <label for="minMainSleepHours" class="translate">Minimale Hauptschlafdauer (Stunden)</label>
+          <!-- Late Wake Correction -->
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <i class="material-icons prefix">alarm_on</i>
+              <input
+                class="value"
+                id="sleepLateWakeCorrectionMinutes"
+                type="number"
+                min="0"
+                max="120"
+                step="5"
+                placeholder="0"
+              />
+              <label for="sleepLateWakeCorrectionMinutes" class="translate"
+                >Korrektur verspäteter Aufwachzeit (Minuten)</label>
+            </div>
           </div>
-        </div>
-
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <i class="material-icons prefix">timelapse</i>
-            <input class="value" id="sleepStabilityMinutes" type="number" min="5" max="60" step="1" placeholder="20">
-            <label for="sleepStabilityMinutes" class="translate">Schlaf-Stabilität (Minuten)</label>
-          </div>
-        </div>
-      </div>
-
-      <!-- NAPS TAB -->
-      <div id="tab-naps" class="col s12 page">
-        <div class="row"><div class="col s6"><img src="fitbit-fitness.png" class="logo"></div></div>
-
-        <div class="row"><div class="col s12"><h6>🕒 Nickerchen-Einstellungen</h6></div></div>
-
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <input class="value" id="showLastOrFirstNap" type="checkbox">
-            <span for="showLastOrFirstNap" class="translate">Letztes oder erstes Nickerchen anzeigen</span>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <input class="value" id="clearNapListAtNight" type="checkbox">
-            <span for="clearNapListAtNight" class="translate">Nickerchen-Liste nachts löschen</span>
-          </div>
+          <p class="col s12 grey-text text-darken-1 translate">
+            Optional: Fitbit erkennt manchmal das Aufwachen zu früh. Hier kannst du einstellen, um wie viele Minuten das
+            korrigiert werden darf (0 = aus).
+          </p>
         </div>
 
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <input class="value" id="enableDailyNapClear" type="checkbox">
-            <span for="enableDailyNapClear" class="translate">Tägliches automatisches Löschen aktivieren</span>
+        <!-- NAPS TAB -->
+        <div id="tab-naps" class="col s12 page">
+          <div class="row"><div class="col s6"><img src="fitbit-fitness.png" class="logo" /></div></div>
+          <div class="row"><div class="col s12"><h6>🕒 Nickerchen-Einstellungen</h6></div></div>
+
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <input class="value" id="showLastOrFirstNap" type="checkbox" />
+              <span for="showLastOrFirstNap" class="translate">Letztes oder erstes Nickerchen anzeigen</span>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <input class="value" id="clearNapListAtNight" type="checkbox" />
+              <span for="clearNapListAtNight" class="translate">Nickerchen-Liste nachts löschen</span>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <input class="value" id="enableDailyNapClear" type="checkbox" />
+              <span for="enableDailyNapClear" class="translate">Tägliches automatisches Löschen aktivieren</span>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <i class="material-icons prefix">access_time</i>
+              <input class="value" id="forceClearNapListTime" type="text" placeholder="02:45" />
+              <label for="forceClearNapListTime" class="translate">Zeitpunkt zum Löschen der Nap-Liste</label>
+            </div>
           </div>
         </div>
 
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <i class="material-icons prefix">access_time</i>
-            <input class="value" id="forceClearNapListTime" type="text" placeholder="02:45">
-            <label for="forceClearNapListTime" class="translate">Zeitpunkt zum Löschen der Nap-Liste</label>
-          </div>
-        </div>
-      </div>
-
-      <!-- DEBUG TAB -->
-      <div id="tab-debug" class="col s12 page">
-        <div class="row"><div class="col s6"><img src="fitbit-fitness.png" class="logo"></div></div>
-        <div class="row"><div class="col s12"><h6>🐞 Debug-Optionen</h6></div></div>
-        <div class="row">
-          <div class="input-field col s12 m6 l4">
-            <input class="value" id="debugEnabled" type="checkbox">
-            <span for="debugEnabled" class="translate">Debug-Ausgabe aktivieren</span>
+        <!-- DEBUG TAB -->
+        <div id="tab-debug" class="col s12 page">
+          <div class="row"><div class="col s6"><img src="fitbit-fitness.png" class="logo" /></div></div>
+          <div class="row"><div class="col s12"><h6>🐞 Debug-Optionen</h6></div></div>
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <input class="value" id="debugEnabled" type="checkbox" />
+              <span for="debugEnabled" class="translate">Debug-Ausgabe aktivieren</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</body>
+  </body>
 </html>
