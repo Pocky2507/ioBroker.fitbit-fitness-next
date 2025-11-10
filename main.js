@@ -1297,6 +1297,20 @@ class FitBit extends utils.Adapter {
     const asleepMin = main.minutesAsleep || 0;
     const inBedMin  = main.timeInBed || 0;
 
+    // ---- Late Wake Correction (optional) ----
+    const lateWakeLimit = this.effectiveConfig.sleepLateWakeCorrectionMinutes || 0;
+    if (lateWakeLimit > 0) {
+      const now = new Date();
+      const diffMin = Math.round((now - woke) / 60000);
+      if (diffMin > 0 && diffMin <= lateWakeLimit) {
+        this.dlog(
+          "debug",
+          `[SLEEP] LateWake correction applied: Fitbit end ${woke.toLocaleTimeString()} → corrected +${diffMin} min`
+        );
+        woke.setMinutes(woke.getMinutes() + diffMin);
+      }
+    }
+
     // Naps
     const napsAsleep = napBlocks.reduce((a,b)=> a+(b.minutesAsleep||0),0);
     const napsInBed  = napBlocks.reduce((a,b)=> a+(b.timeInBed||0),0);
