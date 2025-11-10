@@ -112,6 +112,14 @@ systemDictionary = {
     "en": "Sleep stability (minutes)",
     "de": "Schlaf-Stabilität (Minuten)"
   },
+  "sleepLateWakeCorrectionMinutes": {
+    "en": "Late wake correction (minutes)",
+    "de": "Korrektur verspäteter Aufwachzeit (Minuten)"
+  },
+  "Optional: Fitbit erkennt manchmal das Aufwachen zu früh. Hier kannst du einstellen, um wie viele Minuten das korrigiert werden darf (0 = aus).": {
+    "en": "Optional: Fitbit sometimes detects wake-up too early. Adjust how many minutes it can be corrected (0 = off).",
+    "de": "Optional: Fitbit erkennt manchmal das Aufwachen zu früh. Hier kannst du einstellen, um wie viele Minuten das korrigiert werden darf (0 = aus)."
+  },
 
   /* ===== Nap Options ===== */
   "showLastOrFirstNap": {
