@@ -4,7 +4,10 @@
     ## **WORK IN PROGRESS**
 -->
 
-## **1.0.0 (2025-11-05)**
+## **1.0.1 (2025-11-10)**
+- Added configurable late wake correction (optional time buffer for too-early wake detection)
+
+## **1.0.0 (2025-11-08)**
 - Code completely cleaned up, sorted and re-nested.
 - Further fine-tuning of the sleep logic.
 - Ready for final version to 1.0.0
