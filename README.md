@@ -49,7 +49,7 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 
 ---
 
-## 🩺 ioBroker Fitbit Adapter (v1.0.0)
+## 🩺 ioBroker Fitbit Adapter (v1.0.1)
 
 Dieser Adapter ruft **Fitbit-Daten** in ioBroker ab und stellt sie als strukturierte Datenpunkte bereit.
 Er basiert auf dem ursprünglichen Projekt von **@GermanBluefox** (*fitbit-api*)
@@ -77,8 +77,9 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 
 ---
 
-## ✨ Neue Funktionen in Version 1.0.0
+## ✨ Neue Funktionen in Version 1.0.1
 
+- Optionale Korrektur für zu früh erkannte Aufwachzeiten hinzugefügt (konfigurierbarer Minutenpuffer
 - Code komplett aufgeräumt, sortiert und neu Verschachtelt.
 - Nochmaliges Feintuning der Schlaflogik.
 - Fertig für Finale Version auf 1.0.0
@@ -162,6 +163,7 @@ Der kombinierte Filter verbindet:
 | `smartEarlySleepEnabled` | ✅ | Erkennt lange Schlafphasen automatisch |
 | `minMainSleepHours` | 3 | Mindestdauer für SmartSleep |
 | `sleepStabilityMinutes` | 20 | Dauer für stabile Schlafphase (Minuten) |
+| `sleepLateWakeCorrectionMinutes` | 0 | Optionale Korrektur für zu früh erkannte Aufwachzeiten (Minuten) |
 | `showLastOrFirstNap` | ✅ | Zeigt letztes (true) oder erstes (false) Nickerchen |
 | `clearNapListAtNight` | ✅ | Leert Nickerchenliste nach Mitternacht |
 | `enableDailyNapClear` | ❌ | Aktiviert tägliches Leeren |
@@ -171,6 +173,9 @@ Der kombinierte Filter verbindet:
 ---
 
 ## 🧾 Changelog
+
+## **1.0.1 (2025-11-10)**
+- Optionale Korrektur für zu früh erkannte Aufwachzeiten hinzugefügt (konfigurierbarer Minutenpuffer
 
 ## **1.0.0 (2025-11-08)**
 - Code komplett aufgeräumt, sortiert und neu Verschachtelt.
@@ -257,7 +262,7 @@ to deliver Fitbit data more reliably, accurately, and in real-time within ioBrok
 
 ---
 
-## 🩺 Fitbit Adapter for ioBroker (v1.0.0)
+## 🩺 Fitbit Adapter for ioBroker (v1.0.1)
 
 This adapter retrieves **Fitbit data** into ioBroker and provides structured datapoints.
 Based on the original **fitbit-api** by *@GermanBluefox*,
@@ -282,8 +287,9 @@ To use this adapter, you need a **Fitbit Developer Account**.
 
 ---
 
-## ✨ New in Version 1.0.0
+## ✨ New in Version 1.0.1
 
+- Added configurable late wake correction (optional time buffer for too-early wake detection
 - Code completely cleaned up, sorted and re-nested.
 - Further fine-tuning of the sleep logic.
 - Ready for final version to 1.0.0
@@ -364,6 +370,7 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 | `smartEarlySleepEnabled` | ✅ | Accepts long sleeps before cutoff |
 | `minMainSleepHours` | 3 | Minimum main sleep duration (hours) |
 | `sleepStabilityMinutes` | 20 | Minutes required for stable sleep |
+| `sleepLateWakeCorrectionMinutes` | 0 | optional configurable late wake correction (Minutes) |
 | `showLastOrFirstNap` | ✅ | Show last (true) or first (false) nap |
 | `clearNapListAtNight` | ✅ | Clears nap list after midnight |
 | `enableDailyNapClear` | ❌ | Enables additional daily clearing |
@@ -373,6 +380,9 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 ---
 
 ## 🧾 Changelog
+
+## **1.0.1 (2025-11-10)**
+- Optionale Korrektur für zu früh erkannte Aufwachzeiten hinzugefügt (konfigurierbarer Minutenpuffer
 
 ## **1.0.0 (2025-11-08)**
 - Code completely cleaned up, sorted and re-nested.
