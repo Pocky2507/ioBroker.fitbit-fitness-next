@@ -22,7 +22,7 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 
 **Neue Schwerpunkte dieses Forks:**
 - Erweiterte **Schlafanalyse** mit *SmartSleep*, *EarlySleep* und *Nap-Erkennung*
-- **Intraday-Modus** Abruf mit eingestellten Refresh für die Herzfrequenzwerte
+- **Intraday-Modus** mit eingestellten Refresh Abruf der Herzfrequenzwerte
 - **Stabilitäts- und Fehler-Filter** zur Datenvalidierung
 - Überarbeitete **Admin-Oberfläche** mit Debug- und Entwickler-Tab
 - Verbesserte **Token-Verwaltung** (automatischer Refresh, Introspect-Prüfung)
@@ -79,7 +79,7 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 
 ## ✨ Neue Funktionen in Version 1.0.1
 
-- Optionale Korrektur für zu früh erkannte Aufwachzeiten hinzugefügt (konfigurierbarer Minutenpuffer
+- Optionale Korrektur für zu früh erkannte Aufwachzeiten hinzugefügt (konfigurierbarer Minutenpuffer)
 - Code komplett aufgeräumt, sortiert und neu Verschachtelt.
 - Nochmaliges Feintuning der Schlaflogik.
 - Fertig für Finale Version auf 1.0.0
@@ -96,7 +96,7 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 
 - Liest Daten aus **Körper**, **Aktivitäten**, **Ernährung**, **Schlaf** und **Geräten**
 - Frei wählbares **Abrufintervall**
-- **Intraday-Modus** für 1-Minuten-Herzfrequenzdaten
+- **Intraday-Modus** mit eingestellten Refresh Abruf der Herzfrequenzwerte
 - **Nickerchen-Verwaltung** (erstes/letztes Nickerchen, automatisches Leeren)
 - **Kombinierter EarlySleep & SmartSleep-Filter** mit Echtzeitprüfung
 - **Schlaf-Stabilitäts-Option** für präzisere Nachtschlaf-Erkennung
@@ -175,7 +175,7 @@ Der kombinierte Filter verbindet:
 ## 🧾 Changelog
 
 ## **1.0.1 (2025-11-10)**
-- Optionale Korrektur für zu früh erkannte Aufwachzeiten hinzugefügt (konfigurierbarer Minutenpuffer
+- Optionale Korrektur für zu früh erkannte Aufwachzeiten hinzugefügt (konfigurierbarer Minutenpuffer)
 
 ## **1.0.0 (2025-11-08)**
 - Code komplett aufgeräumt, sortiert und neu Verschachtelt.
@@ -233,7 +233,7 @@ to deliver Fitbit data more reliably, accurately, and in real-time within ioBrok
 
 **Key improvements in this fork:**
 - Advanced **sleep analysis** with *SmartSleep*, *EarlySleep*, and *nap detection*
-- **Intraday mode** Retrieval with set refresh for the heart-rate values
+- **Intraday mode** with set refresh retrieval of heart rate values
 - **Stability filters** and smarter error handling
 - Reworked **Admin UI** with Debug & Developer tabs
 - Improved **OAuth2 handling** with automatic refresh and introspection
@@ -306,7 +306,7 @@ To use this adapter, you need a **Fitbit Developer Account**.
 
 - Retrieves **body**, **activity**, **nutrition**, **sleep**, and **device** data
 - Adjustable **refresh interval**
-- **Intraday mode** for 1-minute heart-rate data
+- **Intraday mode** with set refresh retrieval of heart rate values
 - **Nap management** (first / last nap, auto-clear)
 - **Combined EarlySleep & SmartSleep filter** with real-time clock check
 - **Sleep Stability** for improved main-sleep accuracy
@@ -382,7 +382,7 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 ## 🧾 Changelog
 
 ## **1.0.1 (2025-11-10)**
-- Optionale Korrektur für zu früh erkannte Aufwachzeiten hinzugefügt (konfigurierbarer Minutenpuffer
+- Added optional correction for wake-up times detected too early (configurable minute buffer)
 
 ## **1.0.0 (2025-11-08)**
 - Code completely cleaned up, sorted and re-nested.
