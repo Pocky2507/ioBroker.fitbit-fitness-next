@@ -49,7 +49,7 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 
 ---
 
-## 🩺 ioBroker Fitbit Adapter (v1.0.1)
+## 🩺 ioBroker Fitbit Adapter (v1.0.2)
 
 Dieser Adapter ruft **Fitbit-Daten** in ioBroker ab und stellt sie als strukturierte Datenpunkte bereit.
 Er basiert auf dem ursprünglichen Projekt von **@GermanBluefox** (*fitbit-api*)
@@ -77,8 +77,9 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 
 ---
 
-## ✨ Neue Funktionen in Version 1.0.1
+## ✨ Neue Funktionen in Version 1.0.2
 
+- Nickerchen werden auf Dauer und Herzfrequenz-Aktivität geprüft
 - Optionale Korrektur für zu früh erkannte Aufwachzeiten hinzugefügt (konfigurierbarer Minutenpuffer)
 - Code komplett aufgeräumt, sortiert und neu Verschachtelt.
 - Nochmaliges Feintuning der Schlaflogik.
@@ -164,6 +165,7 @@ Der kombinierte Filter verbindet:
 | `minMainSleepHours` | 3 | Mindestdauer für SmartSleep |
 | `sleepStabilityMinutes` | 20 | Dauer für stabile Schlafphase (Minuten) |
 | `sleepLateWakeCorrectionMinutes` | 0 | Optionale Korrektur für zu früh erkannte Aufwachzeiten (Minuten) |
+| `smartNapValidationEnabled` | ❌ | (Optional) Nickerchen werden auf Dauer und Herzfrequenz-Aktivität geprüft |
 | `showLastOrFirstNap` | ✅ | Zeigt letztes (true) oder erstes (false) Nickerchen |
 | `clearNapListAtNight` | ✅ | Leert Nickerchenliste nach Mitternacht |
 | `enableDailyNapClear` | ❌ | Aktiviert tägliches Leeren |
@@ -174,11 +176,14 @@ Der kombinierte Filter verbindet:
 
 ## 🧾 Changelog
 
+## **1.0.2 (2025-11-1)**
+- Nickerchen werden auf Dauer und Herzfrequenz-Aktivität geprüft, um Fehlinterpretationen (z. B. Lesen oder Ruhen) auszuschließen
+
 ## **1.0.1 (2025-11-10)**
 - Optionale Korrektur für zu früh erkannte Aufwachzeiten hinzugefügt (konfigurierbarer Minutenpuffer)
 
 ## **1.0.0 (2025-11-08)**
-- Code komplett aufgeräumt, sortiert und neu Verschachtelt.
+- Code komplett aufgeräumt, sortiert und neu Verschachtelt
 - Nochmaliges Feintuning der Schlaflogik.
 - Fertig für Finale Version auf 1.0.0
 
@@ -208,7 +213,7 @@ Der kombinierte Filter verbindet:
 ## 👨‍💻 Autoren
 
 - **Chris-656** (<besterquester@live.at>) – ursprünglicher Entwickler
-- **Pocky2507** – Fork & Erweiterungen (SmartSleep, Frühschlaf, Nickerchen, Intraday, Realtime, Debug, Sleep Stability)
+- **Pocky2507** (<pocky@united-websites.org>) – Fork & Erweiterungen (SmartSleep, Frühschlaf, Nickerchen, Intraday, Realtime, Debug, Sleep Stability)
 
 ---
 
@@ -262,7 +267,7 @@ to deliver Fitbit data more reliably, accurately, and in real-time within ioBrok
 
 ---
 
-## 🩺 Fitbit Adapter for ioBroker (v1.0.1)
+## 🩺 Fitbit Adapter for ioBroker (v1.0.2)
 
 This adapter retrieves **Fitbit data** into ioBroker and provides structured datapoints.
 Based on the original **fitbit-api** by *@GermanBluefox*,
@@ -287,9 +292,10 @@ To use this adapter, you need a **Fitbit Developer Account**.
 
 ---
 
-## ✨ New in Version 1.0.1
+## ✨ New in Version 1.0.2
 
-- Added configurable late wake correction (optional time buffer for too-early wake detection
+- Naps are checked for duration and heart-rate activity to exclude false naps (like resting or reading)
+- Added configurable late wake correction (optional time buffer for too-early wake detection)
 - Code completely cleaned up, sorted and re-nested.
 - Further fine-tuning of the sleep logic.
 - Ready for final version to 1.0.0
@@ -371,6 +377,7 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 | `minMainSleepHours` | 3 | Minimum main sleep duration (hours) |
 | `sleepStabilityMinutes` | 20 | Minutes required for stable sleep |
 | `sleepLateWakeCorrectionMinutes` | 0 | optional configurable late wake correction (Minutes) |
+| `smartNapValidationEnabled` | ❌ | (Optional) Naps are checked for duration and heart-rate activity to exclude false naps |
 | `showLastOrFirstNap` | ✅ | Show last (true) or first (false) nap |
 | `clearNapListAtNight` | ✅ | Clears nap list after midnight |
 | `enableDailyNapClear` | ❌ | Enables additional daily clearing |
@@ -380,6 +387,9 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 ---
 
 ## 🧾 Changelog
+
+## **1.0.2 (2025-11-11)**
+- Naps are checked for duration and heart-rate activity to exclude false naps (like resting or reading)
 
 ## **1.0.1 (2025-11-10)**
 - Added optional correction for wake-up times detected too early (configurable minute buffer)
@@ -415,7 +425,7 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 ## 👨‍💻 Authors
 
 - **Chris-656** (<besterquester@live.at>) – original developer
-- **Pocky2507** – extensions (SmartSleep, EarlySleep, Realtime, Debug, Naps, Intraday, Sleep Stability)
+- **Pocky2507** (<pocky@united-websites.org>) – extensions (SmartSleep, EarlySleep, Realtime, Debug, Naps, Intraday, Sleep Stability)
 
 ---
 
