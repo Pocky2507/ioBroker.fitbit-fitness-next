@@ -1,8 +1,8 @@
 {
   "common": {
     "name": "fitbit-fitness",
-    "version": "1.0.1",
-    "nonNpm": true,
+    "version": "1.0.2",
+    "nonNpm": false,
     "installedFrom": "https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main",
     "desc": {
       "en": "Fork of the original ioBroker Fitbit adapter by Chris (besterquester). Extended and maintained by Pocky2507 — includes advanced sleep detection, nap handling, stability threshold, and heart-rate zone metrics. Retrieves Fitbit health, activity and sleep data with nap and early-sleep filtering.",
@@ -139,6 +139,7 @@
     "clearNapListAtNight": true,
     "enableDailyNapClear": false,
     "forceClearNapListTime": "02:45",
+    "smartNapValidationEnabled": false,
     "ignoreEarlyMainSleepEnabled": true,
     "ignoreEarlyMainSleepTime": "23:00",
     "clientId": "",
