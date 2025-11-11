@@ -244,6 +244,11 @@ class FitBit extends utils.Adapter {
           this.config.debugEnabled,
           DEFAULTS.debugEnabled,
         ),
+        // 🧠 Smart Nap Validation (optional)
+        smartNapValidationEnabled: this._coalesceBool(
+          this.config.smartNapValidationEnabled,
+          false,
+        ),
         refresh: Number.isFinite(this.config.refresh)
           ? Number(this.config.refresh)
           : 5,
@@ -342,7 +347,9 @@ class FitBit extends utils.Adapter {
         unit: "min",
       },
       { id: "sleep.Naps.Count", name: "Number of naps", unit: "" },
+      { id: "sleep.Naps.ValidCount", name: "Number of validated naps", unit: "" },
     ];
+
     for (const s of minuteStates) {
       await this.setObjectNotExistsAsync(s.id, {
         type: "state",
@@ -383,7 +390,8 @@ class FitBit extends utils.Adapter {
         name: "Nap - woke up at (local de-DE)",
       },
       { id: "sleep.Naps.List", name: "List of today naps as JSON" },
-    ];
+      { id: "sleep.Naps.ValidList", name: "List of validated naps as JSON" },
+      ];
 
     for (const s of timeStates) {
       await this.setObjectNotExistsAsync(s.id, {
@@ -1315,6 +1323,22 @@ class FitBit extends utils.Adapter {
     const napsAsleep = napBlocks.reduce((a,b)=> a+(b.minutesAsleep||0),0);
     const napsInBed  = napBlocks.reduce((a,b)=> a+(b.timeInBed||0),0);
 
+    // ============================================================
+    // 🧠 Erweiterte Nap-Validierung (optional)
+    // ============================================================
+    let napsValid = napBlocks;
+
+    if (this.effectiveConfig.smartNapValidationEnabled) {
+      this.dlog("info", `[NAP] Smart nap validation enabled – checking ${napBlocks.length} naps...`);
+      napsValid = await this.validateNaps(napBlocks);
+    } else {
+      this.dlog("debug", `[NAP] Smart nap validation disabled – accepting all naps`);
+    }
+
+    const validNaps = napsValid.filter(n => n.isValid !== false);
+    await this.setStateAsync("sleep.Naps.ValidCount", { val: validNaps.length, ack: true });
+    await this.setStateAsync("sleep.Naps.ValidList", { val: JSON.stringify(validNaps, null, 2), ack: true });
+
     // ===========================================================
     // 💤 Fitbit-Schlafphasen (Deep/Light/REM/Wake) 1:1 übernehmen
     // ===========================================================
@@ -1833,6 +1857,46 @@ class FitBit extends utils.Adapter {
         ack: true,
       });
     }
+  }
+
+  async validateNaps(napBlocks) {
+    const validated = [];
+
+    for (const nap of napBlocks) {
+      const start = new Date(nap.startTime);
+      const end   = new Date(nap.endTime);
+      const duration = (end - start) / 60000;
+
+      // Kurze Naps unter 15 Minuten ignorieren
+      if (duration < 15) {
+        this.dlog("debug", `[NAP] Ignored (${start.toLocaleTimeString()} – ${end.toLocaleTimeString()}) too short (${duration} min)`);
+        validated.push({ ...nap, isValid: false });
+        continue;
+      }
+
+      // Falls Intraday-Daten vorhanden, prüfen auf Bewegung/Herzfrequenz
+      const intraday = this.recentHeartData || [];
+      const segment = intraday.filter(p => {
+        const t = new Date(p.ts);
+        return t >= start && t <= end;
+      });
+
+      const avgHR = segment.length
+      ? (segment.reduce((a, b) => a + (b.value || 0), 0) / segment.length)
+      : 0;
+
+      // Bewegung simulativ über Herzfrequenzunterschied bewerten
+      if (avgHR > 65) {
+        this.dlog("debug", `[NAP] Ignored (${start.toLocaleTimeString()}) high HR avg ${avgHR}`);
+        validated.push({ ...nap, isValid: false });
+        continue;
+      }
+
+      this.dlog("debug", `[NAP] Accepted (${start.toLocaleTimeString()} – ${end.toLocaleTimeString()}) ${duration} min`);
+      validated.push({ ...nap, isValid: true });
+    }
+
+    return validated;
   }
 
   // =========================================================================
