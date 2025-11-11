@@ -4,6 +4,9 @@
     ## **WORK IN PROGRESS**
 -->
 
+## **1.0.2 (2025-11-11)**
+- Optional: Naps are checked for duration and heart-rate activity to exclude false naps (like resting or reading)
+
 ## **1.0.1 (2025-11-10)**
 - Added configurable late wake correction (optional time buffer for too-early wake detection)
 
