@@ -138,6 +138,14 @@ systemDictionary = {
     "en": "Time to clear nap list (HH:MM)",
     "de": "Zeitpunkt zum Löschen der Nap-Liste (HH:MM)"
   },
+  "smartNapValidationEnabled": {
+    "en": "Enable smart nap validation",
+    "de": "Intelligente Nickerchen-Erkennung aktivieren"
+  },
+  "Optional: Naps are checked for duration and heart-rate activity to exclude false naps (like resting or reading).": {
+    "en": "Optional: Naps are checked for duration and heart-rate activity to exclude false naps (like resting or reading).",
+    "de": "Optional: Nickerchen werden auf Dauer und Herzfrequenz-Aktivität geprüft, um Fehlinterpretationen (z. B. Lesen oder Ruhen) auszuschließen."
+  },
 
   /* ===== Debug & Optionen ===== */
   "debugEnabled": {
