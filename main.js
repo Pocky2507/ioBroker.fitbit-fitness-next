@@ -776,10 +776,15 @@ class FitBit extends utils.Adapter {
             ack: true,
           });
         }
-
-        // Herzfrequenz-Puffer täglich zurücksetzen
-        this.recentHeartData = [];
-        this.dlog("debug", "Heart data buffer cleared for new day");
+        // Puffer nur leeren, wenn intraday aktiv und wirklich neuer Tag
+        if (
+          this.effectiveConfig.intraday &&
+          this.recentHeartData.length > 0 &&
+          this.recentHeartData[0].ts.toISOString().slice(0,10) !== today
+        ) {
+          this.recentHeartData = [];
+          this.dlog("debug", "HR buffer cleared for new day (intraday active)");
+        }
 
         this.apiCallsToday++;
         await this.setStateAsync("info.apiCalls.todayTotal", {
@@ -975,11 +980,11 @@ class FitBit extends utils.Adapter {
       this.log.warn(`getIntradayHeartRate failed: ${err}`);
     }
 
+    // Nur Daten älter als 24 Stunden entfernen – Puffer bleibt über Mitternacht
     if (this.recentHeartData?.length > 0) {
-      const today = this.getDateTime().dateString;
-      this.recentHeartData = this.recentHeartData.filter((p) =>
-        p.ts.toISOString().startsWith(today),
-      );
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 1);  // Letzte 24h behalten
+      this.recentHeartData = this.recentHeartData.filter(p => p.ts > cutoff);
     }
   }
 
@@ -1485,7 +1490,7 @@ class FitBit extends utils.Adapter {
         const refresh = Math.max(1, this.effectiveConfig.refresh || 5);
         const preWindow = refresh <= 1 ? 45 : 60;
         const postWindow = refresh <= 1 ? 60 : 90;
-        const minPoints = refresh <= 5 ? 10 : 6;
+        const minPoints = 6;  // 6 Punkte reichen (30 min bei refresh=5)
 
         const window = this.recentHeartData.filter(p =>
         p.ts >= new Date(startDT.getTime() - preWindow * 60000) &&
