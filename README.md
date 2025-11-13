@@ -414,7 +414,7 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 
 ## 🧾 Changelog
 
-## **1.0.3 (2025-11-11)**
+## **1.0.3 (2025-11-13)**
 - Smart pre-filter for movie nights, reading, TV
 - Uses HR drop (before/after sleep) to detect real sleep
 - Requires HR drop ≥ 2.5 BPM + stable phase (default 20 min)
@@ -424,7 +424,7 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 - Shift work supported
 - No false positives from evening relaxation
 
-## **1.0.2 (2025-11-11)**
+## **1.0.2 (2025-11-12)**
 - Naps are checked for duration and heart-rate activity to exclude false naps (like resting or reading)
 
 ## **1.0.1 (2025-11-10)**
