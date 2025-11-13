@@ -1,6 +1,6 @@
 {
   "name": "iobroker.fitbit-fitness",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Retrieves Fitbit health, activity, and sleep data (with naps, intraday mode, and combined real-time EarlySleep & SmartSleep filtering) for ioBroker.",
   "author": "Chris-656 <besterquester@live.at>, Pocky2507",
   "homepage": "https://github.com/Pocky2507/ioBroker.fitbit-fitness",
