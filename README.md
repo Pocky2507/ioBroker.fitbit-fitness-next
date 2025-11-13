@@ -49,7 +49,7 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 
 ---
 
-## 🩺 ioBroker Fitbit Adapter (v1.0.2)
+## 🩺 ioBroker Fitbit Adapter (v1.0.3)
 
 Dieser Adapter ruft **Fitbit-Daten** in ioBroker ab und stellt sie als strukturierte Datenpunkte bereit.
 Er basiert auf dem ursprünglichen Projekt von **@GermanBluefox** (*fitbit-api*)
@@ -77,8 +77,16 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 
 ---
 
-## ✨ Neue Funktionen in Version 1.0.2
+## ✨ Neue Funktionen in Version 1.0.3
 
+- Intelligenter Vorfilter für Filmabende, Lesen, Fernsehen
+- Verwendet den HF-Abfall (vor/nach dem Schlafen), um echten Schlaf zu erkennen
+- Erfordert Herzfrequenzabfall ≥ 2,5 BPM + stabile Phase (Standard 20 Min.)
+- Respektiert die IgnoreEarlyMainSleep-Grenze
+- Legt die Zustände HRDropAtSleep, HRBeforeSleep und HRAfterSleep fest
+- Vollständig abwärtskompatibel – keine Breaking Changes
+- Schichtarbeit unterstützt
+- Keine Fehlalarme durch abendliche Entspannung
 - Nickerchen werden auf Dauer und Herzfrequenz-Aktivität geprüft
 - Optionale Korrektur für zu früh erkannte Aufwachzeiten hinzugefügt (konfigurierbarer Minutenpuffer)
 - Code komplett aufgeräumt, sortiert und neu Verschachtelt.
@@ -176,7 +184,17 @@ Der kombinierte Filter verbindet:
 
 ## 🧾 Changelog
 
-## **1.0.2 (2025-11-1)**
+## **1.0.3 (2025-11-13)**
+- Intelligenter Vorfilter für Filmabende, Lesen, Fernsehen
+- Verwendet den HF-Abfall (vor/nach dem Schlafen), um echten Schlaf zu erkennen
+- Erfordert Herzfrequenzabfall ≥ 2,5 BPM + stabile Phase (Standard 20 Min.)
+- Respektiert die IgnoreEarlyMainSleep-Grenze
+- Legt die Zustände HRDropAtSleep, HRBeforeSleep und HRAfterSleep fest
+- Vollständig abwärtskompatibel – keine Breaking Changes
+- Schichtarbeit unterstützt
+- Keine Fehlalarme durch abendliche Entspannung
+
+## **1.0.2 (2025-11-12)**
 - Nickerchen werden auf Dauer und Herzfrequenz-Aktivität geprüft, um Fehlinterpretationen (z. B. Lesen oder Ruhen) auszuschließen
 
 ## **1.0.1 (2025-11-10)**
@@ -267,7 +285,7 @@ to deliver Fitbit data more reliably, accurately, and in real-time within ioBrok
 
 ---
 
-## 🩺 Fitbit Adapter for ioBroker (v1.0.2)
+## 🩺 Fitbit Adapter for ioBroker (v1.0.3)
 
 This adapter retrieves **Fitbit data** into ioBroker and provides structured datapoints.
 Based on the original **fitbit-api** by *@GermanBluefox*,
@@ -292,8 +310,16 @@ To use this adapter, you need a **Fitbit Developer Account**.
 
 ---
 
-## ✨ New in Version 1.0.2
+## ✨ New in Version 1.0.3
 
+- Smart pre-filter for movie nights, reading, TV
+- Uses HR drop (before/after sleep) to detect real sleep
+- Requires HR drop ≥ 2.5 BPM + stable phase (default 20 min)
+- Respects ignoreEarlyMainSleep cutoff
+- Sets HRDropAtSleep, HRBeforeSleep, HRAfterSleep states
+- Fully backward compatible – no breaking changes
+- Shift work supported
+- No false positives from evening relaxation
 - Naps are checked for duration and heart-rate activity to exclude false naps (like resting or reading)
 - Added configurable late wake correction (optional time buffer for too-early wake detection)
 - Code completely cleaned up, sorted and re-nested.
@@ -387,6 +413,16 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 ---
 
 ## 🧾 Changelog
+
+## **1.0.3 (2025-11-11)**
+- Smart pre-filter for movie nights, reading, TV
+- Uses HR drop (before/after sleep) to detect real sleep
+- Requires HR drop ≥ 2.5 BPM + stable phase (default 20 min)
+- Respects ignoreEarlyMainSleep cutoff
+- Sets HRDropAtSleep, HRBeforeSleep, HRAfterSleep states
+- Fully backward compatible – no breaking changes
+- Shift work supported
+- No false positives from evening relaxation
 
 ## **1.0.2 (2025-11-11)**
 - Naps are checked for duration and heart-rate activity to exclude false naps (like resting or reading)
