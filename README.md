@@ -81,7 +81,7 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 
 - Intelligenter Vorfilter für Filmabende, Lesen, Fernsehen
 - Verwendet den HF-Abfall (vor/nach dem Schlafen), um echten Schlaf zu erkennen
-- Erfordert Herzfrequenzabfall ≥ 2,5 BPM + stabile Phase (Standard 20 Min.)
+- Erfordert Herzfrequenzabfall ≥ 2 BPM + stabile Phase (Standard 20 Min.)
 - Respektiert die IgnoreEarlyMainSleep-Grenze
 - Legt die Zustände HRDropAtSleep, HRBeforeSleep und HRAfterSleep fest
 - Vollständig abwärtskompatibel – keine Breaking Changes
@@ -187,7 +187,7 @@ Der kombinierte Filter verbindet:
 ## **1.0.3 (2025-11-13)**
 - Intelligenter Vorfilter für Filmabende, Lesen, Fernsehen
 - Verwendet den HF-Abfall (vor/nach dem Schlafen), um echten Schlaf zu erkennen
-- Erfordert Herzfrequenzabfall ≥ 2,5 BPM + stabile Phase (Standard 20 Min.)
+- Erfordert Herzfrequenzabfall ≥ 2 BPM + stabile Phase (Standard 20 Min.)
 - Respektiert die IgnoreEarlyMainSleep-Grenze
 - Legt die Zustände HRDropAtSleep, HRBeforeSleep und HRAfterSleep fest
 - Vollständig abwärtskompatibel – keine Breaking Changes
@@ -314,7 +314,7 @@ To use this adapter, you need a **Fitbit Developer Account**.
 
 - Smart pre-filter for movie nights, reading, TV
 - Uses HR drop (before/after sleep) to detect real sleep
-- Requires HR drop ≥ 2.5 BPM + stable phase (default 20 min)
+- Requires HR drop ≥ 2 BPM + stable phase (default 20 min)
 - Respects ignoreEarlyMainSleep cutoff
 - Sets HRDropAtSleep, HRBeforeSleep, HRAfterSleep states
 - Fully backward compatible – no breaking changes
@@ -417,7 +417,7 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 ## **1.0.3 (2025-11-13)**
 - Smart pre-filter for movie nights, reading, TV
 - Uses HR drop (before/after sleep) to detect real sleep
-- Requires HR drop ≥ 2.5 BPM + stable phase (default 20 min)
+- Requires HR drop ≥ 2 BPM + stable phase (default 20 min)
 - Respects ignoreEarlyMainSleep cutoff
 - Sets HRDropAtSleep, HRBeforeSleep, HRAfterSleep states
 - Fully backward compatible – no breaking changes
