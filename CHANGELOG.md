@@ -7,7 +7,7 @@
 ## **1.0.3 (2025-11-13)**
 - Smart pre-filter for movie nights, reading, TV
 - Uses HR drop (before/after sleep) to detect real sleep
-- Requires HR drop ≥ 2.5 BPM + stable phase (default 20 min)
+- Requires HR drop ≥ 2 BPM + stable phase (default 20 min)
 - Respects ignoreEarlyMainSleep cutoff
 - Sets HRDropAtSleep, HRBeforeSleep, HRAfterSleep states
 - Fully backward compatible – no breaking changes
