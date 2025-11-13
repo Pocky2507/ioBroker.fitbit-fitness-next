@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "fitbit-fitness",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "nonNpm": false,
     "installedFrom": "https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main",
     "desc": {
@@ -10,7 +10,7 @@
     },
     "authors": [
       "Chris-656 <besterquester@live.at> (original author)",
-      "Pocky2507 (fork and maintenance)"
+      "Pocky2507 <pocky@united-websites.org> (fork and maintenance)"
     ],
     "forkOf": "iobroker-community-adapters/ioBroker.fitbit-fitness",
     "repository": {
@@ -18,17 +18,17 @@
     "url": "https://github.com/Pocky2507/ioBroker.fitbit-fitness"
     },
     "news": {
-      "1.0.1": {
-        "en": "Added configurable late wake correction (optional time buffer for too-early wake detection).",
-        "de": "Optionale Korrektur für zu früh erkannte Aufwachzeiten hinzugefügt (konfigurierbarer Minutenpuffer)."
+      "1.0.3": {
+        "en": "Smart pre-filter for movie nights, reading, TV",
+        "de": "Intelligenter Vorfilter für Filmabende, Lesen, Fernsehen."
+      },
+      "1.0.2": {
+        "en": "Naps are checked for duration and heart-rate activity to exclude false naps (like resting or reading)",
+        "de": "Nickerchen werden auf Dauer und Herzfrequenzaktivität überprüft, um falsche Nickerchen (z. B. Ruhen oder Lesen) auszuschließen."
       },
       "1.0.0": {
         "en": "Code completely cleaned up, sorted and re-nested, further fine-tuning of the sleep logic, ready for final version to 1.0.0",
         "de": "Code komplett aufgeräumt, sortiert und neu verschachtelt, nochmaliges Feintuning der Schlaflogik, fertig für finale Version 1.0.0"
-      },
-      "0.5.7": {
-        "en": "Feintuning der Sofazeiten",
-        "de": "Finetuning the Couchtimes"
       },
       "0.5.6": {
         "en": "Added configurable sleep stability threshold (default 20 min) to fine-tune refined sleep phase detection.",
@@ -96,13 +96,7 @@
       "uk": "fitbit-fitness",
       "zh-cn": "fitbit-fitness"
     },
-    "keywords": [
-      "Fitbit",
-      "Health",
-      "Fitness",
-      "Sleep",
-      "ioBroker"
-    ],
+    "keywords": ["Fitbit", "Health", "Fitness", "Sleep", "ioBroker"],
     "license": "MIT",
     "platform": "Javascript/Node.js",
     "main": "main.js",
@@ -611,6 +605,45 @@
         "role": "text",
         "name": "Main sleep - woke up at (local de-DE)",
         "type": "string",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+    {
+      "_id": "sleep.HRDropAtSleep",
+      "type": "state",
+      "common": {
+        "role": "value.health.bpm",
+        "name": "Heart rate drop at sleep begin",
+        "type": "number",
+        "unit": "bpm",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+    {
+      "_id": "sleep.HRBeforeSleep",
+      "type": "state",
+      "common": {
+        "role": "value.health.bpm",
+        "name": "Heart rate before falling asleep",
+        "type": "number",
+        "unit": "bpm",
+        "read": true,
+        "write": true
+      },
+      "native": {}
+    },
+    {
+      "_id": "sleep.HRAfterSleep",
+      "type": "state",
+      "common": {
+        "role": "value.health.bpm",
+        "name": "Heart rate after falling asleep",
+        "type": "number",
+        "unit": "bpm",
         "read": true,
         "write": true
       },
