@@ -1456,10 +1456,84 @@ class FitBit extends utils.Adapter {
     return segs;
   }
 
+  // --- SMART PREFILTER: verhindert Film-/Lese-Abende ---
+  preSleepSmartFilter(block, segs) {
+    try {
+      if (!this.recentHeartData || this.recentHeartData.length < 6) return null;
+
+      const SLEEP = new Set(["asleep","light","deep","rem"]);
+
+      // 1. erster Sleep-Level
+      const firstSleepSeg = segs.find(s => SLEEP.has(s.level));
+      if (!firstSleepSeg) return null;
+
+      const sleepStart = new Date(firstSleepSeg.dateTime);
+
+      // 2. Cutoff respektieren
+      if (this.effectiveConfig.ignoreEarlyMainSleepEnabled) {
+        const cutoff = new Date(sleepStart);
+        const [h, m] = this.effectiveConfig.ignoreEarlyMainSleepTime.split(":");
+        cutoff.setHours(Number(h), Number(m), 0, 0);
+
+        if (sleepStart < cutoff) return null;
+      }
+
+      // 3. HR-Drop grob prüfen
+      const before = this.recentHeartData
+      .filter(p => p.ts < sleepStart)
+      .slice(-15)
+      .map(p => p.value);
+
+      const after = this.recentHeartData
+      .filter(p => p.ts >= sleepStart)
+      .slice(0, 20)
+      .map(p => p.value);
+
+      if (!before.length || !after.length) return null;
+
+      const mean = arr => arr.reduce((a,b)=>a+b,0) / arr.length;
+      const drop = mean(before) - mean(after);
+
+      if (drop < 2) return null;  // kleiner HR-Drop → zu ruhig → Film/Lesen
+
+      // 4. stabile Phase benutzen (bestehende Logik)
+      const segsList = segs;
+      const S = new Set(["asleep","light","deep","rem"]);
+      const findStable = () => {
+        for (let i = 0; i < segsList.length; i++) {
+          if (!S.has(segsList[i].level)) continue;
+          const start = new Date(segsList[i].dateTime);
+          let dur = 0;
+          for (let j = i; j < segsList.length && S.has(segsList[j].level); j++) {
+            const cur = new Date(segsList[j].dateTime);
+            const nxt = segsList[j+1] ? new Date(segsList[j+1].dateTime) : null;
+            if (nxt) dur += (nxt - cur) / 60000;
+          }
+          if (dur >= (this.effectiveConfig.sleepStabilityMinutes || 20)) return start;
+        }
+        return null;
+      };
+
+      const stable = findStable();
+      if (!stable) return null;
+
+      this.dlog("debug", `[SMART] Prefilter accepted stable sleep @ ${stable.toISOString()} (HR drop ${drop.toFixed(1)})`);
+      return stable;
+
+    } catch (e) {
+      this.dlog("warn", `SmartPrefilter error: ${e.message}`);
+      return null;
+    }
+  }
+
   // ---- 3. Fell-Asleep-Erkennung (mit Cutoff + HR-Analyse + States) ------------
   async computeFellAsleepAt(block, options = {}) {
     const segs = this.getLevelSegments(block);
     if (!segs.length) return this._parseISO(block?.startTime);
+
+    // --- SMART PREFILTER ---
+    const smart = this.preSleepSmartFilter(block, segs);
+    if (smart) return smart;
 
     const baseStable = Number(this.effectiveConfig?.sleepStabilityMinutes) || 20;
     const stabilityMin = options.relaxed ? Math.max(5, baseStable / 2) : baseStable;
@@ -1490,7 +1564,7 @@ class FitBit extends utils.Adapter {
         const refresh = Math.max(1, this.effectiveConfig.refresh || 5);
         const preWindow = refresh <= 1 ? 45 : 60;
         const postWindow = refresh <= 1 ? 60 : 90;
-        const minPoints = 6;  // 6 Punkte reichen (30 min bei refresh=5)
+        const minPoints = 6;
 
         const window = this.recentHeartData.filter(p =>
         p.ts >= new Date(startDT.getTime() - preWindow * 60000) &&
@@ -1500,23 +1574,33 @@ class FitBit extends utils.Adapter {
         if (window.length >= minPoints) {
           const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
           const before = mean(window.filter(p => p.ts < startDT).map(p => p.value));
-          const after = mean(window.filter(p => p.ts >= startDT).map(p => p.value));
-          const drop = before - after;
+          const after  = mean(window.filter(p => p.ts >= startDT).map(p => p.value));
+          const drop   = before - after;
 
           this.dlog("debug", `[COUCH] HR drop ${drop.toFixed(1)} BPM (${window.length} pts, refresh=${refresh}m)`);
 
-          // States setzen
           await Promise.all([
-            this.setStateAsync("sleep.HRDropAtSleep", { val: drop.toFixed(1), ack: true }),
-                            this.setStateAsync("sleep.HRBeforeSleep", { val: before.toFixed(1), ack: true }),
-                            this.setStateAsync("sleep.HRAfterSleep", { val: after.toFixed(1), ack: true })
+            this.setStateAsync("sleep.HRDropAtSleep", { val: Number(drop.toFixed(1)), ack: true }),
+                            this.setStateAsync("sleep.HRBeforeSleep", { val: Number(before.toFixed(1)), ack: true }),
+                            this.setStateAsync("sleep.HRAfterSleep",  { val: Number(after.toFixed(1)),  ack: true })
           ]);
+
         } else {
           this.dlog("debug", `[COUCH] HR check skipped – only ${window.length} pts`);
-          await this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true });
+          await Promise.all([
+            this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true }),
+                            this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true }),
+                            this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true })
+          ]);
         }
+
       } catch (e) {
         this.dlog("warn", `HR check failed: ${e.message}`);
+        await Promise.all([
+          this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true }),
+                          this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true }),
+                          this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true })
+        ]);
       }
     }
 
