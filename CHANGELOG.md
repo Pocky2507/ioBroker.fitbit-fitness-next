@@ -1,8 +1,9 @@
 # 📜 Changelog
 
-<--
-    ## **WORK IN PROGRESS**
 -->
+    ## **WORK IN PROGRESS**
+    Preparation for History Log over 90 days. This ensures a very personal sleep evaluation.
+<--
 
 ## **1.0.3 (2025-11-13)**
 - Smart pre-filter for movie nights, reading, TV
