@@ -14,8 +14,8 @@
     ],
     "forkOf": "iobroker-community-adapters/ioBroker.fitbit-fitness",
     "repository": {
-    "type": "git",
-    "url": "https://github.com/Pocky2507/ioBroker.fitbit-fitness"
+      "type": "git",
+      "url": "https://github.com/Pocky2507/ioBroker.fitbit-fitness"
     },
     "news": {
       "1.0.3": {
@@ -646,6 +646,36 @@
         "unit": "bpm",
         "read": true,
         "write": true
+      },
+      "native": {}
+    },
+    {
+      "_id": "sleep.History",
+      "type": "channel",
+      "common": { "name": "Sleep History" },
+      "native": {}
+    },
+    {
+      "_id": "sleep.History.JSON",
+      "type": "state",
+      "common": {
+        "name": "History of sleep data (JSON)",
+        "type": "string",
+        "role": "json",
+        "read": true,
+        "write": false
+      },
+      "native": {}
+    },
+    {
+      "_id": "sleep.History.LastEntry",
+      "type": "state",
+      "common": {
+        "name": "Last history entry",
+        "type": "string",
+        "role": "json",
+        "read": true,
+        "write": false
       },
       "native": {}
     },
