@@ -1317,6 +1317,33 @@ class FitBit extends utils.Adapter {
       return false;
     }
 
+    // ----------------------------------------------------------------------
+    // 🧠 DSPP – Duplicate Sleep Packet Protection
+    // Wenn mehrere Sleep-Blocks mit identischen IDs kommen (z.B. nachts +
+    // morgens), NUR den finalen verarbeiten.
+    // ----------------------------------------------------------------------
+    if (filtered.length > 1) {
+      const unique = new Map();
+      for (const b of filtered) {
+        const key = b.logId || `${b.startTime}_${b.endTime}`;
+        const existing = unique.get(key);
+
+        // den neueren = längeren Block behalten
+        if (!existing || (b.timeInBed || 0) > (existing.timeInBed || 0)) {
+          unique.set(key, b);
+        }
+      }
+
+      const deduped = [...unique.values()];
+      if (deduped.length !== filtered.length) {
+        this.dlog("info",
+                  `[DSPP] Duplicate Fitbit sleep packets detected → using ${deduped.length} of ${filtered.length}`
+        );
+      }
+      filtered.length = 0;
+      filtered.push(...deduped);
+    }
+
     // Hauptschlaf und Naps trennen
     const mainBlocks = filtered.filter(b => b.isMainSleep);
     const napBlocks  = filtered.filter(b => !b.isMainSleep);
@@ -1561,6 +1588,8 @@ class FitBit extends utils.Adapter {
     // === Herzfrequenz-"Couch"-Check (informativ + States) ===
     if (block.isMainSleep && this.effectiveConfig.intraday && this.recentHeartData?.length > 0) {
       try {
+        // startDT kommt von oben – NICHT erneut definieren!
+
         const refresh = Math.max(1, this.effectiveConfig.refresh || 5);
         const preWindow = refresh <= 1 ? 45 : 60;
         const postWindow = refresh <= 1 ? 60 : 90;
@@ -1778,6 +1807,64 @@ class FitBit extends utils.Adapter {
                       this.setStateAsync("sleep.Naps.Count",  { val: napsCount,  ack: true }),
                       this.setStateAsync("sleep.Naps.List",   { val: JSON.stringify(napsFormatted), ack: true })
     ]);
+
+    // === Sleep History Update ===
+    try {
+      const historyState = await this.getStateAsync("sleep.History.JSON");
+      let history = [];
+
+      // Vorherige History laden
+      if (historyState && historyState.val) {
+        try {
+          history = JSON.parse(historyState.val);
+          if (!Array.isArray(history)) history = [];
+        } catch (e) {
+          history = [];
+        }
+      }
+
+      // Neuer History-Eintrag
+      const entry = {
+        date: fellIso.substring(0, 10),
+        fellAsleepAt: fellIso,
+        wokeUpAt: wokeIso,
+        asleepMinutes: asleepMin,
+        inBedMinutes: inBedMin,
+        hrBefore: await this.getStateAsync("sleep.HRBeforeSleep").then(s => s?.val ?? null),
+        hrAfter:  await this.getStateAsync("sleep.HRAfterSleep").then(s => s?.val ?? null),
+        hrDrop:   await this.getStateAsync("sleep.HRDropAtSleep").then(s => s?.val ?? null),
+        deep:  await this.getStateAsync("sleep.Deep").then(s => s?.val ?? null),
+        light: await this.getStateAsync("sleep.Light").then(s => s?.val ?? null),
+        rem:   await this.getStateAsync("sleep.Rem").then(s => s?.val ?? null),
+        wake:  await this.getStateAsync("sleep.Wake").then(s => s?.val ?? null),
+        naps: napsCount
+      };
+
+      // Tag ersetzen, wenn schon vorhanden
+      const idx = history.findIndex(h => h.date === entry.date);
+      if (idx >= 0) history[idx] = entry;
+      else history.push(entry);
+
+      // Alte Einträge auf 90 Tage begrenzen
+      const MAX_DAYS = 90;
+      history = history.slice(-MAX_DAYS);
+
+      // Speicherung
+      await this.setStateAsync("sleep.History.JSON", {
+        val: JSON.stringify(history, null, 2),
+                               ack: true
+      });
+
+      await this.setStateAsync("sleep.History.LastEntry", {
+        val: JSON.stringify(entry, null, 2),
+                               ack: true
+      });
+
+      this.dlog("info", `[HISTORY] Saved sleep entry for ${entry.date} (History size: ${history.length})`);
+
+    } catch (e) {
+      this.log.warn(`History update failed: ${e.message}`);
+    }
   }
 
   // ============================================================
@@ -1793,6 +1880,7 @@ class FitBit extends utils.Adapter {
     const mi = String(dt.getMinutes()).padStart(2, "0");
     return `${dd}.${mm}.${yyyy} - ${hh}:${mi}`;
   }
+
 
   // =========================================================================
   // Token Introspect (optional)
