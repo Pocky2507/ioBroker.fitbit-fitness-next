@@ -1,7 +1,7 @@
 # 📜 Changelog
 
 -->
-    ## **WORK IN PROGRESS**
+    ## **WORK IN PROGRESS**  
     Preparation for History Log over 90 days. This ensures a very personal sleep evaluation.
 <--
 
