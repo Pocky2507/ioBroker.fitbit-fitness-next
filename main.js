@@ -298,6 +298,14 @@ class FitBit extends utils.Adapter {
       if (this.fitbit.status === 200) {
         await this.setStateAsync("info.connection", { val: true, ack: true });
         await this.initCustomSleepStates();
+
+        // Devices Channel
+        await this.setObjectNotExistsAsync("devices", {
+          type: "channel",
+          common: { name: "FITBIT Devices" },
+          native: {},
+        });
+
         this.initSleepSchedule();
         await this.getFitbitRecords();
         if (this.updateInterval) {
@@ -326,82 +334,51 @@ class FitBit extends utils.Adapter {
   }
 
   // =========================================================================
-  // Sleep States anlegen (inkl. HR-Analyse)
+  // Sleep States anlegen (inkl. HR-Analyse + History)
   // =========================================================================
   async initCustomSleepStates() {
+
+    // ---------------------------------------------------------------------------
+    // Minuten-States
+    // ---------------------------------------------------------------------------
     const minuteStates = [
-      {
-        id: "sleep.AsleepTotal",
-        name: "Total minutes asleep (incl. naps)",
-        unit: "min",
-      },
-      {
-        id: "sleep.InBedTotal",
-        name: "Total minutes in bed (incl. naps)",
-        unit: "min",
-      },
+      { id: "sleep.AsleepTotal", name: "Total minutes asleep (incl. naps)", unit: "min" },
+      { id: "sleep.InBedTotal", name: "Total minutes in bed (incl. naps)", unit: "min" },
       { id: "sleep.Naps.Asleep", name: "Minutes asleep in naps", unit: "min" },
-      {
-        id: "sleep.Naps.InBed",
-        name: "Minutes in bed during naps",
-        unit: "min",
-      },
+      { id: "sleep.Naps.InBed", name: "Minutes in bed during naps", unit: "min" },
       { id: "sleep.Naps.Count", name: "Number of naps", unit: "" },
-      { id: "sleep.Naps.ValidCount", name: "Number of validated naps", unit: "" },
+      { id: "sleep.Naps.ValidCount", name: "Number of validated naps", unit: "" }
     ];
+
     for (const s of minuteStates) {
       await this.setObjectNotExistsAsync(s.id, {
         type: "state",
-        common: {
-          name: s.name,
-          type: "number",
-          role: "value",
-          unit: s.unit,
-          read: true,
-          write: true,
-        },
-        native: {},
+        common: { name: s.name, type: "number", role: "value", unit: s.unit, read: true, write: true },
+        native: {}
       });
     }
 
+    // ---------------------------------------------------------------------------
+    // Zeit-States
+    // ---------------------------------------------------------------------------
     const timeStates = [
-      {
-        id: "sleep.Main.FellAsleepAt",
-        name: "Main sleep - fell asleep at (ISO)",
-      },
-      {
-        id: "sleep.Main.FellAsleepAtLocal",
-        name: "Main sleep - fell asleep at (local de-DE)",
-      },
+      { id: "sleep.Main.FellAsleepAt", name: "Main sleep - fell asleep at (ISO)" },
+      { id: "sleep.Main.FellAsleepAtLocal", name: "Main sleep - fell asleep at (local de-DE)" },
       { id: "sleep.Main.WokeUpAt", name: "Main sleep - woke up at (ISO)" },
-      {
-        id: "sleep.Main.WokeUpAtLocal",
-        name: "Main sleep - woke up at (local de-DE)",
-      },
+      { id: "sleep.Main.WokeUpAtLocal", name: "Main sleep - woke up at (local de-DE)" },
       { id: "sleep.Naps.FellAsleepAt", name: "Nap - fell asleep at (ISO)" },
-      {
-        id: "sleep.Naps.FellAsleepAtLocal",
-        name: "Nap - fell asleep at (local de-DE)",
-      },
+      { id: "sleep.Naps.FellAsleepAtLocal", name: "Nap - fell asleep at (local de-DE)" },
       { id: "sleep.Naps.WokeUpAt", name: "Nap - woke up at (ISO)" },
-      {
-        id: "sleep.Naps.WokeUpAtLocal",
-        name: "Nap - woke up at (local de-DE)",
-      },
+      { id: "sleep.Naps.WokeUpAtLocal", name: "Nap - woke up at (local de-DE)" },
       { id: "sleep.Naps.List", name: "List of today naps as JSON" },
-      { id: "sleep.Naps.ValidList", name: "List of validated naps as JSON" },
+      { id: "sleep.Naps.ValidList", name: "List of validated naps as JSON" }
     ];
+
     for (const s of timeStates) {
       await this.setObjectNotExistsAsync(s.id, {
         type: "state",
-        common: {
-          name: s.name,
-          type: "string",
-          role: "text",
-          read: true,
-          write: true,
-        },
-        native: {},
+        common: { name: s.name, type: "string", role: "text", read: true, write: true },
+        native: {}
       });
     }
 
@@ -410,40 +387,24 @@ class FitBit extends utils.Adapter {
     // ---------------------------------------------------------------------------
     await this.setObjectNotExistsAsync("sleep.Recalculate", {
       type: "state",
-      common: {
-        name: "Recalculate sleep data from last RawData",
-        type: "boolean",
-        role: "button",
-        read: true,
-        write: true,
-      },
-      native: {},
+      common: { name: "Recalculate sleep data from last RawData", type: "boolean", role: "button", read: true, write: true },
+      native: {}
     });
+
     await this.setObjectNotExistsAsync("sleep.RawData", {
       type: "state",
-      common: {
-        name: "Last raw sleep JSON from Fitbit",
-        type: "string",
-        role: "json",
-        read: true,
-        write: false,
-      },
-      native: {},
+      common: { name: "Last raw sleep JSON from Fitbit", type: "string", role: "json", read: true, write: false },
+      native: {}
     });
+
     await this.setObjectNotExistsAsync("sleep.LastRecalculated", {
       type: "state",
-      common: {
-        name: "Timestamp of last recalculation",
-        type: "string",
-        role: "date",
-        read: true,
-        write: false,
-      },
-      native: {},
+      common: { name: "Timestamp of last recalculation", type: "string", role: "date", read: true, write: false },
+      native: {}
     });
 
     // ---------------------------------------------------------------------------
-    // NEU: HR-Analyse States
+    // HR-Analyse States
     // ---------------------------------------------------------------------------
     const hrStates = [
       { id: "sleep.HRDropAtSleep", name: "Herzfrequenzabfall beim Einschlafen", unit: "BPM" },
@@ -454,27 +415,33 @@ class FitBit extends utils.Adapter {
     for (const s of hrStates) {
       await this.setObjectNotExistsAsync(s.id, {
         type: "state",
-        common: {
-          name: s.name,
-          type: "number",
-          role: "value",
-          unit: s.unit,
-          read: true,
-          write: false,
-        },
-        native: {},
+        common: { name: s.name, type: "number", role: "value", unit: s.unit, read: true, write: false },
+        native: {}
       });
     }
 
     // ---------------------------------------------------------------------------
-    // Devices Channel
+    // Sleep History States
     // ---------------------------------------------------------------------------
-    await this.setObjectNotExistsAsync("devices", {
+    await this.setObjectNotExistsAsync("sleep.History", {
       type: "channel",
-      common: { name: "FITBIT Devices" },
-      native: {},
+      common: { name: "Sleep History" },
+      native: {}
     });
-  }
+
+    await this.setObjectNotExistsAsync("sleep.History.JSON", {
+      type: "state",
+      common: { name: "History of sleep data (JSON)", type: "string", role: "json", read: true, write: false },
+                                       native: {}
+    });
+
+    await this.setObjectNotExistsAsync("sleep.History.LastEntry", {
+      type: "state",
+      common: { name: "Last history entry", type: "string", role: "json", read: true, write: false },
+      native: {}
+    });
+
+  } // <<< END of initCustomSleepStates()
 
   // =========================================================================
   // Login + Tokenprüfung
