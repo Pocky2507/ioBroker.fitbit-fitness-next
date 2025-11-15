@@ -26,6 +26,9 @@ const axiosTimeout = 15000;
 const BASE_URL = "https://api.fitbit.com/1/user/";
 const BASE2_URL = "https://api.fitbit.com/1.2/user/";
 const HEART_RATE_ZONE_RANGES = ["customHeartRateZones", "heartRateZones"];
+// Wie weit darf der berechnete Einschlafzeitpunkt maximal NACH dem Fitbit-Start liegen?
+// Schutz gegen Fälle wie: Fitbit 23:20 → Adapter rutscht auf 00:55
+const MAX_SLEEP_START_DELAY_MINUTES = 45; // Anpassen möglich (z. B. 60)
 
 // -----------------------------------------------------------------------------
 // Backward-compat Defaults (werden über Admin-Config übersteuert)
@@ -1520,15 +1523,31 @@ class FitBit extends utils.Adapter {
     }
   }
 
-  // ---- 3. Fell-Asleep-Erkennung (mit Cutoff + HR-Analyse + States) ------------
+  // ---- 3. Fell-Asleep-Erkennung (mit Cutoff + HR-Analyse + Sicherheitsgrenze) ------------
   async computeFellAsleepAt(block, options = {}) {
     const segs = this.getLevelSegments(block);
     if (!segs.length) return this._parseISO(block?.startTime);
 
-    // --- SMART PREFILTER ---
-    const smart = this.preSleepSmartFilter(block, segs);
-    if (smart) return smart;
+    const startDT = new Date(block.startTime);
 
+    // --- SMART PREFILTER (Couch-Filter per HR) ---
+    // Wenn er uns einen plausiblen Zeitpunkt liefert, nehmen wir den.
+    const smart = this.preSleepSmartFilter(block, segs);
+    if (smart instanceof Date && !isNaN(smart)) {
+      const diffMin = Math.round((smart - startDT) / 60000);
+      // Sicherheitsgrenze: niemals mehr als MAX_SLEEP_START_DELAY_MINUTES nach hinten
+      if (diffMin > MAX_SLEEP_START_DELAY_MINUTES) {
+        this.dlog(
+          "warn",
+          `[START] SmartPrefilter wollte Einschlafzeit um ${diffMin}min nach hinten verschieben (> ${MAX_SLEEP_START_DELAY_MINUTES}) → wir bleiben bei Fitbit-StartTime.`,
+        );
+        return startDT;
+      }
+      this.dlog("debug", `[START] Using SmartPrefilter result @ ${smart.toISOString()} (Δ ${diffMin}min)`);
+      return smart;
+    }
+
+    // --- Basis-Stabilitätswert (z.B. 20min) ---
     const baseStable = Number(this.effectiveConfig?.sleepStabilityMinutes) || 20;
     const stabilityMin = options.relaxed ? Math.max(5, baseStable / 2) : baseStable;
     const SLEEP = new Set(["asleep", "light", "deep", "rem"]);
@@ -1549,75 +1568,29 @@ class FitBit extends utils.Adapter {
       return null;
     };
 
-    const startDT = new Date(block.startTime);
     const threeHours = 3 * 60 * 60 * 1000;
 
-    // === Herzfrequenz-"Couch"-Check (informativ + States) ===
-    if (block.isMainSleep && this.effectiveConfig.intraday && this.recentHeartData?.length > 0) {
-      try {
-        // startDT kommt von oben – NICHT erneut definieren!
-
-        const refresh = Math.max(1, this.effectiveConfig.refresh || 5);
-        const preWindow = refresh <= 1 ? 45 : 60;
-        const postWindow = refresh <= 1 ? 60 : 90;
-        const minPoints = 6;
-
-        const window = this.recentHeartData.filter(p =>
-        p.ts >= new Date(startDT.getTime() - preWindow * 60000) &&
-        p.ts <= new Date(startDT.getTime() + postWindow * 60000)
-        );
-
-        if (window.length >= minPoints) {
-          const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
-          const before = mean(window.filter(p => p.ts < startDT).map(p => p.value));
-          const after  = mean(window.filter(p => p.ts >= startDT).map(p => p.value));
-          const drop   = before - after;
-
-          this.dlog("debug", `[COUCH] HR drop ${drop.toFixed(1)} BPM (${window.length} pts, refresh=${refresh}m)`);
-
-          await Promise.all([
-            this.setStateAsync("sleep.HRDropAtSleep", { val: Number(drop.toFixed(1)), ack: true }),
-                            this.setStateAsync("sleep.HRBeforeSleep", { val: Number(before.toFixed(1)), ack: true }),
-                            this.setStateAsync("sleep.HRAfterSleep",  { val: Number(after.toFixed(1)),  ack: true })
-          ]);
-
-        } else {
-          this.dlog("debug", `[COUCH] HR check skipped – only ${window.length} pts`);
-          await Promise.all([
-            this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true }),
-                            this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true }),
-                            this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true })
-          ]);
-        }
-
-      } catch (e) {
-        this.dlog("warn", `HR check failed: ${e.message}`);
-        await Promise.all([
-          this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true }),
-                          this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true }),
-                          this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true })
-        ]);
-      }
-    }
-
-    // === 1. Cutoff korrekt berechnen ===
+    // === 1. Cutoff korrekt berechnen (Frühschlaf-Filter) ===
     let cutoffDT = null;
     let searchStartIdx = 0;
 
     if (this.effectiveConfig.ignoreEarlyMainSleepEnabled && this.effectiveConfig.ignoreEarlyMainSleepTime) {
       const [h, m] = this.effectiveConfig.ignoreEarlyMainSleepTime.split(":").map(Number);
       if (!isNaN(h) && !isNaN(m)) {
+        // Lokale Zeit des Startblocks bestimmen
         const localStart = new Date(startDT.getTime() + startDT.getTimezoneOffset() * 60000);
         const year = localStart.getFullYear();
         const month = localStart.getMonth();
         let day = localStart.getDate();
 
         cutoffDT = new Date(year, month, day, h, m, 0);
-        if (startDT < cutoffDT) {
+        // Wenn der Block vor dem Cutoff liegt, gilt die nächste Nacht
+        if (localStart < cutoffDT) {
           cutoffDT.setDate(cutoffDT.getDate() + 1);
         }
+        // wieder zurück in UTC
         cutoffDT = new Date(cutoffDT.getTime() - cutoffDT.getTimezoneOffset() * 60000);
-        this.dlog("debug", `[START] Cutoff: ${cutoffDT.toISOString()} (from ${this.effectiveConfig.ignoreEarlyMainSleepTime})`);
+        this.dlog("debug", `[START] Cutoff (UTC): ${cutoffDT.toISOString()} (from ${this.effectiveConfig.ignoreEarlyMainSleepTime})`);
       }
     }
 
@@ -1628,10 +1601,10 @@ class FitBit extends utils.Adapter {
           break;
         }
       }
-      this.dlog("debug", `[START] Searching from idx ${searchStartIdx} (cutoff: ${cutoffDT.toISOString()})`);
+      this.dlog("debug", `[START] Searching stable sleep segments from idx ${searchStartIdx} (cutoff reached)`);
     }
 
-    // === 2. Deep/REM ab Cutoff ===
+    // === 2. Deep/REM ab Cutoff bevorzugen ===
     const deepRemIdx = (() => {
       for (let i = searchStartIdx; i < segs.length; i++) {
         const t = new Date(segs[i].dateTime);
@@ -1641,50 +1614,74 @@ class FitBit extends utils.Adapter {
       return -1;
     })();
 
+    let candidateDT = null;
+
     if (deepRemIdx >= 0) {
       const stable = findStableFrom(deepRemIdx);
       if (stable) {
-        this.dlog("debug", `[START] Deep/REM stable @ ${stable.toISOString()}`);
-        return stable;
+        this.dlog("debug", `[START] Deep/REM-based stable sleep @ ${stable.toISOString()}`);
+        candidateDT = stable;
       }
     }
 
-    // === 3. Stabile Phase ab Cutoff ===
-    const stableFromCutoff = findStableFrom(searchStartIdx);
-    if (stableFromCutoff) {
-      const diff = Math.round((stableFromCutoff - startDT) / 60000);
-      if (diff > 10) this.dlog("debug", `[TRIM] Delayed ${diff} min (from cutoff)`);
-      return stableFromCutoff;
-    }
-
-    // === 4. Fallback: Deep/REM ab Start ===
-    const deepRemFallbackIdx = (() => {
-      for (let i = 0; i < segs.length; i++) {
-        const t = new Date(segs[i].dateTime);
-        if ((t - startDT) > threeHours) break;
-        if (segs[i].level === "deep" || segs[i].level === "rem") return i;
-      }
-      return -1;
-    })();
-
-    if (deepRemFallbackIdx >= 0) {
-      const stable = findStableFrom(deepRemFallbackIdx);
-      if (stable) {
-        this.dlog("debug", `[START] Fallback Deep/REM @ ${stable.toISOString()}`);
-        return stable;
+    // === 3. Noch nichts? Dann erste stabile Phase ab Cutoff ===
+    if (!candidateDT) {
+      const stableFromCutoff = findStableFrom(searchStartIdx);
+      if (stableFromCutoff) {
+        const diff = Math.round((stableFromCutoff - startDT) / 60000);
+        if (diff > 10) this.dlog("debug", `[TRIM] Delayed sleep start by ${diff}min (from cutoff)`);
+        candidateDT = stableFromCutoff;
       }
     }
 
-    // === 5. Fallback: stabil irgendwo ===
-    const stableAnywhere = findStableFrom(0);
-    if (stableAnywhere) {
-      this.dlog("debug", `[START] Fallback stable anywhere @ ${stableAnywhere.toISOString()}`);
-      return stableAnywhere;
+    // === 4. Fallback: Deep/REM ab Blockstart ===
+    if (!candidateDT) {
+      const deepRemFallbackIdx = (() => {
+        for (let i = 0; i < segs.length; i++) {
+          const t = new Date(segs[i].dateTime);
+          if ((t - startDT) > threeHours) break;
+          if (segs[i].level === "deep" || segs[i].level === "rem") return i;
+        }
+        return -1;
+      })();
+
+      if (deepRemFallbackIdx >= 0) {
+        const stable = findStableFrom(deepRemFallbackIdx);
+        if (stable) {
+          this.dlog("debug", `[START] Fallback Deep/REM @ ${stable.toISOString()}`);
+          candidateDT = stable;
+        }
+      }
     }
 
-    // === 6. Fitbit-Startzeit ===
-    this.dlog("debug", "[START] Fallback to block.startTime");
-    return this._parseISO(block.startTime);
+    // === 5. Fallback: irgendwo stabil ===
+    if (!candidateDT) {
+      const stableAnywhere = findStableFrom(0);
+      if (stableAnywhere) {
+        this.dlog("debug", `[START] Fallback stable anywhere @ ${stableAnywhere.toISOString()}`);
+        candidateDT = stableAnywhere;
+      }
+    }
+
+    // === 6. Wenn wir gar nichts Gescheites finden → Fitbit-Start ===
+    if (!candidateDT) {
+      this.dlog("debug", "[START] No stable segment found → fallback to block.startTime");
+      return startDT;
+    }
+
+    // === 7. Sicherheitsgrenze: nicht später als X Minuten nach Fitbit-Start ===
+    const deltaMin = Math.round((candidateDT - startDT) / 60000);
+    if (deltaMin > MAX_SLEEP_START_DELAY_MINUTES) {
+      this.dlog(
+        "warn",
+        `[START] Computed sleep start would be delayed by ${deltaMin}min (> ${MAX_SLEEP_START_DELAY_MINUTES}) → using Fitbit startTime instead.`,
+      );
+      return startDT;
+    }
+
+    // Leichte negative Verschiebung (ein paar Minuten früher) wäre theoretisch möglich,
+    // wird aber durch Fitbit-Block-Start praktisch kaum vorkommen.
+    return candidateDT;
   }
 
   // ---- 4. Wake-Up-Erkennung -------------------------------------------------
@@ -1727,26 +1724,62 @@ class FitBit extends utils.Adapter {
     const fellIso = fell instanceof Date ? fell.toISOString() : String(fell);
     const wokeIso = woke instanceof Date ? woke.toISOString() : String(woke);
 
-    // ✳️ Lokale Formatierung (08.11.2025 - 07:53)
+    // -------------------------------------------------------------------------
+    // HR-Analyse: Vor-/Nach-HF und HF-Abfall rund um Einschlafzeit
+    // -------------------------------------------------------------------------
+    try {
+      if (this.effectiveConfig.intraday && this.recentHeartData?.length > 0 && fell instanceof Date) {
+        const startDT = fell;
+
+        const refresh = Math.max(1, this.effectiveConfig.refresh || 5);
+        const preWindow  = refresh <= 1 ? 45 : 60;
+        const postWindow = refresh <= 1 ? 60 : 90;
+        const minPoints  = 6;
+
+        const window = this.recentHeartData.filter(p =>
+        p.ts >= new Date(startDT.getTime() - preWindow * 60000) &&
+        p.ts <= new Date(startDT.getTime() + postWindow * 60000)
+        );
+
+        if (window.length >= minPoints) {
+          const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+
+          const before = mean(window.filter(p => p.ts < startDT).map(p => p.value));
+          const after  = mean(window.filter(p => p.ts >= startDT).map(p => p.value));
+          const drop   = before - after;
+
+          await this.setStateAsync("sleep.HRBeforeSleep", { val: Number(before.toFixed(1)), ack: true });
+          await this.setStateAsync("sleep.HRAfterSleep",  { val: Number(after.toFixed(1)),  ack: true });
+          await this.setStateAsync("sleep.HRDropAtSleep", { val: Number(drop.toFixed(1)),   ack: true });
+
+        } else {
+          await this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true });
+          await this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true });
+          await this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true });
+        }
+      }
+    } catch (e) {
+      await this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true });
+      await this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true });
+      await this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true });
+      this.dlog("warn", `HR analysis error in writeSleepStates: ${e.message}`);
+    }
+
+    // ✳️ Lokale Formatierung
     const fellLocal = this.formatLocalShort(fellIso);
     const wokeLocal = this.formatLocalShort(wokeIso);
 
-    // Nap-Zeitpunkte (Config: first/last Nap)
+    // Nap-Auswahl
     const napFellIso = naps.length
-    ? (this.effectiveConfig.showLastOrFirstNap
-    ? naps[naps.length - 1].startTime
-    : naps[0].startTime)
+    ? (this.effectiveConfig.showLastOrFirstNap ? naps[naps.length - 1].startTime : naps[0].startTime)
     : null;
     const napWokeIso = naps.length
-    ? (this.effectiveConfig.showLastOrFirstNap
-    ? naps[naps.length - 1].endTime
-    : naps[0].endTime)
+    ? (this.effectiveConfig.showLastOrFirstNap ? naps[naps.length - 1].endTime : naps[0].endTime)
     : null;
 
     const napFellLocal = napFellIso ? this.formatLocalShort(napFellIso) : "";
     const napWokeLocal = napWokeIso ? this.formatLocalShort(napWokeIso) : "";
 
-    // Nap-Liste formatiert (für Anzeige)
     const napsFormatted = naps.map(n => ({
       start: this.formatLocalShort(n.startTime),
                                          end: this.formatLocalShort(n.endTime),
@@ -1754,16 +1787,18 @@ class FitBit extends utils.Adapter {
                                          timeInBed: n.timeInBed
     }));
 
-    // --- Alles schreiben ---
+    // -------------------------------------------------------------------------
+    // 📝 Alle States schreiben
+    // -------------------------------------------------------------------------
     await Promise.all([
       this.setStateAsync("sleep.AsleepTotal",        { val: asleepMin + napsAsleep, ack: true }),
                       this.setStateAsync("sleep.InBedTotal",         { val: inBedMin + napsInBed,   ack: true }),
-                      this.setStateAsync("sleep.Main.FellAsleepAt",  { val: fellIso,   ack: true }),
-                      this.setStateAsync("sleep.Main.FellAsleepAtLocal", { val: fellLocal, ack: true }),
-                      this.setStateAsync("sleep.Main.WokeUpAt",      { val: wokeIso,   ack: true }),
-                      this.setStateAsync("sleep.Main.WokeUpAtLocal", { val: wokeLocal, ack: true }),
 
-                      // 💤 Nap-States (ISO + Local)
+                      this.setStateAsync("sleep.Main.FellAsleepAt",       { val: fellIso,   ack: true }),
+                      this.setStateAsync("sleep.Main.FellAsleepAtLocal",  { val: fellLocal, ack: true }),
+                      this.setStateAsync("sleep.Main.WokeUpAt",           { val: wokeIso,   ack: true }),
+                      this.setStateAsync("sleep.Main.WokeUpAtLocal",      { val: wokeLocal, ack: true }),
+
                       this.setStateAsync("sleep.Naps.FellAsleepAt",       { val: napFellIso,   ack: true }),
                       this.setStateAsync("sleep.Naps.FellAsleepAtLocal",  { val: napFellLocal, ack: true }),
                       this.setStateAsync("sleep.Naps.WokeUpAt",           { val: napWokeIso,   ack: true }),
@@ -1775,22 +1810,22 @@ class FitBit extends utils.Adapter {
                       this.setStateAsync("sleep.Naps.List",   { val: JSON.stringify(napsFormatted), ack: true })
     ]);
 
-    // === Sleep History Update ===
+    // -------------------------------------------------------------------------
+    // Sleep History Update
+    // -------------------------------------------------------------------------
     try {
       const historyState = await this.getStateAsync("sleep.History.JSON");
       let history = [];
 
-      // Vorherige History laden
       if (historyState && historyState.val) {
         try {
           history = JSON.parse(historyState.val);
           if (!Array.isArray(history)) history = [];
-        } catch (e) {
+        } catch {
           history = [];
         }
       }
 
-      // Neuer History-Eintrag
       const entry = {
         date: fellIso.substring(0, 10),
         fellAsleepAt: fellIso,
@@ -1807,16 +1842,12 @@ class FitBit extends utils.Adapter {
         naps: napsCount
       };
 
-      // Tag ersetzen, wenn schon vorhanden
       const idx = history.findIndex(h => h.date === entry.date);
       if (idx >= 0) history[idx] = entry;
       else history.push(entry);
 
-      // Alte Einträge auf 90 Tage begrenzen
-      const MAX_DAYS = 90;
-      history = history.slice(-MAX_DAYS);
+      history = history.slice(-90);
 
-      // Speicherung
       await this.setStateAsync("sleep.History.JSON", {
         val: JSON.stringify(history, null, 2),
                                ack: true
