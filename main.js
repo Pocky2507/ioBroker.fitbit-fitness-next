@@ -1774,6 +1774,12 @@ class FitBit extends utils.Adapter {
     // ✳️ Lokale Formatierung
     const fellLocal = this.formatLocalShort(fellIso);
     const wokeLocal = this.formatLocalShort(wokeIso);
+    // Wochentag in deutsch & englisch
+    const weekdayDE = fell.toLocaleDateString("de-DE", { weekday: "long" });
+    const weekdayShortDE = fell.toLocaleDateString("de-DE", { weekday: "short" });
+
+    const weekdayEN = fell.toLocaleDateString("en-US", { weekday: "long" });
+    const weekdayShortEN = fell.toLocaleDateString("en-US", { weekday: "short" });
 
     // Nap-Auswahl
     const napFellIso = naps.length
@@ -1834,6 +1840,13 @@ class FitBit extends utils.Adapter {
 
       const entry = {
         date: fellIso.substring(0, 10),
+
+        // Neue Felder:
+        weekday: weekdayDE,
+        weekdayShort: weekdayShortDE,
+        weekdayEN: weekdayEN,
+        weekdayShortEN: weekdayShortEN,
+
         fellAsleepAt: fellIso,
         wokeUpAt: wokeIso,
         asleepMinutes: asleepMin,
