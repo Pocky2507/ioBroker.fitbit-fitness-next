@@ -1544,6 +1544,7 @@ class FitBit extends utils.Adapter {
         return startDT;
       }
       this.dlog("debug", `[START] Using SmartPrefilter result @ ${smart.toISOString()} (Δ ${diffMin}min)`);
+      this._lastSleepSource = "corrected";
       return smart;
     }
 
@@ -1666,6 +1667,7 @@ class FitBit extends utils.Adapter {
     // === 6. Wenn wir gar nichts Gescheites finden → Fitbit-Start ===
     if (!candidateDT) {
       this.dlog("debug", "[START] No stable segment found → fallback to block.startTime");
+      this._lastSleepSource = "fitbit";
       return startDT;
     }
 
@@ -1843,7 +1845,8 @@ class FitBit extends utils.Adapter {
         light: await this.getStateAsync("sleep.Light").then(s => s?.val ?? null),
         rem:   await this.getStateAsync("sleep.Rem").then(s => s?.val ?? null),
         wake:  await this.getStateAsync("sleep.Wake").then(s => s?.val ?? null),
-        naps: napsCount
+        naps: napsCount,
+        sleepSource: this._lastSleepSource || "fitbit"
       };
 
       const idx = history.findIndex(h => h.date === entry.date);
