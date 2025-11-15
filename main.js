@@ -1728,7 +1728,11 @@ class FitBit extends utils.Adapter {
     // HR-Analyse: Vor-/Nach-HF und HF-Abfall rund um Einschlafzeit
     // -------------------------------------------------------------------------
     try {
-      if (this.effectiveConfig.intraday && this.recentHeartData?.length > 0 && fell instanceof Date) {
+      if (
+        this.effectiveConfig.intraday &&
+        this.recentHeartData?.length > 0 &&
+        fell instanceof Date
+      ) {
         const startDT = fell;
 
         const refresh = Math.max(1, this.effectiveConfig.refresh || 5);
@@ -1753,12 +1757,12 @@ class FitBit extends utils.Adapter {
           await this.setStateAsync("sleep.HRDropAtSleep", { val: Number(drop.toFixed(1)),   ack: true });
 
         } else {
-          await this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true });
-          await this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true });
-          await this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true });
+          // ❗ Zu wenige HR-Daten → Werte NICHT löschen!
+          this.dlog("info", `[HR] Zu wenige Herzfrequenz-Punkte (${window.length}) – letzte gültige Werte bleiben stehen.`);
         }
       }
     } catch (e) {
+      // ❗ Nur im Fehlerfall wirklich zurücksetzen
       await this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true });
       await this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true });
       await this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true });
