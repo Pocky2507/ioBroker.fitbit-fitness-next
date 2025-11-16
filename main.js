@@ -926,10 +926,9 @@ class FitBit extends utils.Adapter {
             value: lastEntry.value,
           });
 
-          // 🧠 Dynamischer Verlaufspuffer – abhängig vom Refresh-Intervall
-          const refresh = Math.max(1, this.effectiveConfig.refresh || 5);
-          const bufferSize = refresh <= 1 ? 300 : refresh <= 5 ? 200 : 100;
-          this.recentHeartData = this.recentHeartData.slice(-bufferSize);
+          // ⭐ Neuer großer Ringpuffer – unabhängig vom Refresh-Intervall
+          const MAX_BUFFER = 20000;
+          this.recentHeartData = this.recentHeartData.slice(-MAX_BUFFER);
 
           if (DEBUG_SLEEP_LOG) {
             const prev =
