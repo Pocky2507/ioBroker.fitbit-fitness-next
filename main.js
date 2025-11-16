@@ -1828,6 +1828,7 @@ class FitBit extends utils.Adapter {
       const historyState = await this.getStateAsync("sleep.History.JSON");
       let history = [];
 
+      // Vorherige History laden
       if (historyState && historyState.val) {
         try {
           history = JSON.parse(historyState.val);
@@ -1837,10 +1838,23 @@ class FitBit extends utils.Adapter {
         }
       }
 
+      // ---------------------------------------------------------------------
+      // Nap-Auswahl für die History (erster oder letzter Nap laut Config)
+      // ---------------------------------------------------------------------
+      let napUsed = null;
+      if (naps.length > 0) {
+        napUsed = this.effectiveConfig.showLastOrFirstNap
+        ? naps[naps.length - 1]   // letztes Nap
+        : naps[0];                 // erstes Nap
+      }
+
+      // ---------------------------------------------------------------------
+      // Neuer History-Eintrag
+      // ---------------------------------------------------------------------
       const entry = {
         date: fellIso.substring(0, 10),
 
-        // Neue Felder:
+        // Wochentag DE/EN
         weekday: weekdayDE,
         weekdayShort: weekdayShortDE,
         weekdayEN: weekdayEN,
@@ -1850,23 +1864,39 @@ class FitBit extends utils.Adapter {
         wokeUpAt: wokeIso,
         asleepMinutes: asleepMin,
         inBedMinutes: inBedMin,
+
+        // Herzfrequenz
         hrBefore: await this.getStateAsync("sleep.HRBeforeSleep").then(s => s?.val ?? null),
         hrAfter:  await this.getStateAsync("sleep.HRAfterSleep").then(s => s?.val ?? null),
         hrDrop:   await this.getStateAsync("sleep.HRDropAtSleep").then(s => s?.val ?? null),
+
+        // Sleep Stages
         deep:  await this.getStateAsync("sleep.Deep").then(s => s?.val ?? null),
         light: await this.getStateAsync("sleep.Light").then(s => s?.val ?? null),
         rem:   await this.getStateAsync("sleep.Rem").then(s => s?.val ?? null),
         wake:  await this.getStateAsync("sleep.Wake").then(s => s?.val ?? null),
+
         naps: napsCount,
-        sleepSource: this._lastSleepSource || "fitbit"
+        sleepSource: this._lastSleepSource || "fitbit",
+
+        // -----------------------------------------------------------------
+        // Nap-Daten für die History
+        // -----------------------------------------------------------------
+        napUsedStart: napUsed ? napUsed.startTime : null,
+        napUsedEnd:   napUsed ? napUsed.endTime   : null,
+        napUsedMinutesAsleep: napUsed ? napUsed.minutesAsleep : null,
+        napUsedTimeInBed:     napUsed ? napUsed.timeInBed     : null
       };
 
+      // Eintrag ersetzen oder anhängen
       const idx = history.findIndex(h => h.date === entry.date);
       if (idx >= 0) history[idx] = entry;
       else history.push(entry);
 
+      // Auf 90 Tage begrenzen
       history = history.slice(-90);
 
+      // Speichern
       await this.setStateAsync("sleep.History.JSON", {
         val: JSON.stringify(history, null, 2),
                                ack: true
@@ -1877,7 +1907,9 @@ class FitBit extends utils.Adapter {
                                ack: true
       });
 
-      this.dlog("info", `[HISTORY] Saved sleep entry for ${entry.date} (History size: ${history.length})`);
+      this.dlog("info",
+                `[HISTORY] Saved sleep entry for ${entry.date} (History size: ${history.length})`
+      );
 
     } catch (e) {
       this.log.warn(`History update failed: ${e.message}`);
