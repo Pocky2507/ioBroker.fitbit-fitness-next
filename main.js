@@ -208,6 +208,10 @@ class FitBit extends utils.Adapter {
 
       // Heartbeat-Puffer zurücksetzen
       this.recentHeartData = [];
+
+      // ⭐ Restore 48h-Puffer aus TS (MUSS VOR login passieren!)
+      await this.restoreRecentHeartDataFromTs();
+
       this.effectiveConfig = {
         intraday: this._coalesceBool(this.config.intraday, DEFAULTS.intraday),
         showLastOrFirstNap: this._coalesceBool(
@@ -311,6 +315,62 @@ class FitBit extends utils.Adapter {
 
         this.initSleepSchedule();
         await this.getFitbitRecords();
+
+        // ========================================================================
+        // ⭐ Intraday HR – Eigener Scheduler
+        // ========================================================================
+        if (this.effectiveConfig.intraday) {
+
+          const hrRefreshMs = Math.max(1, this.effectiveConfig.refresh) * 60 * 1000;
+          this.log.info(`Intraday HR → fetch every ${this.effectiveConfig.refresh} min`);
+
+          // Intervall starten
+          this.intradayInterval = setInterval(async () => {
+            try {
+              const refresh = Math.max(1, Math.round(this.effectiveConfig.refresh));
+              const resolution =
+              refresh <= 1 ? "1min" :
+              refresh <= 5 ? "5min" : "15min";
+
+              await this.getIntradayHeartRate(resolution);
+
+            } catch (err) {
+              this.log.warn(`Intraday fetch failed: ${err}`);
+            }
+          }, hrRefreshMs);
+
+          // Sofort beim Start einmal ausführen
+          const resolution =
+          this.effectiveConfig.refresh <= 1 ? "1min" :
+          this.effectiveConfig.refresh <= 5 ? "5min" : "15min";
+
+          await this.getIntradayHeartRate(resolution);
+        }
+
+
+        // ========================================================================
+        // ⭐ ZoneMetrics HR – Fast-Live fallback (gleiche Rate, gleiche Bedingung)
+        // ========================================================================
+        if (this.effectiveConfig.intraday) {
+
+          const zmRefreshMs = Math.max(1, this.effectiveConfig.refresh) * 60 * 1000;
+          this.log.info(`ZoneMetrics → fetch every ${this.effectiveConfig.refresh} min`);
+
+          this.zoneMetricsInterval = setInterval(async () => {
+            try {
+              await this.getZoneMetrics();
+            } catch (err) {
+              this.log.warn(`ZoneMetrics fetch failed: ${err}`);
+            }
+          }, zmRefreshMs);
+
+          // Sofort beim Start einmal ausführen
+          await this.getZoneMetrics();
+        }
+
+        // ========================================================================
+        // Normaler Tages-Update-Scheduler (Sleep, Steps, Weight, etc.)
+        // ========================================================================
         if (this.updateInterval) {
           clearInterval(this.updateInterval);
           this.updateInterval = null;
@@ -324,6 +384,7 @@ class FitBit extends utils.Adapter {
             this.log.error(`Periodic fetch failed: ${err}`);
           }
         }, refreshMs);
+
       } else {
         await this.setStateAsync("info.connection", { val: false, ack: true });
         this.log.warn(`FITBIT login failed with status ${this.fitbit.status}`);
@@ -542,16 +603,8 @@ class FitBit extends utils.Adapter {
       if (this.effectiveConfig.activityrecords) {
         await this.getActivityRecords();
         await this.getHeartRateTimeSeries();
-
-        // Intraday dynamisch gekoppelt an Config-Intervall
-        if (this.effectiveConfig.intraday) {
-            // Auflösung dynamisch nach Refresh-Intervall wählen
-            const refresh = Math.max(1, Math.round(this.effectiveConfig.refresh));
-            const resolution =
-            refresh <= 1 ? "1min" : refresh <= 5 ? "5min" : "15min";
-            await this.getIntradayHeartRate(resolution);
-        }
       }
+
       // Körper
       if (this.effectiveConfig.bodyrecords) {
         await this.getBodyRecords();
@@ -879,17 +932,15 @@ class FitBit extends utils.Adapter {
     return true;
   }
 
-  // =========================================================================
-  // Intraday Herz (optional, gekoppelt an Config-Intervall + HR-Puffer)
-  // =========================================================================
+  // ============================================================================
+  // Intraday Herzfrequenz – 72h TS + 48h interner Puffer
+  // ============================================================================
   async getIntradayHeartRate(resolution = "1min") {
     if (!this.fitbit.tokens || !this.effectiveConfig.intraday) return;
 
     const token = this.fitbit.tokens.access_token;
     const userId = "-";
-    const dateString = this.getDateTime().dateString;
-
-    const url = `https://api.fitbit.com/1/user/${userId}/activities/heart/date/${dateString}/1d/${resolution}.json`;
+    const url = `https://api.fitbit.com/1/user/${userId}/activities/heart/date/today/1d/${resolution}.json`;
 
     try {
       const response = await axios.get(url, {
@@ -897,63 +948,280 @@ class FitBit extends utils.Adapter {
         timeout: axiosTimeout,
       });
 
-      if (
-        response.status === 200 &&
-        response.data["activities-heart-intraday"]
-      ) {
-        const dataset =
-          response.data["activities-heart-intraday"].dataset || [];
-        if (dataset.length > 0) {
-          const lastEntry = dataset[dataset.length - 1];
+      const dataset = response?.data?.["activities-heart-intraday"]?.dataset || [];
+      if (!dataset.length) {
+        this.log.warn("Intraday → Kein Dataset erhalten");
+        return;
+      }
 
-          const id = "activity.CurrentHeartRate";
-          await this.setObjectNotExistsAsync(id, {
-            type: "state",
-            common: {
-              name: "Current Heart Rate",
-              type: "number",
-              role: "value.bpm",
-              read: true,
-              write: true,
-            },
-            native: {},
-          });
-          await this.setStateAsync(id, { val: lastEntry.value, ack: true });
+      // ---------------------------------------------------------------------
+      // (1) Bestehende TS laden
+      // ---------------------------------------------------------------------
+      const tsId = "activity.HeartRate-ts";
+      await this.setObjectNotExistsAsync(tsId, {
+        type: "state",
+        common: {
+          name: "Intraday HR (72h)",
+                                         type: "string",
+                                         role: "json",
+                                         read: true,
+                                         write: false,
+        },
+        native: {}
+      });
 
-          if (!this.recentHeartData) this.recentHeartData = [];
-          this.recentHeartData.push({
-            ts: new Date(`${dateString}T${lastEntry.time}`),
-            value: lastEntry.value,
-          });
+      const existing = await this.getStateAsync(tsId);
+      let oldArr = [];
 
-          // ⭐ Neuer großer Ringpuffer – unabhängig vom Refresh-Intervall
-          const MAX_BUFFER = 20000;
-          this.recentHeartData = this.recentHeartData.slice(-MAX_BUFFER);
+      if (existing?.val) {
+        try { oldArr = JSON.parse(existing.val); }
+        catch { oldArr = []; }
+      }
 
-          if (DEBUG_SLEEP_LOG) {
-            const prev =
-              this.recentHeartData.length > 1
-                ? this.recentHeartData[this.recentHeartData.length - 2].value
-                : null;
-            const diff = prev != null ? Math.abs(lastEntry.value - prev) : 0;
+      // ---------------------------------------------------------------------
+      // (2) Merge ohne Duplikate
+      // ---------------------------------------------------------------------
+      const now = new Date();
+      const todayDateString = now.toISOString().split("T")[0];
 
-            if (this.effectiveConfig.refresh >= 5 || diff > 5) {
-              this.log.debug(
-                `Intraday fetch (${resolution}) → ${lastEntry.time}, HR=${lastEntry.value} BPM${diff > 5 ? ` (Δ${diff})` : ""}`,
-              );
+      const map = new Map();
+
+      // alte Daten übernehmen
+      for (const o of oldArr) {
+        map.set(o.ts, o.value);
+      }
+
+      // neue Daten einfügen (überschreiben gleiche ts)
+      for (const entry of dataset) {
+        const fullTs = new Date(`${todayDateString}T${entry.time}`).toISOString();
+        map.set(fullTs, entry.value);
+      }
+
+      // map zurück in Array (sortiert)
+      let merged = Array.from(map, ([ts, value]) => ({ ts, value }))
+      .sort((a, b) => new Date(a.ts) - new Date(b.ts));
+
+      // ---------------------------------------------------------------------
+      // (3) Auf 72 Stunden beschränken
+      // ---------------------------------------------------------------------
+      const cutoff = new Date();
+      cutoff.setHours(cutoff.getHours() - 72);
+
+      const pruned = merged.filter(p => new Date(p.ts) >= cutoff);
+
+      // ---------------------------------------------------------------------
+      // (5) internen Puffer aktualisieren (48h)
+      // ---------------------------------------------------------------------
+      if (!this.recentHeartData) this.recentHeartData = [];
+
+      const cutoff48 = new Date();
+      cutoff48.setHours(cutoff48.getHours() - 48);
+
+      for (const entry of dataset) {
+        const ts = new Date(`${todayDateString}T${entry.time}`);
+        if (ts >= cutoff48) {
+          this.recentHeartData.push({ ts, value: entry.value });
+        }
+      }
+
+      this.recentHeartData = this.recentHeartData
+      .filter(p => p.ts >= cutoff48)
+      .slice(-5000); // Falls 1-min-Betrieb, zur Sicherheit
+
+      /***********************************************************************
+       * ⭐ HEART RATE FALLBACK (zoneMetrics → HeartRate-ts + recentHeartData)
+       ***********************************************************************/
+      try {
+        const refreshMin = Math.max(1, this.effectiveConfig.refresh);
+        const now = new Date();
+        const nowMinute = new Date(
+          now.getFullYear(),
+                                   now.getMonth(),
+                                   now.getDate(),
+                                   now.getHours(),
+                                   now.getMinutes(),
+                                   0, 0
+        );
+
+        // Letzten realen HR-Wert im 48h-Puffer suchen
+        let lastReal = null;
+        if (this.recentHeartData.length > 0) {
+          lastReal = this.recentHeartData[this.recentHeartData.length - 1].ts;
+        }
+
+        if (lastReal) {
+          const diffMin = Math.round((nowMinute - lastReal) / 60000);
+
+          // Fallback nach 2× Refresh
+          if (diffMin > refreshMin * 2) {
+            const zone = await this.getStateAsync("activity.zoneMetrics");
+
+            if (zone?.val) {
+              const z = JSON.parse(zone.val);
+              if (z?.bpm && Number.isFinite(z.bpm)) {
+
+                const tsIso = nowMinute.toISOString();
+
+                // Prüfen, ob in pruned oder recentHeartData ein Wert existiert
+                const hasTS = this.recentHeartData.some(p => p.ts.toISOString() === tsIso);
+
+                if (!hasTS) {
+                  this.log.info(`[HR-Fallback] Insert fallback HR ${z.bpm} at ${tsIso}`);
+
+                  // In BOTH schreiben:
+                  this.recentHeartData.push({
+                    ts: nowMinute,
+                    value: z.bpm,
+                    source: "fallback"
+                  });
+
+                  // HeartRate-ts (pruned) erweitern:
+                  pruned.push({
+                    ts: tsIso,
+                    value: z.bpm,
+                    source: "fallback"
+                  });
+                }
+              }
             }
           }
         }
-      }
-    } catch (err) {
-      this.log.warn(`getIntradayHeartRate failed: ${err}`);
-    }
 
-    // Nur Daten älter als 24 Stunden entfernen – Puffer bleibt über Mitternacht
-    if (this.recentHeartData?.length > 0) {
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 1);  // Letzte 24h behalten
-      this.recentHeartData = this.recentHeartData.filter(p => p.ts > cutoff);
+        // Neu sortieren
+        this.recentHeartData.sort((a,b) => a.ts - b.ts);
+        pruned.sort((a,b) => new Date(a.ts) - new Date(b.ts));
+
+        // pruned erneut in TS speichern (da erweitert)
+        await this.setStateAsync(tsId, {
+          val: JSON.stringify(pruned),
+                                 ack: true
+        });
+
+      } catch (e) {
+        this.log.error("HR-Fallback error: " + e.message);
+      }
+
+      // ---------------------------------------------------------------------
+      // (6) CurrentHeartRate aktualisieren
+      // ---------------------------------------------------------------------
+      const last = dataset[dataset.length - 1];
+      await this.setObjectNotExistsAsync("activity.CurrentHeartRate", {
+        type: "state",
+        common: {
+          name: "Current Heart Rate",
+          type: "number",
+          role: "value.bpm",
+          read: true,
+          write: false,
+        },
+        native: {}
+      });
+
+      await this.setStateAsync("activity.CurrentHeartRate", {
+        val: last.value,
+        ack: true
+      });
+
+    } catch (err) {
+      this.log.error(`getIntradayHeartRate ERROR → ${err.message}`);
+    }
+  }
+
+  // ============================================================================
+  // Add/merge single HR point (used by zoneMetrics + fallback)
+  // ============================================================================
+  async addHeartRatePoint(point) {
+    try {
+      const tsId = "activity.HeartRate-ts";
+
+      // TS laden oder anlegen
+      await this.setObjectNotExistsAsync(tsId, {
+        type: "state",
+        common: { name: "Intraday HR (72h)", type: "string", role: "json", read: true, write: false },
+                                         native: {},
+      });
+
+      let pruned = [];
+      const existing = await this.getStateAsync(tsId);
+      if (existing?.val) {
+        try { pruned = JSON.parse(existing.val); } catch { pruned = []; }
+      }
+
+      // Map für effizienten Merge
+      const map = new Map(pruned.map(p => [p.ts, p.value]));
+
+      // Einfügen/Ersetzen
+      map.set(point.ts.toISOString(), point.value);
+
+      // Neu sortieren
+      pruned = Array.from(map, ([ts, value]) => ({ ts, value }))
+      .sort((a,b) => new Date(a.ts) - new Date(b.ts));
+
+      // Auf 72h begrenzen
+      const cutoff72 = new Date();
+      cutoff72.setHours(cutoff72.getHours() - 72);
+      pruned = pruned.filter(p => new Date(p.ts) >= cutoff72);
+
+      // TS speichern
+      await this.setStateAsync(tsId, { val: JSON.stringify(pruned), ack: true });
+
+      // Interner 48h-Puffer aktualisieren
+      const cutoff48 = new Date();
+      cutoff48.setHours(cutoff48.getHours() - 48);
+      this.recentHeartData.push(point);
+      this.recentHeartData = this.recentHeartData
+      .filter(p => p.ts >= cutoff48)
+      .slice(-5000);
+
+    } catch (e) {
+      this.log.error("addHeartRatePoint() error: " + e.message);
+    }
+  }
+
+  // ============================================================================
+  // zoneMetrics → Fast-Live Puls, alle 5 Min
+  // ============================================================================
+  async getZoneMetrics() {
+    try {
+      const apiUrl = "https://api.fitbit.com/1/user/-/activities/heart/date/today/1d/1min.json";
+      const token = this.fitbit.tokens?.access_token;
+      if (!token) return;
+
+      const response = await axios.get(apiUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 15000
+      });
+
+      // Fitbit liefert heute letzten HR-Wert immer im dataset letzte Position
+      const ds = response?.data?.["activities-heart-intraday"]?.dataset;
+      if (!Array.isArray(ds) || ds.length === 0) return;
+
+      const last = ds[ds.length - 1];
+      if (!last || !last.time || !last.value) return;
+
+      const today = new Date().toISOString().slice(0,10);
+      const ts = new Date(`${today}T${last.time}`);
+
+      await this.addHeartRatePoint({
+        ts,
+        value: last.value,
+        source: "zonemetrics"
+      });
+
+      // sichtbarer State
+      await this.setObjectNotExistsAsync("activity.zoneMetrics", {
+        type: "state",
+        common: { name: "ZoneMetrics HR", type: "string", role: "json", read: true, write: false },
+        native: {}
+      });
+
+      await this.setStateAsync("activity.zoneMetrics", {
+        val: JSON.stringify({ bpm: last.value, ts: ts.toISOString() }),
+                               ack: true
+      });
+
+    } catch (err) {
+      this.log.warn("ZoneMetrics error: " + err.message);
     }
   }
 
@@ -2212,6 +2480,39 @@ class FitBit extends utils.Adapter {
     }
 
     return validated;
+  }
+
+  // ============================================================================
+  // Interner 48h-Puffer nach Adapterstart aus TS wiederherstellen
+  // ============================================================================
+  async restoreRecentHeartDataFromTs() {
+    const tsId = "activity.HeartRate-ts";
+    const state = await this.getStateAsync(tsId);
+
+    this.recentHeartData = [];
+
+    if (!state?.val) return;
+
+    try {
+      const arr = JSON.parse(state.val);
+      const cutoff = new Date();
+      cutoff.setHours(cutoff.getHours() - 48);
+
+      for (const entry of arr) {
+        const ts = new Date(entry.ts);
+        if (ts >= cutoff) {
+          this.recentHeartData.push({
+            ts,
+            value: entry.value
+          });
+        }
+      }
+
+      this.log.info(`Puffer wiederhergestellt: ${this.recentHeartData.length} HR-Einträge (48h)`);
+
+    } catch (e) {
+      this.log.error("restoreRecentHeartDataFromTs: JSON Fehler");
+    }
   }
 
   // =========================================================================
