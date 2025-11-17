@@ -260,11 +260,11 @@
       "_id": "activity.HeartRate-ts",
       "type": "state",
       "common": {
-        "role": "value.health.heartrate",
-        "name": "Heart rate (time series)",
-        "type": "number",
+        "role": "json",
+        "name": "Intraday HR time series",
+        "type": "string",
         "read": true,
-        "write": true
+        "write": false
       },
       "native": {}
     },
