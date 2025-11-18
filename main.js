@@ -51,6 +51,9 @@ class FitBit extends utils.Adapter {
   constructor(options) {
     super({ ...options, name: "fitbit-fitness" });
 
+    // --- Neuer Speicher für wartenden Hauptschlaf ---
+    this.pendingMainSleep = null;
+
     this.on("ready", this.onReady.bind(this));
     this.on("stateChange", this.onStateChange.bind(this));
     this.on("unload", this.onUnload.bind(this));
@@ -625,6 +628,13 @@ class FitBit extends utils.Adapter {
         } else {
           await this.getSleepRecords();
         }
+      }
+
+      // ------------------------------------------------------------
+      // Falls ein Hauptschlaf auf HR-Daten wartet → prüfen
+      // ------------------------------------------------------------
+      if (this.pendingMainSleep) {
+        await this.checkNightHRAndProcess();
       }
 
       //
@@ -1554,6 +1564,30 @@ class FitBit extends utils.Adapter {
       return false;
     }
 
+    // ------------------------------------------------------------
+    // Warten auf Intraday-HR beim Hauptschlaf
+    // ------------------------------------------------------------
+    const sleep = filtered[0];
+
+    if (sleep.isMainSleep) {
+      this.log.info(`[SLEEP] Hauptschlaf erkannt → Analyse wird verzögert, bis HR vollständig ist`);
+
+      // Pending speichern
+      this.pendingMainSleep = {
+        start: new Date(sleep.startTime),
+        end: new Date(sleep.endTime),
+        raw: sleep
+      };
+
+      return false; // Analyse jetzt abbrechen
+    }
+
+    // Nickerchen → direkt analysieren
+    if (!sleep.isMainSleep) {
+      this.log.info(`[SLEEP] Nap → direkte Analyse`);
+      // kein return – Code läuft unten weiter
+    }
+
     // ----------------------------------------------------------------------
     // 🧠 DSPP – Duplicate Sleep Packet Protection
     // Wenn mehrere Sleep-Blocks mit identischen IDs kommen (z.B. nachts +
@@ -2480,6 +2514,48 @@ class FitBit extends utils.Adapter {
     }
 
     return validated;
+  }
+
+  /**
+   * Prüft, ob genügend HR-Daten für die Nacht vorhanden sind.
+   * Wenn ja → Hauptschlaf analysieren.
+   */
+  async checkNightHRAndProcess() {
+    const pending = this.pendingMainSleep;
+    if (!pending) return;
+
+    const start = pending.start;
+    const end = pending.end;
+
+    // HR-Fenster: 2h vor Schlafende bis 30min nach Schlafende
+    const windowStart = new Date(end.getTime() - 2 * 60 * 60 * 1000);
+    const windowEnd   = new Date(end.getTime() + 30 * 60 * 1000);
+
+    // HeartRate-ts laden
+    const tsState = await this.getStateAsync("activity.HeartRate-ts");
+    if (!tsState?.val) {
+      this.log.info("[WAIT] Noch keine HR-TS Daten → später erneut prüfen");
+      return;
+    }
+
+    let ts = [];
+    try { ts = JSON.parse(tsState.val); } catch {}
+
+    const nightHR = ts.filter(e => {
+      const t = new Date(e.ts);
+      return t >= windowStart && t <= windowEnd;
+    });
+
+    // Mindestanzahl HR Punkte
+    if (nightHR.length < 5) {
+      this.log.info(`[WAIT] Nacht-HR unvollständig (${nightHR.length}) → später erneut prüfen`);
+      return;
+    }
+
+    this.log.info(`[OK] HR-Daten vollständig → starte Schlafanalyse`);
+    await this.setSleepStates({ sleep: [ pending.raw ] }, { relaxed: false });
+
+    this.pendingMainSleep = null;
   }
 
   // ============================================================================
