@@ -29,6 +29,8 @@ const HEART_RATE_ZONE_RANGES = ["customHeartRateZones", "heartRateZones"];
 // Wie weit darf der berechnete Einschlafzeitpunkt maximal NACH dem Fitbit-Start liegen?
 // Schutz gegen Fälle wie: Fitbit 23:20 → Adapter rutscht auf 00:55
 const MAX_SLEEP_START_DELAY_MINUTES = 45; // Anpassen möglich (z. B. 60)
+// Wie lange darf ein pendingMainSleep maximal "warten", bevor er ohne HR-Analyse verarbeitet wird?
+const PENDING_MAIN_SLEEP_MAX_AGE_HOURS = 24; // z. B. 24h
 
 // -----------------------------------------------------------------------------
 // Backward-compat Defaults (werden über Admin-Config übersteuert)
@@ -53,6 +55,8 @@ class FitBit extends utils.Adapter {
 
     // --- Neuer Speicher für wartenden Hauptschlaf ---
     this.pendingMainSleep = null;
+    // Serialisierte Schreibzugriffe auf activity.HeartRate-ts
+    this._hrTsLock = Promise.resolve();
 
     this.on("ready", this.onReady.bind(this));
     this.on("stateChange", this.onStateChange.bind(this));
@@ -942,8 +946,23 @@ class FitBit extends utils.Adapter {
     return true;
   }
 
+  /**
+   * Serialisiert alle Lese/Schreibzugriffe auf activity.HeartRate-ts.
+   * Alle Aufrufer von HeartRate-ts müssen durch diesen Wrapper laufen.
+   */
+  async _withHrTsLock(label, fn) {
+    this._hrTsLock = this._hrTsLock
+    .then(() => fn())
+    .catch(err => {
+      const msg = err?.message || err;
+      this.log.error(`[HR-TS-LOCK] ${label} failed: ${msg}`);
+    });
+
+    return this._hrTsLock;
+  }
+
   // ============================================================================
-  // Intraday Herzfrequenz – 72h TS + 48h interner Puffer
+  // Intraday Herzfrequenz – 72h TS + 48h interner Puffer (mit Mutex)
   // ============================================================================
   async getIntradayHeartRate(resolution = "1min") {
     if (!this.fitbit.tokens || !this.effectiveConfig.intraday) return;
@@ -964,155 +983,163 @@ class FitBit extends utils.Adapter {
         return;
       }
 
-      // ---------------------------------------------------------------------
-      // (1) Bestehende TS laden
-      // ---------------------------------------------------------------------
-      const tsId = "activity.HeartRate-ts";
-      await this.setObjectNotExistsAsync(tsId, {
-        type: "state",
-        common: {
-          name: "Intraday HR (72h)",
-                                         type: "string",
-                                         role: "json",
-                                         read: true,
-                                         write: false,
-        },
-        native: {}
-      });
-
-      const existing = await this.getStateAsync(tsId);
-      let oldArr = [];
-
-      if (existing?.val) {
-        try { oldArr = JSON.parse(existing.val); }
-        catch { oldArr = []; }
-      }
-
-      // ---------------------------------------------------------------------
-      // (2) Merge ohne Duplikate
-      // ---------------------------------------------------------------------
       const now = new Date();
       const todayDateString = now.toISOString().split("T")[0];
 
-      const map = new Map();
+      // Alles, was HeartRate-ts liest/schreibt, läuft durch den Mutex
+      await this._withHrTsLock("getIntradayHeartRate", async () => {
 
-      // alte Daten übernehmen
-      for (const o of oldArr) {
-        map.set(o.ts, o.value);
-      }
+        // ---------------------------------------------------------------------
+        // (1) Bestehende TS laden
+        // ---------------------------------------------------------------------
+        const tsId = "activity.HeartRate-ts";
+        await this.setObjectNotExistsAsync(tsId, {
+          type: "state",
+          common: {
+            name: "Intraday HR (72h)",
+                                           type: "string",
+                                           role: "json",
+                                           read: true,
+                                           write: false,
+          },
+          native: {}
+        });
 
-      // neue Daten einfügen (überschreiben gleiche ts)
-      for (const entry of dataset) {
-        const fullTs = new Date(`${todayDateString}T${entry.time}`).toISOString();
-        map.set(fullTs, entry.value);
-      }
+        const existing = await this.getStateAsync(tsId);
+        let oldArr = [];
 
-      // map zurück in Array (sortiert)
-      let merged = Array.from(map, ([ts, value]) => ({ ts, value }))
-      .sort((a, b) => new Date(a.ts) - new Date(b.ts));
-
-      // ---------------------------------------------------------------------
-      // (3) Auf 72 Stunden beschränken
-      // ---------------------------------------------------------------------
-      const cutoff = new Date();
-      cutoff.setHours(cutoff.getHours() - 72);
-
-      const pruned = merged.filter(p => new Date(p.ts) >= cutoff);
-
-      // ---------------------------------------------------------------------
-      // (5) internen Puffer aktualisieren (48h)
-      // ---------------------------------------------------------------------
-      if (!this.recentHeartData) this.recentHeartData = [];
-
-      const cutoff48 = new Date();
-      cutoff48.setHours(cutoff48.getHours() - 48);
-
-      for (const entry of dataset) {
-        const ts = new Date(`${todayDateString}T${entry.time}`);
-        if (ts >= cutoff48) {
-          this.recentHeartData.push({ ts, value: entry.value });
-        }
-      }
-
-      this.recentHeartData = this.recentHeartData
-      .filter(p => p.ts >= cutoff48)
-      .slice(-5000); // Falls 1-min-Betrieb, zur Sicherheit
-
-      /***********************************************************************
-       * ⭐ HEART RATE FALLBACK (zoneMetrics → HeartRate-ts + recentHeartData)
-       ***********************************************************************/
-      try {
-        const refreshMin = Math.max(1, this.effectiveConfig.refresh);
-        const now = new Date();
-        const nowMinute = new Date(
-          now.getFullYear(),
-                                   now.getMonth(),
-                                   now.getDate(),
-                                   now.getHours(),
-                                   now.getMinutes(),
-                                   0, 0
-        );
-
-        // Letzten realen HR-Wert im 48h-Puffer suchen
-        let lastReal = null;
-        if (this.recentHeartData.length > 0) {
-          lastReal = this.recentHeartData[this.recentHeartData.length - 1].ts;
+        if (existing?.val) {
+          try { oldArr = JSON.parse(existing.val); }
+          catch { oldArr = []; }
         }
 
-        if (lastReal) {
-          const diffMin = Math.round((nowMinute - lastReal) / 60000);
+        // ---------------------------------------------------------------------
+        // (2) Merge ohne Duplikate
+        // ---------------------------------------------------------------------
+        const map = new Map();
 
-          // Fallback nach 2× Refresh
-          if (diffMin > refreshMin * 2) {
-            const zone = await this.getStateAsync("activity.zoneMetrics");
+        // alte Daten übernehmen
+        for (const o of oldArr) {
+          map.set(o.ts, o.value);
+        }
 
-            if (zone?.val) {
-              const z = JSON.parse(zone.val);
-              if (z?.bpm && Number.isFinite(z.bpm)) {
+        // neue Daten einfügen (überschreiben gleiche ts)
+        for (const entry of dataset) {
+          const fullTs = new Date(`${todayDateString}T${entry.time}`).toISOString();
+          map.set(fullTs, entry.value);
+        }
 
-                const tsIso = nowMinute.toISOString();
+        // map zurück in Array (sortiert)
+        let merged = Array.from(map, ([ts, value]) => ({ ts, value }))
+        .sort((a, b) => new Date(a.ts) - new Date(b.ts));
 
-                // Prüfen, ob in pruned oder recentHeartData ein Wert existiert
-                const hasTS = this.recentHeartData.some(p => p.ts.toISOString() === tsIso);
+        // ---------------------------------------------------------------------
+        // (3) Auf 72 Stunden beschränken
+        // ---------------------------------------------------------------------
+        const cutoff = new Date();
+        cutoff.setHours(cutoff.getHours() - 72);
 
-                if (!hasTS) {
-                  this.log.info(`[HR-Fallback] Insert fallback HR ${z.bpm} at ${tsIso}`);
+        let pruned = merged.filter(p => new Date(p.ts) >= cutoff);
 
-                  // In BOTH schreiben:
-                  this.recentHeartData.push({
-                    ts: nowMinute,
-                    value: z.bpm,
-                    source: "fallback"
-                  });
+        // ---------------------------------------------------------------------
+        // (4) internen Puffer aktualisieren (48h)
+        // ---------------------------------------------------------------------
+        if (!this.recentHeartData) this.recentHeartData = [];
 
-                  // HeartRate-ts (pruned) erweitern:
-                  pruned.push({
-                    ts: tsIso,
-                    value: z.bpm,
-                    source: "fallback"
-                  });
+        const cutoff48 = new Date();
+        cutoff48.setHours(cutoff48.getHours() - 48);
+
+        for (const entry of dataset) {
+          const ts = new Date(`${todayDateString}T${entry.time}`);
+          if (ts >= cutoff48) {
+            this.recentHeartData.push({ ts, value: entry.value });
+          }
+        }
+
+        this.recentHeartData = this.recentHeartData
+        .filter(p => p.ts >= cutoff48)
+        .slice(-5000); // Falls 1-min-Betrieb, zur Sicherheit
+
+        /***********************************************************************
+         * ⭐ HEART RATE FALLBACK (zoneMetrics → HeartRate-ts + recentHeartData)
+         ***********************************************************************/
+        try {
+          const refreshMin = Math.max(1, this.effectiveConfig.refresh);
+          const nowMinute = new Date(
+            now.getFullYear(),
+                                     now.getMonth(),
+                                     now.getDate(),
+                                     now.getHours(),
+                                     now.getMinutes(),
+                                     0, 0
+          );
+
+          // Letzten realen HR-Wert im 48h-Puffer suchen
+          let lastReal = null;
+          if (this.recentHeartData.length > 0) {
+            lastReal = this.recentHeartData[this.recentHeartData.length - 1].ts;
+          }
+
+          if (lastReal) {
+            const diffMin = Math.round((nowMinute - lastReal) / 60000);
+
+            // Fallback nach 2× Refresh
+            if (diffMin > refreshMin * 2) {
+              const zone = await this.getStateAsync("activity.zoneMetrics");
+
+              if (zone?.val) {
+                const z = JSON.parse(zone.val);
+                if (z?.bpm && Number.isFinite(z.bpm)) {
+
+                  const tsIso = nowMinute.toISOString();
+
+                  // Prüfen, ob in recentHeartData bereits ein Wert existiert
+                  const hasTS =
+                  this.recentHeartData.some(p => p.ts.toISOString() === tsIso) ||
+                  pruned.some(p => p.ts === tsIso);
+
+                  if (!hasTS) {
+                    this.log.info(`[HR-Fallback] Insert fallback HR ${z.bpm} at ${tsIso}`);
+
+                    // In BOTH schreiben:
+                    this.recentHeartData.push({
+                      ts: nowMinute,
+                      value: z.bpm,
+                      source: "fallback"
+                    });
+
+                    // HeartRate-ts (pruned) erweitern:
+                    pruned.push({
+                      ts: tsIso,
+                      value: z.bpm,
+                      source: "fallback"
+                    });
+                  }
                 }
               }
             }
           }
+
+          // Neu sortieren nach möglichem Fallback-Insert
+          this.recentHeartData.sort((a, b) => a.ts - b.ts);
+          pruned.sort((a, b) => new Date(a.ts) - new Date(b.ts));
+
+        } catch (e) {
+          this.log.error("HR-Fallback error: " + e.message);
         }
 
-        // Neu sortieren
-        this.recentHeartData.sort((a,b) => a.ts - b.ts);
-        pruned.sort((a,b) => new Date(a.ts) - new Date(b.ts));
-
-        // pruned erneut in TS speichern (da erweitert)
+        // ---------------------------------------------------------------------
+        // (5) TS speichern (immer innerhalb des Mutex!)
+        // ---------------------------------------------------------------------
         await this.setStateAsync(tsId, {
           val: JSON.stringify(pruned),
                                  ack: true
         });
 
-      } catch (e) {
-        this.log.error("HR-Fallback error: " + e.message);
-      }
+      }); // Ende _withHrTsLock
 
       // ---------------------------------------------------------------------
-      // (6) CurrentHeartRate aktualisieren
+      // (6) CurrentHeartRate aktualisieren (kein TS-Write, daher ohne Lock)
       // ---------------------------------------------------------------------
       const last = dataset[dataset.length - 1];
       await this.setObjectNotExistsAsync("activity.CurrentHeartRate", {
@@ -1138,17 +1165,23 @@ class FitBit extends utils.Adapter {
   }
 
   // ============================================================================
-  // Add/merge single HR point (used by zoneMetrics + fallback)
+  // Add/merge single HR point (used by zoneMetrics + fallback) – mit Mutex
   // ============================================================================
   async addHeartRatePoint(point) {
-    try {
+    await this._withHrTsLock("addHeartRatePoint", async () => {
       const tsId = "activity.HeartRate-ts";
 
       // TS laden oder anlegen
       await this.setObjectNotExistsAsync(tsId, {
         type: "state",
-        common: { name: "Intraday HR (72h)", type: "string", role: "json", read: true, write: false },
-                                         native: {},
+        common: {
+          name: "Intraday HR (72h)",
+                                         type: "string",
+                                         role: "json",
+                                         read: true,
+                                         write: false
+        },
+        native: {},
       });
 
       let pruned = [];
@@ -1165,7 +1198,7 @@ class FitBit extends utils.Adapter {
 
       // Neu sortieren
       pruned = Array.from(map, ([ts, value]) => ({ ts, value }))
-      .sort((a,b) => new Date(a.ts) - new Date(b.ts));
+      .sort((a, b) => new Date(a.ts) - new Date(b.ts));
 
       // Auf 72h begrenzen
       const cutoff72 = new Date();
@@ -1182,10 +1215,7 @@ class FitBit extends utils.Adapter {
       this.recentHeartData = this.recentHeartData
       .filter(p => p.ts >= cutoff48)
       .slice(-5000);
-
-    } catch (e) {
-      this.log.error("addHeartRatePoint() error: " + e.message);
-    }
+    });
   }
 
   // ============================================================================
@@ -1463,9 +1493,7 @@ class FitBit extends utils.Adapter {
       if (this.effectiveConfig.clearNapListAtNight) {
         const hour = new Date().getHours();
         if (hour >= 0 && hour < 4) {
-          this.log.info(
-            "clearNapListAtNight → Liste wird geleert (nach Mitternacht).",
-          );
+          this.log.info("clearNapListAtNight → Liste wird geleert (nach Mitternacht).");
           await this._clearNapStates({ onlyList: true });
         }
       }
@@ -1478,10 +1506,13 @@ class FitBit extends utils.Adapter {
       if (response.status === 200) {
         await this.setStateAsync("sleep.RawData", {
           val: JSON.stringify(response.data),
-          ack: true,
+                                 ack: true,
         });
 
-        if (!this.setSleepStates(response.data)) {
+        // 🔥 WICHTIG: setSleepStates ist async → wir müssen warten!
+        const ok = await this.setSleepStates(response.data);
+
+        if (!ok) {
           await this._clearNapStates({ onlyList: true });
           this.dlog(`debug`, `No sleep data available`);
         }
@@ -1569,17 +1600,27 @@ class FitBit extends utils.Adapter {
     // ------------------------------------------------------------
     const sleep = filtered[0];
 
-    if (sleep.isMainSleep) {
-      this.log.info(`[SLEEP] Hauptschlaf erkannt → Analyse wird verzögert, bis HR vollständig ist`);
+    // Hauptschlaf nur „parken“, wenn Intraday aktiv ist
+    if (
+      sleep.isMainSleep &&
+      this.effectiveConfig.intraday &&
+      !options.forceMainProcess
+    ) {
+      const start = this._parseISO(sleep.startTime);
+      const end   = this._parseISO(sleep.endTime);
 
-      // Pending speichern
+      this.log.info(
+        `[SLEEP] Hauptschlaf erkannt (${sleep.startTime} – ${sleep.endTime}) → warte auf HR-Daten (kein sofortiges Schreiben!)`
+      );
+
+      // Struktur passend für checkNightHRAndProcess()
       this.pendingMainSleep = {
-        start: new Date(sleep.startTime),
-        end: new Date(sleep.endTime),
-        raw: sleep
+        start: start instanceof Date && !isNaN(start) ? start : new Date(sleep.startTime),
+        end:   end   instanceof Date && !isNaN(end)   ? end   : new Date(sleep.endTime),
+        raw: sleep,           // kompletter Fitbit-Block inkl. levels usw.
       };
 
-      return false; // Analyse jetzt abbrechen
+      return true;
     }
 
     // Nickerchen → direkt analysieren
@@ -2029,47 +2070,81 @@ class FitBit extends utils.Adapter {
 
     // -------------------------------------------------------------------------
     // HR-Analyse: Vor-/Nach-HF und HF-Abfall rund um Einschlafzeit
+    // → FIX: Wir lesen jetzt DIREKT aus activity.HeartRate-ts statt aus recentHeartData
+    // → Dadurch funktioniert die Analyse auch nach pendingMainSleep und Adapter-Neustart
     // -------------------------------------------------------------------------
     try {
-      if (
-        this.effectiveConfig.intraday &&
-        this.recentHeartData?.length > 0 &&
-        fell instanceof Date
-      ) {
+      if (this.effectiveConfig.intraday && fell instanceof Date) {
         const startDT = fell;
 
-        const refresh = Math.max(1, this.effectiveConfig.refresh || 5);
-        const preWindow  = refresh <= 1 ? 45 : 60;
-        const postWindow = refresh <= 1 ? 60 : 90;
-        const minPoints  = 6;
+        // Analysefenster: 6 Stunden vor bis 2 Stunden nach dem berechneten Einschlafzeitpunkt
+        const windowStart = new Date(startDT.getTime() - 6 * 60 * 60 * 1000);
+        const windowEnd   = new Date(startDT.getTime() + 2 * 60 * 60 * 1000);
 
-        const window = this.recentHeartData.filter(p =>
-        p.ts >= new Date(startDT.getTime() - preWindow * 60000) &&
-        p.ts <= new Date(startDT.getTime() + postWindow * 60000)
-        );
+        // *** HIER IST DER WICHTIGE FIX ***
+        let nightHR = [];
+        try {
+          const tsState = await this.getStateAsync("activity.HeartRate-ts");
+          if (tsState?.val) {
+            const allTs = JSON.parse(tsState.val);
+            nightHR = allTs.filter(e => {
+              const t = new Date(e.ts);
+              return t >= windowStart && t <= windowEnd;
+            });
+          }
+        } catch (e) {
+          this.dlog("warn", "[HR] Fehler beim Laden von HeartRate-ts für Analyse: " + e.message);
+        }
 
-        if (window.length >= minPoints) {
+        const MIN_HR_POINTS = 15; // Mindestens 15 Messwerte für eine vernünftige Analyse
+
+        if (nightHR.length < MIN_HR_POINTS) {
+          this.dlog("info", `[HR] Zu wenig Messpunkte im Nachtfenster (${nightHR.length}/${MIN_HR_POINTS}) → HR-Werte bleiben leer`);
+          await Promise.all([
+            this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true }),
+                            this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true }),
+                            this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true })
+          ]);
+        } else {
           const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
 
-          const before = mean(window.filter(p => p.ts < startDT).map(p => p.value));
-          const after  = mean(window.filter(p => p.ts >= startDT).map(p => p.value));
-          const drop   = before - after;
+          const beforeStart = new Date(startDT.getTime() - 90 * 60000); // 90–10 min vor Einschlafen
+          const beforeEnd   = new Date(startDT.getTime() - 10 * 60000);
+          const afterStart  = new Date(startDT.getTime() + 10 * 60000); // 10–90 min nach Einschlafen
+          const afterEnd    = new Date(startDT.getTime() + 90 * 60000);
 
-          await this.setStateAsync("sleep.HRBeforeSleep", { val: Number(before.toFixed(1)), ack: true });
-          await this.setStateAsync("sleep.HRAfterSleep",  { val: Number(after.toFixed(1)),  ack: true });
-          await this.setStateAsync("sleep.HRDropAtSleep", { val: Number(drop.toFixed(1)),   ack: true });
+          const beforeArr = nightHR.filter(p => p.ts >= beforeStart && p.ts <= beforeEnd).map(p => p.value);
+          const afterArr  = nightHR.filter(p => p.ts >= afterStart  && p.ts <= afterEnd ).map(p => p.value);
 
-        } else {
-          // ❗ Zu wenige HR-Daten → Werte NICHT löschen!
-          this.dlog("info", `[HR] Zu wenige Herzfrequenz-Punkte (${window.length}) – letzte gültige Werte bleiben stehen.`);
+          if (beforeArr.length >= 3 && afterArr.length >= 3) {
+            const before = mean(beforeArr);
+            const after  = mean(afterArr);
+            const drop   = before - after;
+
+            await Promise.all([
+              this.setStateAsync("sleep.HRBeforeSleep", { val: Number(before.toFixed(1)), ack: true }),
+                              this.setStateAsync("sleep.HRAfterSleep",  { val: Number(after.toFixed(1)),  ack: true }),
+                              this.setStateAsync("sleep.HRDropAtSleep", { val: Number(drop.toFixed(1)),   ack: true })
+            ]);
+
+            this.dlog("debug", `[HR] Erfolgreich analysiert → vor=${before.toFixed(1)} BPM, nach=${after.toFixed(1)} BPM, Abfall=${drop.toFixed(1)} BPM (${nightHR.length} Punkte)`);
+          } else {
+            this.dlog("info", `[HR] Zu wenige Punkte in den Fein-Fenstern (vor=${beforeArr.length}, nach=${afterArr.length}) → HR-Werte leer`);
+            await Promise.all([
+              this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true }),
+                              this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true }),
+                              this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true })
+            ]);
+          }
         }
       }
     } catch (e) {
-      // ❗ Nur im Fehlerfall wirklich zurücksetzen
-      await this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true });
-      await this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true });
-      await this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true });
-      this.dlog("warn", `HR analysis error in writeSleepStates: ${e.message}`);
+      this.log.warn(`HR-Analyse fehlgeschlagen: ${e.message || e}`);
+      await Promise.all([
+        this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true }),
+                        this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true }),
+                        this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true })
+      ]);
     }
 
     // ✳️ Lokale Formatierung
@@ -2519,17 +2594,47 @@ class FitBit extends utils.Adapter {
   /**
    * Prüft, ob genügend HR-Daten für die Nacht vorhanden sind.
    * Wenn ja → Hauptschlaf analysieren.
+   * Falls zu lange gewartet wurde → Failsafe ohne HR-Wait.
    */
   async checkNightHRAndProcess() {
     const pending = this.pendingMainSleep;
     if (!pending) return;
 
+    const now = new Date();
+
+    // Failsafe: pendingMainSleep zu alt?
+    if (pending.start instanceof Date && !isNaN(pending.start)) {
+      const ageMs = now - pending.start;
+      const maxAgeMs = PENDING_MAIN_SLEEP_MAX_AGE_HOURS * 60 * 60 * 1000;
+
+      if (ageMs > maxAgeMs) {
+        this.log.warn(
+          `[SLEEP] pendingMainSleep älter als ${PENDING_MAIN_SLEEP_MAX_AGE_HOURS}h → ` +
+          `Schlaf wird ohne weiteres HR-Warten verarbeitet (HR-Dichte zu dünn?).`
+        );
+        try {
+          // relaxed + forceMainProcess → keine erneute pendingMainSleep-Setzung,
+          // aber vorhandene Daten trotzdem sauber durch die Pipeline jagen.
+          await this.setSleepStates(
+            { sleep: [pending.raw] },
+            { relaxed: true, forceMainProcess: true }
+          );
+        } catch (e) {
+          this.log.error(
+            `[SLEEP] Failsafe-Verarbeitung von pendingMainSleep fehlgeschlagen: ${e.message || e}`
+          );
+        }
+        this.pendingMainSleep = null;
+        return;
+      }
+    }
+
     const start = pending.start;
     const end = pending.end;
 
-    // HR-Fenster: 2h vor Schlafende bis 30min nach Schlafende
-    const windowStart = new Date(end.getTime() - 2 * 60 * 60 * 1000);
-    const windowEnd   = new Date(end.getTime() + 30 * 60 * 1000);
+    // Verbesserte HR-Erkennung: 6h vor Start bis 2h nach Start
+    const windowStart = new Date(start.getTime() - 6 * 60 * 60 * 1000);
+    const windowEnd   = new Date(start.getTime() + 2 * 60 * 60 * 1000);
 
     // HeartRate-ts laden
     const tsState = await this.getStateAsync("activity.HeartRate-ts");
@@ -2548,12 +2653,17 @@ class FitBit extends utils.Adapter {
 
     // Mindestanzahl HR Punkte
     if (nightHR.length < 5) {
-      this.log.info(`[WAIT] Nacht-HR unvollständig (${nightHR.length}) → später erneut prüfen`);
+      this.log.info(
+        `[WAIT] Nacht-HR unvollständig (${nightHR.length}) → später erneut prüfen`
+      );
       return;
     }
 
     this.log.info(`[OK] HR-Daten vollständig → starte Schlafanalyse`);
-    await this.setSleepStates({ sleep: [ pending.raw ] }, { relaxed: false });
+    await this.setSleepStates(
+      { sleep: [pending.raw] },
+      { relaxed: false, forceMainProcess: true }
+    );
 
     this.pendingMainSleep = null;
   }
@@ -2596,13 +2706,30 @@ class FitBit extends utils.Adapter {
   // =========================================================================
   onUnload(callback) {
     try {
+      // Haupt-Update-Intervall
       if (this.updateInterval) {
         clearInterval(this.updateInterval);
         this.updateInterval = null;
       }
+
+      // Sleep-Scheduler (node-schedule Job)
       if (this.sleepSchedule) {
         this.sleepSchedule.cancel();
+        this.sleepSchedule = null;
       }
+
+      // 🔥 NEU: Intraday-Intervall stoppen
+      if (this.intradayInterval) {
+        clearInterval(this.intradayInterval);
+        this.intradayInterval = null;
+      }
+
+      // 🔥 NEU: ZoneMetrics-Intervall stoppen
+      if (this.zoneMetricsInterval) {
+        clearInterval(this.zoneMetricsInterval);
+        this.zoneMetricsInterval = null;
+      }
+
       callback();
     } catch (e) {
       callback();
@@ -2637,7 +2764,7 @@ class FitBit extends utils.Adapter {
           if (raw && raw.val) {
             const parsed = JSON.parse(raw.val);
             this.log.info("Recalculating sleep data from stored RawData (relaxed mode)...");
-            await this.setSleepStates(parsed, { relaxed: true });
+            await this.setSleepStates(parsed, { relaxed: true, forceMainProcess: true });
             await this.setStateAsync("sleep.LastRecalculated", {
               val: new Date().toISOString(),
               ack: true,
