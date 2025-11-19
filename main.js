@@ -26,9 +26,11 @@ const axiosTimeout = 15000;
 const BASE_URL = "https://api.fitbit.com/1/user/";
 const BASE2_URL = "https://api.fitbit.com/1.2/user/";
 const HEART_RATE_ZONE_RANGES = ["customHeartRateZones", "heartRateZones"];
+
 // Wie weit darf der berechnete Einschlafzeitpunkt maximal NACH dem Fitbit-Start liegen?
 // Schutz gegen Fälle wie: Fitbit 23:20 → Adapter rutscht auf 00:55
-const MAX_SLEEP_START_DELAY_MINUTES = 45; // Anpassen möglich (z. B. 60)
+const MAX_SLEEP_START_DELAY_MINUTES = 180; // Anpassen möglich (z. B. 60)
+
 // Wie lange darf ein pendingMainSleep maximal "warten", bevor er ohne HR-Analyse verarbeitet wird?
 const PENDING_MAIN_SLEEP_MAX_AGE_HOURS = 24; // z. B. 24h
 
@@ -2070,53 +2072,47 @@ class FitBit extends utils.Adapter {
 
     // -------------------------------------------------------------------------
     // HR-Analyse: Vor-/Nach-HF und HF-Abfall rund um Einschlafzeit
-    // → FIX: Wir lesen jetzt DIREKT aus activity.HeartRate-ts statt aus recentHeartData
-    // → Dadurch funktioniert die Analyse auch nach pendingMainSleep und Adapter-Neustart
     // -------------------------------------------------------------------------
     try {
       if (this.effectiveConfig.intraday && fell instanceof Date) {
         const startDT = fell;
+        const windowStart = new Date(startDT.getTime() - 6 * 3600000);
+        const windowEnd   = new Date(startDT.getTime() + 2 * 3600000);
 
-        // Analysefenster: 6 Stunden vor bis 2 Stunden nach dem berechneten Einschlafzeitpunkt
-        const windowStart = new Date(startDT.getTime() - 6 * 60 * 60 * 1000);
-        const windowEnd   = new Date(startDT.getTime() + 2 * 60 * 60 * 1000);
-
-        // *** HIER IST DER WICHTIGE FIX ***
         let nightHR = [];
         try {
           const tsState = await this.getStateAsync("activity.HeartRate-ts");
           if (tsState?.val) {
             const allTs = JSON.parse(tsState.val);
             nightHR = allTs.filter(e => {
-              const t = new Date(e.ts);
-              return t >= windowStart && t <= windowEnd;
+              if (!e.ts) return false;
+              const t = Date.parse(e.ts);
+              return t >= windowStart.getTime() && t <= windowEnd.getTime();
             });
+            this.dlog("debug", `[HR] Gefundene Punkte im 8h-Fenster: ${nightHR.length} (von ${allTs.length} total)`);
           }
         } catch (e) {
-          this.dlog("warn", "[HR] Fehler beim Laden von HeartRate-ts für Analyse: " + e.message);
+          this.dlog("warn", "[HR] Fehler beim Laden von HeartRate-ts: " + e.message);
         }
 
-        const MIN_HR_POINTS = 15; // Mindestens 15 Messwerte für eine vernünftige Analyse
-
-        if (nightHR.length < MIN_HR_POINTS) {
-          this.dlog("info", `[HR] Zu wenig Messpunkte im Nachtfenster (${nightHR.length}/${MIN_HR_POINTS}) → HR-Werte bleiben leer`);
+        if (nightHR.length < 8) {
+          this.dlog("info", `[HR] Zu wenig Messpunkte im 8h-Fenster (${nightHR.length}/8) → HR-Werte leer`);
           await Promise.all([
             this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true }),
                             this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true }),
                             this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true })
           ]);
         } else {
-          const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+          const now = startDT.getTime();
+          const beforeArr = nightHR
+          .filter(p => Date.parse(p.ts) >= now - 120*60000 && Date.parse(p.ts) <= now - 15*60000)
+          .map(p => p.value);
+          const afterArr = nightHR
+          .filter(p => Date.parse(p.ts) >= now + 15*60000 && Date.parse(p.ts) <= now + 120*60000)
+          .map(p => p.value);
 
-          const beforeStart = new Date(startDT.getTime() - 90 * 60000); // 90–10 min vor Einschlafen
-          const beforeEnd   = new Date(startDT.getTime() - 10 * 60000);
-          const afterStart  = new Date(startDT.getTime() + 10 * 60000); // 10–90 min nach Einschlafen
-          const afterEnd    = new Date(startDT.getTime() + 90 * 60000);
-
-          const beforeArr = nightHR.filter(p => p.ts >= beforeStart && p.ts <= beforeEnd).map(p => p.value);
-          const afterArr  = nightHR.filter(p => p.ts >= afterStart  && p.ts <= afterEnd ).map(p => p.value);
-
-          if (beforeArr.length >= 3 && afterArr.length >= 3) {
+          if (beforeArr.length >= 2 && afterArr.length >= 2) {
+            const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
             const before = mean(beforeArr);
             const after  = mean(afterArr);
             const drop   = before - after;
@@ -2127,7 +2123,7 @@ class FitBit extends utils.Adapter {
                               this.setStateAsync("sleep.HRDropAtSleep", { val: Number(drop.toFixed(1)),   ack: true })
             ]);
 
-            this.dlog("debug", `[HR] Erfolgreich analysiert → vor=${before.toFixed(1)} BPM, nach=${after.toFixed(1)} BPM, Abfall=${drop.toFixed(1)} BPM (${nightHR.length} Punkte)`);
+            this.dlog("info", `[HR] Erfolgreich analysiert → Vor: ${before.toFixed(1)} BPM (${beforeArr.length} Werte), Nach: ${after.toFixed(1)} BPM (${afterArr.length} Werte), Abfall: ${drop.toFixed(1)} BPM`);
           } else {
             this.dlog("info", `[HR] Zu wenige Punkte in den Fein-Fenstern (vor=${beforeArr.length}, nach=${afterArr.length}) → HR-Werte leer`);
             await Promise.all([
