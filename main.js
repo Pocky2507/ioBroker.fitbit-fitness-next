@@ -90,7 +90,6 @@ class FitBit extends utils.Adapter {
   // Adapter Start
   // =========================================================================
   async onReady() {
-
     try {
       await this.setStateAsync("info.connection", { val: false, ack: true });
       // === API Call Counter: Initialisierung ===
@@ -286,8 +285,13 @@ class FitBit extends utils.Adapter {
 
       DEBUG_SLEEP_LOG = !!this.effectiveConfig.debugEnabled;
       if (DEBUG_SLEEP_LOG) {
-        this.log.info("[DEBUG] Erweiterter Debugmodus aktiv – detaillierte Logausgaben eingeschaltet.");
-        this.dlog("debug", "[DEBUGTEST] dlog() funktioniert – Debug-Ausgaben aktiv");
+        this.log.info(
+          "[DEBUG] Erweiterter Debugmodus aktiv – detaillierte Logausgaben eingeschaltet.",
+        );
+        this.dlog(
+          "debug",
+          "[DEBUGTEST] dlog() funktioniert – Debug-Ausgaben aktiv",
+        );
       }
 
       // --- Nur Konfiguration immer loggen (einmalig beim Start) ---
@@ -307,7 +311,7 @@ class FitBit extends utils.Adapter {
         "info",
         `Intervals → refresh every ${this.effectiveConfig.refresh} min; scheduled sleep fetch=${this.effectiveConfig.sleeprecordsschedule ? "on" : "off"}`,
       );
-      this.log.info("[INIT] Sleep processor (Debug-Extended) active")
+      this.log.info("[INIT] Sleep processor (Debug-Extended) active");
 
       await this.login();
 
@@ -329,20 +333,23 @@ class FitBit extends utils.Adapter {
         // ⭐ Intraday HR – Eigener Scheduler
         // ========================================================================
         if (this.effectiveConfig.intraday) {
-
-          const hrRefreshMs = Math.max(1, this.effectiveConfig.refresh) * 60 * 1000;
-          this.log.info(`Intraday HR → fetch every ${this.effectiveConfig.refresh} min`);
+          const hrRefreshMs =
+            Math.max(1, this.effectiveConfig.refresh) * 60 * 1000;
+          this.log.info(
+            `Intraday HR → fetch every ${this.effectiveConfig.refresh} min`,
+          );
 
           // Intervall starten
           this.intradayInterval = setInterval(async () => {
             try {
-              const refresh = Math.max(1, Math.round(this.effectiveConfig.refresh));
+              const refresh = Math.max(
+                1,
+                Math.round(this.effectiveConfig.refresh),
+              );
               const resolution =
-              refresh <= 1 ? "1min" :
-              refresh <= 5 ? "5min" : "15min";
+                refresh <= 1 ? "1min" : refresh <= 5 ? "5min" : "15min";
 
               await this.getIntradayHeartRate(resolution);
-
             } catch (err) {
               this.log.warn(`Intraday fetch failed: ${err}`);
             }
@@ -350,20 +357,24 @@ class FitBit extends utils.Adapter {
 
           // Sofort beim Start einmal ausführen
           const resolution =
-          this.effectiveConfig.refresh <= 1 ? "1min" :
-          this.effectiveConfig.refresh <= 5 ? "5min" : "15min";
+            this.effectiveConfig.refresh <= 1
+              ? "1min"
+              : this.effectiveConfig.refresh <= 5
+                ? "5min"
+                : "15min";
 
           await this.getIntradayHeartRate(resolution);
         }
-
 
         // ========================================================================
         // ⭐ ZoneMetrics HR – Fast-Live fallback (gleiche Rate, gleiche Bedingung)
         // ========================================================================
         if (this.effectiveConfig.intraday) {
-
-          const zmRefreshMs = Math.max(1, this.effectiveConfig.refresh) * 60 * 1000;
-          this.log.info(`ZoneMetrics → fetch every ${this.effectiveConfig.refresh} min`);
+          const zmRefreshMs =
+            Math.max(1, this.effectiveConfig.refresh) * 60 * 1000;
+          this.log.info(
+            `ZoneMetrics → fetch every ${this.effectiveConfig.refresh} min`,
+          );
 
           this.zoneMetricsInterval = setInterval(async () => {
             try {
@@ -393,7 +404,6 @@ class FitBit extends utils.Adapter {
             this.log.error(`Periodic fetch failed: ${err}`);
           }
         }, refreshMs);
-
       } else {
         await this.setStateAsync("info.connection", { val: false, ack: true });
         this.log.warn(`FITBIT login failed with status ${this.fitbit.status}`);
@@ -410,24 +420,46 @@ class FitBit extends utils.Adapter {
   // Sleep States anlegen (inkl. HR-Analyse + History)
   // =========================================================================
   async initCustomSleepStates() {
-
     // ---------------------------------------------------------------------------
     // Minuten-States
     // ---------------------------------------------------------------------------
     const minuteStates = [
-      { id: "sleep.AsleepTotal", name: "Total minutes asleep (incl. naps)", unit: "min" },
-      { id: "sleep.InBedTotal", name: "Total minutes in bed (incl. naps)", unit: "min" },
+      {
+        id: "sleep.AsleepTotal",
+        name: "Total minutes asleep (incl. naps)",
+        unit: "min",
+      },
+      {
+        id: "sleep.InBedTotal",
+        name: "Total minutes in bed (incl. naps)",
+        unit: "min",
+      },
       { id: "sleep.Naps.Asleep", name: "Minutes asleep in naps", unit: "min" },
-      { id: "sleep.Naps.InBed", name: "Minutes in bed during naps", unit: "min" },
+      {
+        id: "sleep.Naps.InBed",
+        name: "Minutes in bed during naps",
+        unit: "min",
+      },
       { id: "sleep.Naps.Count", name: "Number of naps", unit: "" },
-      { id: "sleep.Naps.ValidCount", name: "Number of validated naps", unit: "" }
+      {
+        id: "sleep.Naps.ValidCount",
+        name: "Number of validated naps",
+        unit: "",
+      },
     ];
 
     for (const s of minuteStates) {
       await this.setObjectNotExistsAsync(s.id, {
         type: "state",
-        common: { name: s.name, type: "number", role: "value", unit: s.unit, read: true, write: true },
-        native: {}
+        common: {
+          name: s.name,
+          type: "number",
+          role: "value",
+          unit: s.unit,
+          read: true,
+          write: true,
+        },
+        native: {},
       });
     }
 
@@ -435,23 +467,44 @@ class FitBit extends utils.Adapter {
     // Zeit-States
     // ---------------------------------------------------------------------------
     const timeStates = [
-      { id: "sleep.Main.FellAsleepAt", name: "Main sleep - fell asleep at (ISO)" },
-      { id: "sleep.Main.FellAsleepAtLocal", name: "Main sleep - fell asleep at (local de-DE)" },
+      {
+        id: "sleep.Main.FellAsleepAt",
+        name: "Main sleep - fell asleep at (ISO)",
+      },
+      {
+        id: "sleep.Main.FellAsleepAtLocal",
+        name: "Main sleep - fell asleep at (local de-DE)",
+      },
       { id: "sleep.Main.WokeUpAt", name: "Main sleep - woke up at (ISO)" },
-      { id: "sleep.Main.WokeUpAtLocal", name: "Main sleep - woke up at (local de-DE)" },
+      {
+        id: "sleep.Main.WokeUpAtLocal",
+        name: "Main sleep - woke up at (local de-DE)",
+      },
       { id: "sleep.Naps.FellAsleepAt", name: "Nap - fell asleep at (ISO)" },
-      { id: "sleep.Naps.FellAsleepAtLocal", name: "Nap - fell asleep at (local de-DE)" },
+      {
+        id: "sleep.Naps.FellAsleepAtLocal",
+        name: "Nap - fell asleep at (local de-DE)",
+      },
       { id: "sleep.Naps.WokeUpAt", name: "Nap - woke up at (ISO)" },
-      { id: "sleep.Naps.WokeUpAtLocal", name: "Nap - woke up at (local de-DE)" },
+      {
+        id: "sleep.Naps.WokeUpAtLocal",
+        name: "Nap - woke up at (local de-DE)",
+      },
       { id: "sleep.Naps.List", name: "List of today naps as JSON" },
-      { id: "sleep.Naps.ValidList", name: "List of validated naps as JSON" }
+      { id: "sleep.Naps.ValidList", name: "List of validated naps as JSON" },
     ];
 
     for (const s of timeStates) {
       await this.setObjectNotExistsAsync(s.id, {
         type: "state",
-        common: { name: s.name, type: "string", role: "text", read: true, write: true },
-        native: {}
+        common: {
+          name: s.name,
+          type: "string",
+          role: "text",
+          read: true,
+          write: true,
+        },
+        native: {},
       });
     }
 
@@ -460,36 +513,73 @@ class FitBit extends utils.Adapter {
     // ---------------------------------------------------------------------------
     await this.setObjectNotExistsAsync("sleep.Recalculate", {
       type: "state",
-      common: { name: "Recalculate sleep data from last RawData", type: "boolean", role: "button", read: true, write: true },
-      native: {}
+      common: {
+        name: "Recalculate sleep data from last RawData",
+        type: "boolean",
+        role: "button",
+        read: true,
+        write: true,
+      },
+      native: {},
     });
 
     await this.setObjectNotExistsAsync("sleep.RawData", {
       type: "state",
-      common: { name: "Last raw sleep JSON from Fitbit", type: "string", role: "json", read: true, write: false },
-      native: {}
+      common: {
+        name: "Last raw sleep JSON from Fitbit",
+        type: "string",
+        role: "json",
+        read: true,
+        write: false,
+      },
+      native: {},
     });
 
     await this.setObjectNotExistsAsync("sleep.LastRecalculated", {
       type: "state",
-      common: { name: "Timestamp of last recalculation", type: "string", role: "date", read: true, write: false },
-      native: {}
+      common: {
+        name: "Timestamp of last recalculation",
+        type: "string",
+        role: "date",
+        read: true,
+        write: false,
+      },
+      native: {},
     });
 
     // ---------------------------------------------------------------------------
     // HR-Analyse States
     // ---------------------------------------------------------------------------
     const hrStates = [
-      { id: "sleep.HRDropAtSleep", name: "Herzfrequenzabfall beim Einschlafen", unit: "BPM" },
-      { id: "sleep.HRBeforeSleep", name: "Durchschnitt HR vor Einschlafen", unit: "BPM" },
-      { id: "sleep.HRAfterSleep", name: "Durchschnitt HR nach Einschlafen", unit: "BPM" },
+      {
+        id: "sleep.HRDropAtSleep",
+        name: "Herzfrequenzabfall beim Einschlafen",
+        unit: "BPM",
+      },
+      {
+        id: "sleep.HRBeforeSleep",
+        name: "Durchschnitt HR vor Einschlafen",
+        unit: "BPM",
+      },
+      {
+        id: "sleep.HRAfterSleep",
+        name: "Durchschnitt HR nach Einschlafen",
+        unit: "BPM",
+      },
     ];
 
     for (const s of hrStates) {
       await this.setObjectNotExistsAsync(s.id, {
         type: "state",
-        common: { name: s.name, type: "number", role: "value", unit: s.unit, read: true, write: false },
-        native: {}
+        common: {
+          name: s.name,
+          type: "number",
+          role: "value",
+          unit: s.unit,
+          read: true,
+          write: false,
+        },
+        native: {},
       });
     }
 
@@ -499,21 +589,32 @@ class FitBit extends utils.Adapter {
     await this.setObjectNotExistsAsync("sleep.History", {
       type: "channel",
       common: { name: "Sleep History" },
-      native: {}
+      native: {},
     });
 
     await this.setObjectNotExistsAsync("sleep.History.JSON", {
       type: "state",
-      common: { name: "History of sleep data (JSON)", type: "string", role: "json", read: true, write: false },
-                                       native: {}
+      common: {
+        name: "History of sleep data (JSON)",
+        type: "string",
+        role: "json",
+        read: true,
+        write: false,
+      },
+      native: {},
     });
 
     await this.setObjectNotExistsAsync("sleep.History.LastEntry", {
       type: "state",
-      common: { name: "Last history entry", type: "string", role: "json", read: true, write: false },
-      native: {}
+      common: {
+        name: "Last history entry",
+        type: "string",
+        role: "json",
+        read: true,
+        write: false,
+      },
+      native: {},
     });
-
   } // <<< END of initCustomSleepStates()
 
   // =========================================================================
@@ -650,20 +751,32 @@ class FitBit extends utils.Adapter {
         try {
           const deviceResponse = await this.getDeviceRecords();
 
-          if (deviceResponse && deviceResponse.status === 200 && Array.isArray(deviceResponse.data?.devices)) {
+          if (
+            deviceResponse &&
+            deviceResponse.status === 200 &&
+            Array.isArray(deviceResponse.data?.devices)
+          ) {
             this.fitbit.devices = deviceResponse.data.devices;
-            this.dlog("debug", `Device info cached (${deviceResponse.data.devices.length} Geräte)`);
+            this.dlog(
+              "debug",
+              `Device info cached (${deviceResponse.data.devices.length} Geräte)`,
+            );
           } else if (Array.isArray(deviceResponse?.data)) {
             this.fitbit.devices = deviceResponse.data;
-            this.dlog("debug", `Device info cached (${deviceResponse.data.length} Geräte, direct array)`);
+            this.dlog(
+              "debug",
+              `Device info cached (${deviceResponse.data.length} Geräte, direct array)`,
+            );
           } else {
-            this.dlog("debug", "Device info not cached (unexpected response format)");
+            this.dlog(
+              "debug",
+              "Device info not cached (unexpected response format)",
+            );
           }
         } catch (err) {
           this.log.warn(`Device info fetch failed: ${err.message}`);
         }
       }
-
     } catch (err) {
       // 401 → einmalig Token erneuern und retry
       if (err && err.response && err.response.status === 401) {
@@ -672,18 +785,22 @@ class FitBit extends utils.Adapter {
           const renewed = await this.renewToken();
           if (renewed) return this.getFitbitRecords(true);
         }
-        this.log.error("Still 401 after renew attempt. Manual re-auth may be required.");
+        this.log.error(
+          "Still 401 after renew attempt. Manual re-auth may be required.",
+        );
       }
 
       // 429 → Too Many Requests (Rate Limit)
       else if (err && err.response && err.response.status === 429) {
         const retryAfter = Number(err.response.headers?.["retry-after"] || 120); // meist Sekunden
         const waitMs = Math.min(retryAfter * 1000, 5 * 60 * 1000); // max. 5 Min pausieren
-        this.log.warn(`⚠️ Fitbit API rate limit hit (429). Pausing requests for ${Math.round(waitMs / 1000)} seconds.`);
+        this.log.warn(
+          `⚠️ Fitbit API rate limit hit (429). Pausing requests for ${Math.round(waitMs / 1000)} seconds.`,
+        );
         await this.setStateAsync("info.connection", { val: false, ack: true });
 
         // Pause, damit Fitbit sich wieder fängt
-        await new Promise(res => setTimeout(res, waitMs));
+        await new Promise((res) => setTimeout(res, waitMs));
 
         await this.setStateAsync("info.connection", { val: true, ack: true });
         this.log.info("Resuming Fitbit requests after rate-limit pause.");
@@ -819,7 +936,7 @@ class FitBit extends utils.Adapter {
         if (
           this.effectiveConfig.intraday &&
           this.recentHeartData.length > 0 &&
-          this.recentHeartData[0].ts.toISOString().slice(0,10) !== today
+          this.recentHeartData[0].ts.toISOString().slice(0, 10) !== today
         ) {
           this.recentHeartData = [];
           this.dlog("debug", "HR buffer cleared for new day (intraday active)");
@@ -840,13 +957,22 @@ class FitBit extends utils.Adapter {
           minutesToReset = diffMin > 0 ? diffMin : 0;
         }
 
-        await this.setStateAsync("info.apiCalls.used", { val: used, ack: true });
-        await this.setStateAsync("info.apiCalls.percentFree", { val: percentFree, ack: true });
-        await this.setStateAsync("info.apiCalls.minutesToReset", { val: minutesToReset, ack: true });
+        await this.setStateAsync("info.apiCalls.used", {
+          val: used,
+          ack: true,
+        });
+        await this.setStateAsync("info.apiCalls.percentFree", {
+          val: percentFree,
+          ack: true,
+        });
+        await this.setStateAsync("info.apiCalls.minutesToReset", {
+          val: minutesToReset,
+          ack: true,
+        });
 
         this.dlog(
           "debug",
-          `API usage: limit=${lim}, used=${used}, remaining=${rem}, free=${percentFree}%, reset in ${minutesToReset}min`
+          `API usage: limit=${lim}, used=${used}, remaining=${rem}, free=${percentFree}%, reset in ${minutesToReset}min`,
         );
       }
     } catch (err) {
@@ -954,11 +1080,11 @@ class FitBit extends utils.Adapter {
    */
   async _withHrTsLock(label, fn) {
     this._hrTsLock = this._hrTsLock
-    .then(() => fn())
-    .catch(err => {
-      const msg = err?.message || err;
-      this.log.error(`[HR-TS-LOCK] ${label} failed: ${msg}`);
-    });
+      .then(() => fn())
+      .catch((err) => {
+        const msg = err?.message || err;
+        this.log.error(`[HR-TS-LOCK] ${label} failed: ${msg}`);
+      });
 
     return this._hrTsLock;
   }
@@ -979,7 +1105,8 @@ class FitBit extends utils.Adapter {
         timeout: axiosTimeout,
       });
 
-      const dataset = response?.data?.["activities-heart-intraday"]?.dataset || [];
+      const dataset =
+        response?.data?.["activities-heart-intraday"]?.dataset || [];
       if (!dataset.length) {
         this.log.warn("Intraday → Kein Dataset erhalten");
         return;
@@ -990,7 +1117,6 @@ class FitBit extends utils.Adapter {
 
       // Alles, was HeartRate-ts liest/schreibt, läuft durch den Mutex
       await this._withHrTsLock("getIntradayHeartRate", async () => {
-
         // ---------------------------------------------------------------------
         // (1) Bestehende TS laden
         // ---------------------------------------------------------------------
@@ -999,20 +1125,23 @@ class FitBit extends utils.Adapter {
           type: "state",
           common: {
             name: "Intraday HR (72h)",
-                                           type: "string",
-                                           role: "json",
-                                           read: true,
-                                           write: false,
+            type: "string",
+            role: "json",
+            read: true,
+            write: false,
           },
-          native: {}
+          native: {},
         });
 
         const existing = await this.getStateAsync(tsId);
         let oldArr = [];
 
         if (existing?.val) {
-          try { oldArr = JSON.parse(existing.val); }
-          catch { oldArr = []; }
+          try {
+            oldArr = JSON.parse(existing.val);
+          } catch {
+            oldArr = [];
+          }
         }
 
         // ---------------------------------------------------------------------
@@ -1027,13 +1156,16 @@ class FitBit extends utils.Adapter {
 
         // neue Daten einfügen (überschreiben gleiche ts)
         for (const entry of dataset) {
-          const fullTs = new Date(`${todayDateString}T${entry.time}`).toISOString();
+          const fullTs = new Date(
+            `${todayDateString}T${entry.time}`,
+          ).toISOString();
           map.set(fullTs, entry.value);
         }
 
         // map zurück in Array (sortiert)
-        let merged = Array.from(map, ([ts, value]) => ({ ts, value }))
-        .sort((a, b) => new Date(a.ts) - new Date(b.ts));
+        let merged = Array.from(map, ([ts, value]) => ({ ts, value })).sort(
+          (a, b) => new Date(a.ts) - new Date(b.ts),
+        );
 
         // ---------------------------------------------------------------------
         // (3) Auf 72 Stunden beschränken
@@ -1041,7 +1173,7 @@ class FitBit extends utils.Adapter {
         const cutoff = new Date();
         cutoff.setHours(cutoff.getHours() - 72);
 
-        let pruned = merged.filter(p => new Date(p.ts) >= cutoff);
+        let pruned = merged.filter((p) => new Date(p.ts) >= cutoff);
 
         // ---------------------------------------------------------------------
         // (4) internen Puffer aktualisieren (48h)
@@ -1059,8 +1191,8 @@ class FitBit extends utils.Adapter {
         }
 
         this.recentHeartData = this.recentHeartData
-        .filter(p => p.ts >= cutoff48)
-        .slice(-5000); // Falls 1-min-Betrieb, zur Sicherheit
+          .filter((p) => p.ts >= cutoff48)
+          .slice(-5000); // Falls 1-min-Betrieb, zur Sicherheit
 
         /***********************************************************************
          * ⭐ HEART RATE FALLBACK (zoneMetrics → HeartRate-ts + recentHeartData)
@@ -1069,11 +1201,12 @@ class FitBit extends utils.Adapter {
           const refreshMin = Math.max(1, this.effectiveConfig.refresh);
           const nowMinute = new Date(
             now.getFullYear(),
-                                     now.getMonth(),
-                                     now.getDate(),
-                                     now.getHours(),
-                                     now.getMinutes(),
-                                     0, 0
+            now.getMonth(),
+            now.getDate(),
+            now.getHours(),
+            now.getMinutes(),
+            0,
+            0,
           );
 
           // Letzten realen HR-Wert im 48h-Puffer suchen
@@ -1092,29 +1225,31 @@ class FitBit extends utils.Adapter {
               if (zone?.val) {
                 const z = JSON.parse(zone.val);
                 if (z?.bpm && Number.isFinite(z.bpm)) {
-
                   const tsIso = nowMinute.toISOString();
 
                   // Prüfen, ob in recentHeartData bereits ein Wert existiert
                   const hasTS =
-                  this.recentHeartData.some(p => p.ts.toISOString() === tsIso) ||
-                  pruned.some(p => p.ts === tsIso);
+                    this.recentHeartData.some(
+                      (p) => p.ts.toISOString() === tsIso,
+                    ) || pruned.some((p) => p.ts === tsIso);
 
                   if (!hasTS) {
-                    this.log.info(`[HR-Fallback] Insert fallback HR ${z.bpm} at ${tsIso}`);
+                    this.log.info(
+                      `[HR-Fallback] Insert fallback HR ${z.bpm} at ${tsIso}`,
+                    );
 
                     // In BOTH schreiben:
                     this.recentHeartData.push({
                       ts: nowMinute,
                       value: z.bpm,
-                      source: "fallback"
+                      source: "fallback",
                     });
 
                     // HeartRate-ts (pruned) erweitern:
                     pruned.push({
                       ts: tsIso,
                       value: z.bpm,
-                      source: "fallback"
+                      source: "fallback",
                     });
                   }
                 }
@@ -1125,7 +1260,6 @@ class FitBit extends utils.Adapter {
           // Neu sortieren nach möglichem Fallback-Insert
           this.recentHeartData.sort((a, b) => a.ts - b.ts);
           pruned.sort((a, b) => new Date(a.ts) - new Date(b.ts));
-
         } catch (e) {
           this.log.error("HR-Fallback error: " + e.message);
         }
@@ -1135,9 +1269,8 @@ class FitBit extends utils.Adapter {
         // ---------------------------------------------------------------------
         await this.setStateAsync(tsId, {
           val: JSON.stringify(pruned),
-                                 ack: true
+          ack: true,
         });
-
       }); // Ende _withHrTsLock
 
       // ---------------------------------------------------------------------
@@ -1153,14 +1286,13 @@ class FitBit extends utils.Adapter {
           read: true,
           write: false,
         },
-        native: {}
+        native: {},
       });
 
       await this.setStateAsync("activity.CurrentHeartRate", {
         val: last.value,
-        ack: true
+        ack: true,
       });
-
     } catch (err) {
       this.log.error(`getIntradayHeartRate ERROR → ${err.message}`);
     }
@@ -1178,10 +1310,10 @@ class FitBit extends utils.Adapter {
         type: "state",
         common: {
           name: "Intraday HR (72h)",
-                                         type: "string",
-                                         role: "json",
-                                         read: true,
-                                         write: false
+          type: "string",
+          role: "json",
+          read: true,
+          write: false,
         },
         native: {},
       });
@@ -1189,34 +1321,42 @@ class FitBit extends utils.Adapter {
       let pruned = [];
       const existing = await this.getStateAsync(tsId);
       if (existing?.val) {
-        try { pruned = JSON.parse(existing.val); } catch { pruned = []; }
+        try {
+          pruned = JSON.parse(existing.val);
+        } catch {
+          pruned = [];
+        }
       }
 
       // Map für effizienten Merge
-      const map = new Map(pruned.map(p => [p.ts, p.value]));
+      const map = new Map(pruned.map((p) => [p.ts, p.value]));
 
       // Einfügen/Ersetzen
       map.set(point.ts.toISOString(), point.value);
 
       // Neu sortieren
-      pruned = Array.from(map, ([ts, value]) => ({ ts, value }))
-      .sort((a, b) => new Date(a.ts) - new Date(b.ts));
+      pruned = Array.from(map, ([ts, value]) => ({ ts, value })).sort(
+        (a, b) => new Date(a.ts) - new Date(b.ts),
+      );
 
       // Auf 72h begrenzen
       const cutoff72 = new Date();
       cutoff72.setHours(cutoff72.getHours() - 72);
-      pruned = pruned.filter(p => new Date(p.ts) >= cutoff72);
+      pruned = pruned.filter((p) => new Date(p.ts) >= cutoff72);
 
       // TS speichern
-      await this.setStateAsync(tsId, { val: JSON.stringify(pruned), ack: true });
+      await this.setStateAsync(tsId, {
+        val: JSON.stringify(pruned),
+        ack: true,
+      });
 
       // Interner 48h-Puffer aktualisieren
       const cutoff48 = new Date();
       cutoff48.setHours(cutoff48.getHours() - 48);
       this.recentHeartData.push(point);
       this.recentHeartData = this.recentHeartData
-      .filter(p => p.ts >= cutoff48)
-      .slice(-5000);
+        .filter((p) => p.ts >= cutoff48)
+        .slice(-5000);
     });
   }
 
@@ -1225,13 +1365,14 @@ class FitBit extends utils.Adapter {
   // ============================================================================
   async getZoneMetrics() {
     try {
-      const apiUrl = "https://api.fitbit.com/1/user/-/activities/heart/date/today/1d/1min.json";
+      const apiUrl =
+        "https://api.fitbit.com/1/user/-/activities/heart/date/today/1d/1min.json";
       const token = this.fitbit.tokens?.access_token;
       if (!token) return;
 
       const response = await axios.get(apiUrl, {
         headers: { Authorization: `Bearer ${token}` },
-        timeout: 15000
+        timeout: 15000,
       });
 
       // Fitbit liefert heute letzten HR-Wert immer im dataset letzte Position
@@ -1241,27 +1382,32 @@ class FitBit extends utils.Adapter {
       const last = ds[ds.length - 1];
       if (!last || !last.time || !last.value) return;
 
-      const today = new Date().toISOString().slice(0,10);
+      const today = new Date().toISOString().slice(0, 10);
       const ts = new Date(`${today}T${last.time}`);
 
       await this.addHeartRatePoint({
         ts,
         value: last.value,
-        source: "zonemetrics"
+        source: "zonemetrics",
       });
 
       // sichtbarer State
       await this.setObjectNotExistsAsync("activity.zoneMetrics", {
         type: "state",
-        common: { name: "ZoneMetrics HR", type: "string", role: "json", read: true, write: false },
-        native: {}
+        common: {
+          name: "ZoneMetrics HR",
+          type: "string",
+          role: "json",
+          read: true,
+          write: false,
+        },
+        native: {},
       });
 
       await this.setStateAsync("activity.zoneMetrics", {
         val: JSON.stringify({ bpm: last.value, ts: ts.toISOString() }),
-                               ack: true
+        ack: true,
       });
-
     } catch (err) {
       this.log.warn("ZoneMetrics error: " + err.message);
     }
@@ -1271,24 +1417,24 @@ class FitBit extends utils.Adapter {
   // Geräte
   // =========================================================================
   async getDeviceRecords() {
-      const url = `${BASE_URL}-/devices.json`;
-      const token = this.fitbit.tokens.access_token;
-      let response = null;                          // <— Variable vorab definieren
+    const url = `${BASE_URL}-/devices.json`;
+    const token = this.fitbit.tokens.access_token;
+    let response = null; // <— Variable vorab definieren
 
-      try {
-          response = await axios.get(url, {
-              headers: { Authorization: `Bearer ${token}` },
-              timeout: axiosTimeout,
-          });
+    try {
+      response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: axiosTimeout,
+      });
 
-          if (response.status === 200) {
-              await this.setDeviceStates(response.data);
-          }
-      } catch (err) {
-          this.log.warn(`getDeviceRecords: ${err}`);
+      if (response.status === 200) {
+        await this.setDeviceStates(response.data);
       }
+    } catch (err) {
+      this.log.warn(`getDeviceRecords: ${err}`);
+    }
 
-      return response;
+    return response;
   }
 
   async setDeviceStates(data) {
@@ -1332,74 +1478,74 @@ class FitBit extends utils.Adapter {
 
     // === Letzte Synchronisation (alle Geräte) ===
     const lastSyncDevice = data
-    .filter(d => d.lastSyncTime)
-    .sort((a, b) => new Date(b.lastSyncTime) - new Date(a.lastSyncTime))[0];
+      .filter((d) => d.lastSyncTime)
+      .sort((a, b) => new Date(b.lastSyncTime) - new Date(a.lastSyncTime))[0];
 
     if (lastSyncDevice) {
-        const syncTime = new Date(lastSyncDevice.lastSyncTime);
-        const now = new Date();
-        const hoursDiff = (now - syncTime) / (1000 * 60 * 60);
+      const syncTime = new Date(lastSyncDevice.lastSyncTime);
+      const now = new Date();
+      const hoursDiff = (now - syncTime) / (1000 * 60 * 60);
 
-        // info.lastSyncHours
-        await this.setObjectNotExistsAsync("info.lastSyncHours", {
-            type: "state",
-            common: {
-                name: "Stunden seit letzter Synchronisation",
-                type: "number",
-                role: "value",
-                unit: "h",
-                read: true,
-                write: false,
-            },
-            native: {},
-        });
-        await this.setStateAsync("info.lastSyncHours", {
-            val: Number(hoursDiff.toFixed(2)),
-                                 ack: true,
-        });
+      // info.lastSyncHours
+      await this.setObjectNotExistsAsync("info.lastSyncHours", {
+        type: "state",
+        common: {
+          name: "Stunden seit letzter Synchronisation",
+          type: "number",
+          role: "value",
+          unit: "h",
+          read: true,
+          write: false,
+        },
+        native: {},
+      });
+      await this.setStateAsync("info.lastSyncHours", {
+        val: Number(hoursDiff.toFixed(2)),
+        ack: true,
+      });
 
-        // Gerät-spezifisch
-        const devId = `devices.${lastSyncDevice.id}`;
-        await this.setObjectNotExistsAsync(`${devId}.lastSyncTime`, {
-            type: "state",
-            common: {
-                name: "Letzte Synchronisation (UTC)",
-                                           type: "string",
-                                           role: "date",
-                                           read: true,
-                                           write: false,
-            },
-            native: {},
-        });
-        await this.setStateAsync(`${devId}.lastSyncTime`, {
-            val: lastSyncDevice.lastSyncTime,
-            ack: true,
-        });
+      // Gerät-spezifisch
+      const devId = `devices.${lastSyncDevice.id}`;
+      await this.setObjectNotExistsAsync(`${devId}.lastSyncTime`, {
+        type: "state",
+        common: {
+          name: "Letzte Synchronisation (UTC)",
+          type: "string",
+          role: "date",
+          read: true,
+          write: false,
+        },
+        native: {},
+      });
+      await this.setStateAsync(`${devId}.lastSyncTime`, {
+        val: lastSyncDevice.lastSyncTime,
+        ack: true,
+      });
 
-        await this.setObjectNotExistsAsync(`${devId}.lastSyncLocal`, {
-            type: "state",
-            common: {
-                name: "Letzte Synchronisation (lokal)",
-                                           type: "string",
-                                           role: "text",
-                                           read: true,
-                                           write: false,
-            },
-            native: {},
-        });
-        await this.setStateAsync(`${devId}.lastSyncLocal`, {
-            val: this.formatDE_Short(syncTime),
-                                 ack: true,
-        });
+      await this.setObjectNotExistsAsync(`${devId}.lastSyncLocal`, {
+        type: "state",
+        common: {
+          name: "Letzte Synchronisation (lokal)",
+          type: "string",
+          role: "text",
+          read: true,
+          write: false,
+        },
+        native: {},
+      });
+      await this.setStateAsync(`${devId}.lastSyncLocal`, {
+        val: this.formatDE_Short(syncTime),
+        ack: true,
+      });
 
-        this.dlog(
-            "info",
-            `${lastSyncDevice.deviceVersion || "Gerät"} zuletzt synchronisiert: ${this.formatDE_Short(syncTime)} (vor ${hoursDiff.toFixed(2)}h)`
-        );
-        this.dlog(
-            "info",
-            `Aktuellster Sync stammt von: ${lastSyncDevice.deviceVersion || "unknown"} (${this.formatDE_Short(syncTime)})`
-        );
+      this.dlog(
+        "info",
+        `${lastSyncDevice.deviceVersion || "Gerät"} zuletzt synchronisiert: ${this.formatDE_Short(syncTime)} (vor ${hoursDiff.toFixed(2)}h)`,
+      );
+      this.dlog(
+        "info",
+        `Aktuellster Sync stammt von: ${lastSyncDevice.deviceVersion || "unknown"} (${this.formatDE_Short(syncTime)})`,
+      );
     }
   }
 
@@ -1495,7 +1641,9 @@ class FitBit extends utils.Adapter {
       if (this.effectiveConfig.clearNapListAtNight) {
         const hour = new Date().getHours();
         if (hour >= 0 && hour < 4) {
-          this.log.info("clearNapListAtNight → Liste wird geleert (nach Mitternacht).");
+          this.log.info(
+            "clearNapListAtNight → Liste wird geleert (nach Mitternacht).",
+          );
           await this._clearNapStates({ onlyList: true });
         }
       }
@@ -1508,7 +1656,7 @@ class FitBit extends utils.Adapter {
       if (response.status === 200) {
         await this.setStateAsync("sleep.RawData", {
           val: JSON.stringify(response.data),
-                                 ack: true,
+          ack: true,
         });
 
         // 🔥 WICHTIG: setSleepStates ist async → wir müssen warten!
@@ -1535,15 +1683,17 @@ class FitBit extends utils.Adapter {
     if (!Array.isArray(blocks) || blocks.length === 0) return [];
 
     let arr = blocks.slice();
-    const dbg = msg => this.dlog("debug", msg);
+    const dbg = (msg) => this.dlog("debug", msg);
 
     // === Early Sleep Filter ===
     if (cfg.ignoreEarlyMainSleepEnabled && cfg.ignoreEarlyMainSleepTime) {
-      const [h, m] = String(cfg.ignoreEarlyMainSleepTime).split(":").map(Number);
+      const [h, m] = String(cfg.ignoreEarlyMainSleepTime)
+        .split(":")
+        .map(Number);
       const cutoff = h * 60 + m;
       dbg(`[FILTER] Early sleep cutoff ${cfg.ignoreEarlyMainSleepTime}`);
 
-      arr = arr.filter(b => {
+      arr = arr.filter((b) => {
         if (!b?.isMainSleep || !b.startTime) return true;
         const st = new Date(b.startTime);
         const mins = st.getHours() * 60 + st.getMinutes();
@@ -1554,11 +1704,15 @@ class FitBit extends utils.Adapter {
           const durMs = new Date(b.endTime) - new Date(b.startTime);
           const minMs = (cfg.minMainSleepHours || 3) * 3600000;
           if (durMs >= minMs) {
-            dbg(`[FILTER] Early block kept (${Math.round(durMs / 60000)} min ≥ ${minMs / 60000})`);
+            dbg(
+              `[FILTER] Early block kept (${Math.round(durMs / 60000)} min ≥ ${minMs / 60000})`,
+            );
             return true;
           }
         }
-        dbg(`[FILTER] Early main sleep ignored (${st.toTimeString().slice(0,5)} < ${cfg.ignoreEarlyMainSleepTime})`);
+        dbg(
+          `[FILTER] Early main sleep ignored (${st.toTimeString().slice(0, 5)} < ${cfg.ignoreEarlyMainSleepTime})`,
+        );
         return false;
       });
     }
@@ -1567,7 +1721,7 @@ class FitBit extends utils.Adapter {
     if (cfg.smartEarlySleepEnabled && !cfg.ignoreEarlyMainSleepEnabled) {
       const minMs = (cfg.minMainSleepHours || 3) * 3600000;
       dbg(`[FILTER] SmartSleep min main duration ≥ ${minMs / 60000} min`);
-      arr = arr.filter(b => {
+      arr = arr.filter((b) => {
         if (!b?.isMainSleep || !b.endTime) return true;
         const dur = new Date(b.endTime) - new Date(b.startTime);
         return dur >= minMs;
@@ -1576,7 +1730,7 @@ class FitBit extends utils.Adapter {
 
     // === Fallback: Wenn alles rausgefiltert wurde, Naps behalten ===
     if (arr.length === 0) {
-      const naps = blocks.filter(b => !b.isMainSleep);
+      const naps = blocks.filter((b) => !b.isMainSleep);
       if (naps.length) {
         dbg(`[FILTER] No main sleep left → using ${naps.length} nap(s)`);
         return naps;
@@ -1591,7 +1745,11 @@ class FitBit extends utils.Adapter {
     if (!blocks.length) return false;
 
     const effectiveOptions = { ...options };
-    const filtered = this.filterSleepBlocks(blocks, this.effectiveConfig, effectiveOptions);
+    const filtered = this.filterSleepBlocks(
+      blocks,
+      this.effectiveConfig,
+      effectiveOptions,
+    );
     if (!filtered.length) {
       this.dlog("debug", "[FILTER] No sleep blocks left after filtering.");
       return false;
@@ -1609,17 +1767,20 @@ class FitBit extends utils.Adapter {
       !options.forceMainProcess
     ) {
       const start = this._parseISO(sleep.startTime);
-      const end   = this._parseISO(sleep.endTime);
+      const end = this._parseISO(sleep.endTime);
 
       this.log.info(
-        `[SLEEP] Hauptschlaf erkannt (${sleep.startTime} – ${sleep.endTime}) → warte auf HR-Daten (kein sofortiges Schreiben!)`
+        `[SLEEP] Hauptschlaf erkannt (${sleep.startTime} – ${sleep.endTime}) → warte auf HR-Daten (kein sofortiges Schreiben!)`,
       );
 
       // Struktur passend für checkNightHRAndProcess()
       this.pendingMainSleep = {
-        start: start instanceof Date && !isNaN(start) ? start : new Date(sleep.startTime),
-        end:   end   instanceof Date && !isNaN(end)   ? end   : new Date(sleep.endTime),
-        raw: sleep,           // kompletter Fitbit-Block inkl. levels usw.
+        start:
+          start instanceof Date && !isNaN(start)
+            ? start
+            : new Date(sleep.startTime),
+        end: end instanceof Date && !isNaN(end) ? end : new Date(sleep.endTime),
+        raw: sleep, // kompletter Fitbit-Block inkl. levels usw.
       };
 
       return true;
@@ -1650,8 +1811,9 @@ class FitBit extends utils.Adapter {
 
       const deduped = [...unique.values()];
       if (deduped.length !== filtered.length) {
-        this.dlog("info",
-                  `[DSPP] Duplicate Fitbit sleep packets detected → using ${deduped.length} of ${filtered.length}`
+        this.dlog(
+          "info",
+          `[DSPP] Duplicate Fitbit sleep packets detected → using ${deduped.length} of ${filtered.length}`,
         );
       }
       filtered.length = 0;
@@ -1659,9 +1821,11 @@ class FitBit extends utils.Adapter {
     }
 
     // Hauptschlaf und Naps trennen
-    const mainBlocks = filtered.filter(b => b.isMainSleep);
-    const napBlocks  = filtered.filter(b => !b.isMainSleep);
-    const main = mainBlocks.sort((a,b)=> new Date(b.endTime)-new Date(a.endTime))[0];
+    const mainBlocks = filtered.filter((b) => b.isMainSleep);
+    const napBlocks = filtered.filter((b) => !b.isMainSleep);
+    const main = mainBlocks.sort(
+      (a, b) => new Date(b.endTime) - new Date(a.endTime),
+    )[0];
 
     if (!main) {
       this.dlog("warn", "[SLEEP] No main sleep block found.");
@@ -1672,25 +1836,29 @@ class FitBit extends utils.Adapter {
     const fell = await this.computeFellAsleepAt(main, effectiveOptions);
     const woke = this.computeWokeUpAt(main);
     const asleepMin = main.minutesAsleep || 0;
-    const inBedMin  = main.timeInBed || 0;
+    const inBedMin = main.timeInBed || 0;
 
     // ---- Late Wake Correction (optional) ----
-    const lateWakeLimit = this.effectiveConfig.sleepLateWakeCorrectionMinutes || 0;
+    const lateWakeLimit =
+      this.effectiveConfig.sleepLateWakeCorrectionMinutes || 0;
     if (lateWakeLimit > 0) {
       const now = new Date();
       const diffMin = Math.round((now - woke) / 60000);
       if (diffMin > 0 && diffMin <= lateWakeLimit) {
         this.dlog(
           "debug",
-          `[SLEEP] LateWake correction applied: Fitbit end ${woke.toLocaleTimeString()} → corrected +${diffMin} min`
+          `[SLEEP] LateWake correction applied: Fitbit end ${woke.toLocaleTimeString()} → corrected +${diffMin} min`,
         );
         woke.setMinutes(woke.getMinutes() + diffMin);
       }
     }
 
     // Naps
-    const napsAsleep = napBlocks.reduce((a,b)=> a+(b.minutesAsleep||0),0);
-    const napsInBed  = napBlocks.reduce((a,b)=> a+(b.timeInBed||0),0);
+    const napsAsleep = napBlocks.reduce(
+      (a, b) => a + (b.minutesAsleep || 0),
+      0,
+    );
+    const napsInBed = napBlocks.reduce((a, b) => a + (b.timeInBed || 0), 0);
 
     // ============================================================
     // 🧠 Erweiterte Nap-Validierung (optional)
@@ -1698,15 +1866,27 @@ class FitBit extends utils.Adapter {
     let napsValid = napBlocks;
 
     if (this.effectiveConfig.smartNapValidationEnabled) {
-      this.dlog("info", `[NAP] Smart nap validation enabled – checking ${napBlocks.length} naps...`);
+      this.dlog(
+        "info",
+        `[NAP] Smart nap validation enabled – checking ${napBlocks.length} naps...`,
+      );
       napsValid = await this.validateNaps(napBlocks);
     } else {
-      this.dlog("debug", `[NAP] Smart nap validation disabled – accepting all naps`);
+      this.dlog(
+        "debug",
+        `[NAP] Smart nap validation disabled – accepting all naps`,
+      );
     }
 
-    const validNaps = napsValid.filter(n => n.isValid !== false);
-    await this.setStateAsync("sleep.Naps.ValidCount", { val: validNaps.length, ack: true });
-    await this.setStateAsync("sleep.Naps.ValidList", { val: JSON.stringify(validNaps, null, 2), ack: true });
+    const validNaps = napsValid.filter((n) => n.isValid !== false);
+    await this.setStateAsync("sleep.Naps.ValidCount", {
+      val: validNaps.length,
+      ack: true,
+    });
+    await this.setStateAsync("sleep.Naps.ValidList", {
+      val: JSON.stringify(validNaps, null, 2),
+      ack: true,
+    });
 
     // ===========================================================
     // 💤 Fitbit-Schlafphasen (Deep/Light/REM/Wake) 1:1 übernehmen
@@ -1714,44 +1894,78 @@ class FitBit extends utils.Adapter {
     try {
       if (main.levels?.summary) {
         const s = main.levels.summary;
-        const deepMin  = s.deep?.minutes  || 0;
+        const deepMin = s.deep?.minutes || 0;
         const lightMin = s.light?.minutes || 0;
-        const remMin   = s.rem?.minutes   || 0;
-        const wakeMin  = s.wake?.minutes  || 0;
+        const remMin = s.rem?.minutes || 0;
+        const wakeMin = s.wake?.minutes || 0;
 
         await Promise.all([
           this.setObjectNotExistsAsync("sleep.Deep", {
             type: "state",
-            common: { name: "Deep Sleep (minutes)", type: "number", role: "value", unit: "min", read: true, write: false },
-                                       native: {},
+            common: {
+              name: "Deep Sleep (minutes)",
+              type: "number",
+              role: "value",
+              unit: "min",
+              read: true,
+              write: false,
+            },
+            native: {},
           }),
           this.setObjectNotExistsAsync("sleep.Light", {
             type: "state",
-            common: { name: "Light Sleep (minutes)", type: "number", role: "value", unit: "min", read: true, write: false },
-                                       native: {},
+            common: {
+              name: "Light Sleep (minutes)",
+              type: "number",
+              role: "value",
+              unit: "min",
+              read: true,
+              write: false,
+            },
+            native: {},
           }),
           this.setObjectNotExistsAsync("sleep.Rem", {
             type: "state",
-            common: { name: "REM Sleep (minutes)", type: "number", role: "value", unit: "min", read: true, write: false },
-                                       native: {},
+            common: {
+              name: "REM Sleep (minutes)",
+              type: "number",
+              role: "value",
+              unit: "min",
+              read: true,
+              write: false,
+            },
+            native: {},
           }),
           this.setObjectNotExistsAsync("sleep.Wake", {
             type: "state",
-            common: { name: "Awake (minutes)", type: "number", role: "value", unit: "min", read: true, write: false },
-                                       native: {},
-          })
+            common: {
+              name: "Awake (minutes)",
+              type: "number",
+              role: "value",
+              unit: "min",
+              read: true,
+              write: false,
+            },
+            native: {},
+          }),
         ]);
 
         await Promise.all([
-          this.setStateAsync("sleep.Deep",  { val: deepMin,  ack: true }),
-                          this.setStateAsync("sleep.Light", { val: lightMin, ack: true }),
-                          this.setStateAsync("sleep.Rem",   { val: remMin,   ack: true }),
-                          this.setStateAsync("sleep.Wake",  { val: wakeMin,  ack: true })
+          this.setStateAsync("sleep.Deep", { val: deepMin, ack: true }),
+          this.setStateAsync("sleep.Light", { val: lightMin, ack: true }),
+          this.setStateAsync("sleep.Rem", { val: remMin, ack: true }),
+          this.setStateAsync("sleep.Wake", { val: wakeMin, ack: true }),
         ]);
 
-        this.dlog("debug", `[SLEEP] Fitbit phases → deep=${deepMin}, light=${lightMin}, rem=${remMin}, wake=${wakeMin}`);
+        this.dlog(
+          "debug",
+          `[SLEEP] Fitbit phases → deep=${deepMin}, light=${lightMin}, rem=${remMin}, wake=${wakeMin}`,
+        );
       } else {
-        this.dlog("warn", "[SLEEP] No summary levels found in main block → skipping phase update");
+        this.dlog(
+          "warn",
+          "[SLEEP] No summary levels found in main block → skipping phase update",
+        );
       }
     } catch (err) {
       this.log.warn(`Sleep phase update failed: ${err.message}`);
@@ -1759,21 +1973,37 @@ class FitBit extends utils.Adapter {
 
     // Danach die bisherigen States schreiben
     await this.writeSleepStates({
-      fell, woke, asleepMin, inBedMin,
-      napsAsleep, napsInBed,
-      napsCount: napBlocks.length, naps: napBlocks
+      fell,
+      woke,
+      asleepMin,
+      inBedMin,
+      napsAsleep,
+      napsInBed,
+      napsCount: napBlocks.length,
+      naps: napBlocks,
     });
 
-    this.dlog("info",
-              `[SLEEP] Main ${fell.toISOString()} → ${woke.toISOString()} (${asleepMin} min asleep, ${inBedMin} min in bed)`);
+    this.dlog(
+      "info",
+      `[SLEEP] Main ${fell.toISOString()} → ${woke.toISOString()} (${asleepMin} min asleep, ${inBedMin} min in bed)`,
+    );
 
     // ---- DEBUG/TEST ----
     if (DEBUG_SLEEP_LOG || this.effectiveConfig.debugEnabled) {
       const dur = Math.round((woke - fell) / 60000);
-      this.dlog("debug", `[SLEEP-DETAIL] Naps=${napBlocks.length} (${napsAsleep} asleep/${napsInBed} in bed)`);
-      this.dlog("debug", `MainSleep → ${fell.toLocaleTimeString()} – ${woke.toLocaleTimeString()} (${dur} min)`);
+      this.dlog(
+        "debug",
+        `[SLEEP-DETAIL] Naps=${napBlocks.length} (${napsAsleep} asleep/${napsInBed} in bed)`,
+      );
+      this.dlog(
+        "debug",
+        `MainSleep → ${fell.toLocaleTimeString()} – ${woke.toLocaleTimeString()} (${dur} min)`,
+      );
       napBlocks.forEach((n, i) => {
-        this.dlog("debug", `Nap ${i+1}: ${n.startTime} – ${n.endTime} (${n.minutesAsleep} min)`);
+        this.dlog(
+          "debug",
+          `Nap ${i + 1}: ${n.startTime} – ${n.endTime} (${n.minutesAsleep} min)`,
+        );
       });
     }
 
@@ -1785,13 +2015,13 @@ class FitBit extends utils.Adapter {
   // -------------------------------------------------------------------------
   getLevelSegments(block) {
     const a =
-    block && block.levels && Array.isArray(block.levels.data)
-    ? block.levels.data
-    : [];
+      block && block.levels && Array.isArray(block.levels.data)
+        ? block.levels.data
+        : [];
     const b =
-    block && block.levels && Array.isArray(block.levels.shortData)
-    ? block.levels.shortData
-    : [];
+      block && block.levels && Array.isArray(block.levels.shortData)
+        ? block.levels.shortData
+        : [];
     const segs = [...a, ...b].filter((s) => s && s.dateTime && s.level);
     segs.sort((x, y) => new Date(x.dateTime) - new Date(y.dateTime));
     return segs;
@@ -1802,10 +2032,10 @@ class FitBit extends utils.Adapter {
     try {
       if (!this.recentHeartData || this.recentHeartData.length < 6) return null;
 
-      const SLEEP = new Set(["asleep","light","deep","rem"]);
+      const SLEEP = new Set(["asleep", "light", "deep", "rem"]);
 
       // 1. erster Sleep-Level
-      const firstSleepSeg = segs.find(s => SLEEP.has(s.level));
+      const firstSleepSeg = segs.find((s) => SLEEP.has(s.level));
       if (!firstSleepSeg) return null;
 
       const sleepStart = new Date(firstSleepSeg.dateTime);
@@ -1821,36 +2051,43 @@ class FitBit extends utils.Adapter {
 
       // 3. HR-Drop grob prüfen
       const before = this.recentHeartData
-      .filter(p => p.ts < sleepStart)
-      .slice(-15)
-      .map(p => p.value);
+        .filter((p) => p.ts < sleepStart)
+        .slice(-15)
+        .map((p) => p.value);
 
       const after = this.recentHeartData
-      .filter(p => p.ts >= sleepStart)
-      .slice(0, 20)
-      .map(p => p.value);
+        .filter((p) => p.ts >= sleepStart)
+        .slice(0, 20)
+        .map((p) => p.value);
 
       if (!before.length || !after.length) return null;
 
-      const mean = arr => arr.reduce((a,b)=>a+b,0) / arr.length;
+      const mean = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
       const drop = mean(before) - mean(after);
 
-      if (drop < 2) return null;  // kleiner HR-Drop → zu ruhig → Film/Lesen
+      if (drop < 2) return null; // kleiner HR-Drop → zu ruhig → Film/Lesen
 
       // 4. stabile Phase benutzen (bestehende Logik)
       const segsList = segs;
-      const S = new Set(["asleep","light","deep","rem"]);
+      const S = new Set(["asleep", "light", "deep", "rem"]);
       const findStable = () => {
         for (let i = 0; i < segsList.length; i++) {
           if (!S.has(segsList[i].level)) continue;
           const start = new Date(segsList[i].dateTime);
           let dur = 0;
-          for (let j = i; j < segsList.length && S.has(segsList[j].level); j++) {
+          for (
+            let j = i;
+            j < segsList.length && S.has(segsList[j].level);
+            j++
+          ) {
             const cur = new Date(segsList[j].dateTime);
-            const nxt = segsList[j+1] ? new Date(segsList[j+1].dateTime) : null;
+            const nxt = segsList[j + 1]
+              ? new Date(segsList[j + 1].dateTime)
+              : null;
             if (nxt) dur += (nxt - cur) / 60000;
           }
-          if (dur >= (this.effectiveConfig.sleepStabilityMinutes || 20)) return start;
+          if (dur >= (this.effectiveConfig.sleepStabilityMinutes || 20))
+            return start;
         }
         return null;
       };
@@ -1858,9 +2095,11 @@ class FitBit extends utils.Adapter {
       const stable = findStable();
       if (!stable) return null;
 
-      this.dlog("debug", `[SMART] Prefilter accepted stable sleep @ ${stable.toISOString()} (HR drop ${drop.toFixed(1)})`);
+      this.dlog(
+        "debug",
+        `[SMART] Prefilter accepted stable sleep @ ${stable.toISOString()} (HR drop ${drop.toFixed(1)})`,
+      );
       return stable;
-
     } catch (e) {
       this.dlog("warn", `SmartPrefilter error: ${e.message}`);
       return null;
@@ -1874,71 +2113,89 @@ class FitBit extends utils.Adapter {
 
     const startDT = new Date(block.startTime);
 
-    // --- SMART PREFILTER (Couch-Filter per HR) ---
-    // Wenn er uns einen plausiblen Zeitpunkt liefert, nehmen wir den.
+    // --- SMART PREFILTER ---
     const smart = this.preSleepSmartFilter(block, segs);
     if (smart instanceof Date && !isNaN(smart)) {
       const diffMin = Math.round((smart - startDT) / 60000);
-      // Sicherheitsgrenze: niemals mehr als MAX_SLEEP_START_DELAY_MINUTES nach hinten
       if (diffMin > MAX_SLEEP_START_DELAY_MINUTES) {
         this.dlog(
           "warn",
-          `[START] SmartPrefilter wollte Einschlafzeit um ${diffMin}min nach hinten verschieben (> ${MAX_SLEEP_START_DELAY_MINUTES}) → wir bleiben bei Fitbit-StartTime.`,
+          `[START] SmartPrefilter Δ ${diffMin} > limit → using Fitbit startTime`,
         );
         return startDT;
       }
-      this.dlog("debug", `[START] Using SmartPrefilter result @ ${smart.toISOString()} (Δ ${diffMin}min)`);
       this._lastSleepSource = "corrected";
       return smart;
     }
 
-    // --- Basis-Stabilitätswert (z.B. 20min) ---
-    const baseStable = Number(this.effectiveConfig?.sleepStabilityMinutes) || 20;
-    const stabilityMin = options.relaxed ? Math.max(5, baseStable / 2) : baseStable;
+    const baseStable =
+      Number(this.effectiveConfig?.sleepStabilityMinutes) || 20;
+    const stabilityMin = options.relaxed
+      ? Math.max(5, baseStable / 2)
+      : baseStable;
     const SLEEP = new Set(["asleep", "light", "deep", "rem"]);
-    const candidate = s => SLEEP.has(s.level);
+    const candidate = (s) => SLEEP.has(s.level);
 
     const findStableFrom = (startIdx) => {
       for (let i = startIdx; i < segs.length; i++) {
         if (!candidate(segs[i])) continue;
         const start = new Date(segs[i].dateTime);
-        let durMin = 0;
+        let dur = 0;
         for (let j = i; j < segs.length && candidate(segs[j]); j++) {
           const cur = new Date(segs[j].dateTime);
           const next = segs[j + 1] ? new Date(segs[j + 1].dateTime) : null;
-          if (next) durMin += (next - cur) / 60000;
+          if (next) dur += (next - cur) / 60000;
         }
-        if (durMin >= stabilityMin) return start;
+        if (dur >= stabilityMin) return start;
       }
       return null;
     };
 
     const threeHours = 3 * 60 * 60 * 1000;
 
-    // === 1. Cutoff korrekt berechnen (Frühschlaf-Filter) ===
+    // =================================================================
+    // 1. Cutoff + Startindex
+    // =================================================================
     let cutoffDT = null;
     let searchStartIdx = 0;
 
-    if (this.effectiveConfig.ignoreEarlyMainSleepEnabled && this.effectiveConfig.ignoreEarlyMainSleepTime) {
-      const [h, m] = this.effectiveConfig.ignoreEarlyMainSleepTime.split(":").map(Number);
+    if (
+      this.effectiveConfig.ignoreEarlyMainSleepEnabled &&
+      this.effectiveConfig.ignoreEarlyMainSleepTime
+    ) {
+      const [h, m] = this.effectiveConfig.ignoreEarlyMainSleepTime
+        .split(":")
+        .map(Number);
+
       if (!isNaN(h) && !isNaN(m)) {
-        // Lokale Zeit des Startblocks bestimmen
-        const localStart = new Date(startDT.getTime() + startDT.getTimezoneOffset() * 60000);
+        // Lokale Zeit → Cutoff berechnen
+        const localStart = new Date(
+          startDT.getTime() + startDT.getTimezoneOffset() * 60000,
+        );
         const year = localStart.getFullYear();
         const month = localStart.getMonth();
         let day = localStart.getDate();
 
         cutoffDT = new Date(year, month, day, h, m, 0);
-        // Wenn der Block vor dem Cutoff liegt, gilt die nächste Nacht
+
+        // Falls Block vor Cutoff → nächster Tag
         if (localStart < cutoffDT) {
           cutoffDT.setDate(cutoffDT.getDate() + 1);
         }
-        // wieder zurück in UTC
-        cutoffDT = new Date(cutoffDT.getTime() - cutoffDT.getTimezoneOffset() * 60000);
-        this.dlog("debug", `[START] Cutoff (UTC): ${cutoffDT.toISOString()} (from ${this.effectiveConfig.ignoreEarlyMainSleepTime})`);
+
+        // Zurück nach UTC
+        cutoffDT = new Date(
+          cutoffDT.getTime() - cutoffDT.getTimezoneOffset() * 60000,
+        );
+
+        this.dlog(
+          "debug",
+          `[START] Cutoff (UTC): ${cutoffDT.toISOString()} (from ${this.effectiveConfig.ignoreEarlyMainSleepTime})`,
+        );
       }
     }
 
+    // === Index ab Cutoff suchen ===
     if (cutoffDT && startDT < cutoffDT) {
       for (let i = 0; i < segs.length; i++) {
         if (new Date(segs[i].dateTime) >= cutoffDT) {
@@ -1946,14 +2203,20 @@ class FitBit extends utils.Adapter {
           break;
         }
       }
-      this.dlog("debug", `[START] Searching stable sleep segments from idx ${searchStartIdx} (cutoff reached)`);
+
+      this.dlog(
+        "debug",
+        `[START] Searching stable segments from idx=${searchStartIdx}`,
+      );
     }
 
-    // === 2. Deep/REM ab Cutoff bevorzugen ===
+    // =================================================================
+    // 2. Deep/REM bevorzugen
+    // =================================================================
     const deepRemIdx = (() => {
       for (let i = searchStartIdx; i < segs.length; i++) {
         const t = new Date(segs[i].dateTime);
-        if ((t - startDT) > threeHours) break;
+        if (t - startDT > threeHours) break;
         if (segs[i].level === "deep" || segs[i].level === "rem") return i;
       }
       return -1;
@@ -1964,97 +2227,127 @@ class FitBit extends utils.Adapter {
     if (deepRemIdx >= 0) {
       const stable = findStableFrom(deepRemIdx);
       if (stable) {
-        this.dlog("debug", `[START] Deep/REM-based stable sleep @ ${stable.toISOString()}`);
         candidateDT = stable;
       }
     }
 
-    // === 3. Noch nichts? Dann erste stabile Phase ab Cutoff ===
-    if (!candidateDT) {
-      const stableFromCutoff = findStableFrom(searchStartIdx);
-      if (stableFromCutoff) {
-        const diff = Math.round((stableFromCutoff - startDT) / 60000);
-        if (diff > 10) this.dlog("debug", `[TRIM] Delayed sleep start by ${diff}min (from cutoff)`);
-        candidateDT = stableFromCutoff;
-      }
-    }
-
-    // === 4. Fallback: Deep/REM ab Blockstart ===
-    if (!candidateDT) {
-      const deepRemFallbackIdx = (() => {
-        for (let i = 0; i < segs.length; i++) {
-          const t = new Date(segs[i].dateTime);
-          if ((t - startDT) > threeHours) break;
-          if (segs[i].level === "deep" || segs[i].level === "rem") return i;
+    // =================================================================
+    // 3. Alle stabilen Segmente sammeln
+    // =================================================================
+    let stableSegments = [];
+    try {
+      let i = searchStartIdx;
+      while (i < segs.length) {
+        if (!candidate(segs[i])) {
+          i++;
+          continue;
         }
-        return -1;
-      })();
 
-      if (deepRemFallbackIdx >= 0) {
-        const stable = findStableFrom(deepRemFallbackIdx);
-        if (stable) {
-          this.dlog("debug", `[START] Fallback Deep/REM @ ${stable.toISOString()}`);
-          candidateDT = stable;
+        const start = new Date(segs[i].dateTime);
+        let dur = 0;
+        let j = i;
+
+        while (j < segs.length && candidate(segs[j])) {
+          const cur = new Date(segs[j].dateTime);
+          const next = segs[j + 1] ? new Date(segs[j + 1].dateTime) : null;
+          if (next) dur += (next - cur) / 60000;
+          j++;
         }
+
+        if (dur >= stabilityMin) stableSegments.push(start);
+        i = j;
+      }
+    } catch (e) {
+      this.dlog("warn", `Stable-phase error: ${e.message}`);
+    }
+
+    // =================================================================
+    // 4. Zweite stabile Phase bevorzugen
+    // =================================================================
+    if (stableSegments.length >= 2) {
+      const first = stableSegments[0];
+      const second = stableSegments[1];
+      const diff = Math.round((second - first) / 60000);
+
+      if (diff > 0 && diff <= 60) {
+        candidateDT = second;
+        this._lastSleepSource = "second-stable";
       }
     }
 
-    // === 5. Fallback: irgendwo stabil ===
+    // =================================================================
+    // 5. Falls keine zweite → erste stabile
+    // =================================================================
+    if (!candidateDT && stableSegments.length >= 1) {
+      candidateDT = stableSegments[0];
+      this._lastSleepSource = "first-stable";
+    }
+
+    // =================================================================
+    // 6. Fallback: irgendeine stabile Phase
+    // =================================================================
     if (!candidateDT) {
-      const stableAnywhere = findStableFrom(0);
-      if (stableAnywhere) {
-        this.dlog("debug", `[START] Fallback stable anywhere @ ${stableAnywhere.toISOString()}`);
-        candidateDT = stableAnywhere;
+      const any = findStableFrom(0);
+      if (any) {
+        candidateDT = any;
+        this._lastSleepSource = "fallback-stable";
       }
     }
 
-    // === 6. Wenn wir gar nichts Gescheites finden → Fitbit-Start ===
+    // =================================================================
+    // 7. Wenn nichts → Fitbit Start
+    // =================================================================
     if (!candidateDT) {
-      this.dlog("debug", "[START] No stable segment found → fallback to block.startTime");
       this._lastSleepSource = "fitbit";
       return startDT;
     }
 
-    // === 7. Sicherheitsgrenze: nicht später als X Minuten nach Fitbit-Start ===
+    // =================================================================
+    // 8. Sicherheitsgrenze
+    // =================================================================
     const deltaMin = Math.round((candidateDT - startDT) / 60000);
     if (deltaMin > MAX_SLEEP_START_DELAY_MINUTES) {
-      this.dlog(
-        "warn",
-        `[START] Computed sleep start would be delayed by ${deltaMin}min (> ${MAX_SLEEP_START_DELAY_MINUTES}) → using Fitbit startTime instead.`,
-      );
       return startDT;
     }
 
-    // Leichte negative Verschiebung (ein paar Minuten früher) wäre theoretisch möglich,
-    // wird aber durch Fitbit-Block-Start praktisch kaum vorkommen.
     return candidateDT;
   }
 
   // ---- 4. Wake-Up-Erkennung -------------------------------------------------
   computeWokeUpAt(block) {
     const segs = this.getLevelSegments(block);
-    const SLEEP = new Set(["asleep","light","deep","rem"]);
+    const SLEEP = new Set(["asleep", "light", "deep", "rem"]);
     if (!segs.length) return this._parseISO(block?.endTime);
 
     let lastSleepIdx = -1;
-    for (let i=segs.length-1;i>=0;i--) if (SLEEP.has(segs[i].level)) { lastSleepIdx=i; break; }
-    if (lastSleepIdx===-1) return this._parseISO(block?.endTime);
+    for (let i = segs.length - 1; i >= 0; i--)
+      if (SLEEP.has(segs[i].level)) {
+        lastSleepIdx = i;
+        break;
+      }
+    if (lastSleepIdx === -1) return this._parseISO(block?.endTime);
 
     const s = segs[lastSleepIdx];
     const segStart = this._parseISO(s.dateTime);
-    const endOfSleep = s.seconds ? this._addSeconds(segStart,s.seconds)
-    : (segs[lastSleepIdx+1]?this._parseISO(segs[lastSleepIdx+1].dateTime)
-    : this._parseISO(block?.endTime));
+    const endOfSleep = s.seconds
+      ? this._addSeconds(segStart, s.seconds)
+      : segs[lastSleepIdx + 1]
+        ? this._parseISO(segs[lastSleepIdx + 1].dateTime)
+        : this._parseISO(block?.endTime);
 
     const base = Number(this.effectiveConfig?.sleepStabilityMinutes) || 20;
-    const wakeStable = Math.min(base,15);
+    const wakeStable = Math.min(base, 15);
     let wakeDur = 0;
 
-    for (let j=lastSleepIdx+1;j<segs.length && !SLEEP.has(segs[j].level);j++){
-      const wStart=this._parseISO(segs[j].dateTime);
-      const wNext = segs[j+1]?this._parseISO(segs[j+1].dateTime):null;
-      const endRef=wNext||this._parseISO(block?.endTime);
-      wakeDur += (endRef - wStart)/60000;
+    for (
+      let j = lastSleepIdx + 1;
+      j < segs.length && !SLEEP.has(segs[j].level);
+      j++
+    ) {
+      const wStart = this._parseISO(segs[j].dateTime);
+      const wNext = segs[j + 1] ? this._parseISO(segs[j + 1].dateTime) : null;
+      const endRef = wNext || this._parseISO(block?.endTime);
+      wakeDur += (endRef - wStart) / 60000;
     }
 
     if (wakeDur < wakeStable) {
@@ -2066,7 +2359,16 @@ class FitBit extends utils.Adapter {
   }
 
   // ---- 5. States schreiben ---------------------------------------------------
-  async writeSleepStates({ fell, woke, asleepMin, inBedMin, napsAsleep, napsInBed, napsCount, naps }) {
+  async writeSleepStates({
+    fell,
+    woke,
+    asleepMin,
+    inBedMin,
+    napsAsleep,
+    napsInBed,
+    napsCount,
+    naps,
+  }) {
     const fellIso = fell instanceof Date ? fell.toISOString() : String(fell);
     const wokeIso = woke instanceof Date ? woke.toISOString() : String(woke);
 
@@ -2077,59 +2379,100 @@ class FitBit extends utils.Adapter {
       if (this.effectiveConfig.intraday && fell instanceof Date) {
         const startDT = fell;
         const windowStart = new Date(startDT.getTime() - 6 * 3600000);
-        const windowEnd   = new Date(startDT.getTime() + 2 * 3600000);
+        const windowEnd = new Date(startDT.getTime() + 2 * 3600000);
 
         let nightHR = [];
         try {
           const tsState = await this.getStateAsync("activity.HeartRate-ts");
           if (tsState?.val) {
             const allTs = JSON.parse(tsState.val);
-            nightHR = allTs.filter(e => {
+            nightHR = allTs.filter((e) => {
               if (!e.ts) return false;
               const t = Date.parse(e.ts);
               return t >= windowStart.getTime() && t <= windowEnd.getTime();
             });
-            this.dlog("debug", `[HR] Gefundene Punkte im 8h-Fenster: ${nightHR.length} (von ${allTs.length} total)`);
+            this.dlog(
+              "debug",
+              `[HR] Gefundene Punkte im 8h-Fenster: ${nightHR.length} (von ${allTs.length} total)`,
+            );
           }
         } catch (e) {
-          this.dlog("warn", "[HR] Fehler beim Laden von HeartRate-ts: " + e.message);
+          this.dlog(
+            "warn",
+            "[HR] Fehler beim Laden von HeartRate-ts: " + e.message,
+          );
         }
 
         if (nightHR.length < 8) {
-          this.dlog("info", `[HR] Zu wenig Messpunkte im 8h-Fenster (${nightHR.length}/8) → HR-Werte leer`);
+          this.dlog(
+            "info",
+            `[HR] Zu wenig Messpunkte im 8h-Fenster (${nightHR.length}/8) → HR-Werte leer`,
+          );
           await Promise.all([
             this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true }),
-                            this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true }),
-                            this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true })
+            this.setStateAsync("sleep.HRAfterSleep", { val: null, ack: true }),
+            this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true }),
           ]);
         } else {
           const now = startDT.getTime();
           const beforeArr = nightHR
-          .filter(p => Date.parse(p.ts) >= now - 120*60000 && Date.parse(p.ts) <= now - 15*60000)
-          .map(p => p.value);
+            .filter(
+              (p) =>
+                Date.parse(p.ts) >= now - 120 * 60000 &&
+                Date.parse(p.ts) <= now - 15 * 60000,
+            )
+            .map((p) => p.value);
           const afterArr = nightHR
-          .filter(p => Date.parse(p.ts) >= now + 15*60000 && Date.parse(p.ts) <= now + 120*60000)
-          .map(p => p.value);
+            .filter(
+              (p) =>
+                Date.parse(p.ts) >= now + 15 * 60000 &&
+                Date.parse(p.ts) <= now + 120 * 60000,
+            )
+            .map((p) => p.value);
 
           if (beforeArr.length >= 2 && afterArr.length >= 2) {
-            const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+            const mean = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
             const before = mean(beforeArr);
-            const after  = mean(afterArr);
-            const drop   = before - after;
+            const after = mean(afterArr);
+            const drop = before - after;
 
             await Promise.all([
-              this.setStateAsync("sleep.HRBeforeSleep", { val: Number(before.toFixed(1)), ack: true }),
-                              this.setStateAsync("sleep.HRAfterSleep",  { val: Number(after.toFixed(1)),  ack: true }),
-                              this.setStateAsync("sleep.HRDropAtSleep", { val: Number(drop.toFixed(1)),   ack: true })
+              this.setStateAsync("sleep.HRBeforeSleep", {
+                val: Number(before.toFixed(1)),
+                ack: true,
+              }),
+              this.setStateAsync("sleep.HRAfterSleep", {
+                val: Number(after.toFixed(1)),
+                ack: true,
+              }),
+              this.setStateAsync("sleep.HRDropAtSleep", {
+                val: Number(drop.toFixed(1)),
+                ack: true,
+              }),
             ]);
 
-            this.dlog("info", `[HR] Erfolgreich analysiert → Vor: ${before.toFixed(1)} BPM (${beforeArr.length} Werte), Nach: ${after.toFixed(1)} BPM (${afterArr.length} Werte), Abfall: ${drop.toFixed(1)} BPM`);
+            this.dlog(
+              "info",
+              `[HR] Erfolgreich analysiert → Vor: ${before.toFixed(1)} BPM (${beforeArr.length} Werte), Nach: ${after.toFixed(1)} BPM (${afterArr.length} Werte), Abfall: ${drop.toFixed(1)} BPM`,
+            );
           } else {
-            this.dlog("info", `[HR] Zu wenige Punkte in den Fein-Fenstern (vor=${beforeArr.length}, nach=${afterArr.length}) → HR-Werte leer`);
+            this.dlog(
+              "info",
+              `[HR] Zu wenige Punkte in den Fein-Fenstern (vor=${beforeArr.length}, nach=${afterArr.length}) → HR-Werte leer`,
+            );
             await Promise.all([
-              this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true }),
-                              this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true }),
-                              this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true })
+              this.setStateAsync("sleep.HRBeforeSleep", {
+                val: null,
+                ack: true,
+              }),
+              this.setStateAsync("sleep.HRAfterSleep", {
+                val: null,
+                ack: true,
+              }),
+              this.setStateAsync("sleep.HRDropAtSleep", {
+                val: null,
+                ack: true,
+              }),
             ]);
           }
         }
@@ -2138,8 +2481,8 @@ class FitBit extends utils.Adapter {
       this.log.warn(`HR-Analyse fehlgeschlagen: ${e.message || e}`);
       await Promise.all([
         this.setStateAsync("sleep.HRBeforeSleep", { val: null, ack: true }),
-                        this.setStateAsync("sleep.HRAfterSleep",  { val: null, ack: true }),
-                        this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true })
+        this.setStateAsync("sleep.HRAfterSleep", { val: null, ack: true }),
+        this.setStateAsync("sleep.HRDropAtSleep", { val: null, ack: true }),
       ]);
     }
 
@@ -2148,50 +2491,85 @@ class FitBit extends utils.Adapter {
     const wokeLocal = this.formatLocalShort(wokeIso);
     // Wochentag in deutsch & englisch
     const weekdayDE = fell.toLocaleDateString("de-DE", { weekday: "long" });
-    const weekdayShortDE = fell.toLocaleDateString("de-DE", { weekday: "short" });
+    const weekdayShortDE = fell.toLocaleDateString("de-DE", {
+      weekday: "short",
+    });
 
     const weekdayEN = fell.toLocaleDateString("en-US", { weekday: "long" });
-    const weekdayShortEN = fell.toLocaleDateString("en-US", { weekday: "short" });
+    const weekdayShortEN = fell.toLocaleDateString("en-US", {
+      weekday: "short",
+    });
 
     // Nap-Auswahl
     const napFellIso = naps.length
-    ? (this.effectiveConfig.showLastOrFirstNap ? naps[naps.length - 1].startTime : naps[0].startTime)
-    : null;
+      ? this.effectiveConfig.showLastOrFirstNap
+        ? naps[naps.length - 1].startTime
+        : naps[0].startTime
+      : null;
     const napWokeIso = naps.length
-    ? (this.effectiveConfig.showLastOrFirstNap ? naps[naps.length - 1].endTime : naps[0].endTime)
-    : null;
+      ? this.effectiveConfig.showLastOrFirstNap
+        ? naps[naps.length - 1].endTime
+        : naps[0].endTime
+      : null;
 
     const napFellLocal = napFellIso ? this.formatLocalShort(napFellIso) : "";
     const napWokeLocal = napWokeIso ? this.formatLocalShort(napWokeIso) : "";
 
-    const napsFormatted = naps.map(n => ({
+    const napsFormatted = naps.map((n) => ({
       start: this.formatLocalShort(n.startTime),
-                                         end: this.formatLocalShort(n.endTime),
-                                         minutesAsleep: n.minutesAsleep,
-                                         timeInBed: n.timeInBed
+      end: this.formatLocalShort(n.endTime),
+      minutesAsleep: n.minutesAsleep,
+      timeInBed: n.timeInBed,
     }));
 
     // -------------------------------------------------------------------------
     // 📝 Alle States schreiben
     // -------------------------------------------------------------------------
     await Promise.all([
-      this.setStateAsync("sleep.AsleepTotal",        { val: asleepMin + napsAsleep, ack: true }),
-                      this.setStateAsync("sleep.InBedTotal",         { val: inBedMin + napsInBed,   ack: true }),
+      this.setStateAsync("sleep.AsleepTotal", {
+        val: asleepMin + napsAsleep,
+        ack: true,
+      }),
+      this.setStateAsync("sleep.InBedTotal", {
+        val: inBedMin + napsInBed,
+        ack: true,
+      }),
 
-                      this.setStateAsync("sleep.Main.FellAsleepAt",       { val: fellIso,   ack: true }),
-                      this.setStateAsync("sleep.Main.FellAsleepAtLocal",  { val: fellLocal, ack: true }),
-                      this.setStateAsync("sleep.Main.WokeUpAt",           { val: wokeIso,   ack: true }),
-                      this.setStateAsync("sleep.Main.WokeUpAtLocal",      { val: wokeLocal, ack: true }),
+      this.setStateAsync("sleep.Main.FellAsleepAt", {
+        val: fellIso,
+        ack: true,
+      }),
+      this.setStateAsync("sleep.Main.FellAsleepAtLocal", {
+        val: fellLocal,
+        ack: true,
+      }),
+      this.setStateAsync("sleep.Main.WokeUpAt", { val: wokeIso, ack: true }),
+      this.setStateAsync("sleep.Main.WokeUpAtLocal", {
+        val: wokeLocal,
+        ack: true,
+      }),
 
-                      this.setStateAsync("sleep.Naps.FellAsleepAt",       { val: napFellIso,   ack: true }),
-                      this.setStateAsync("sleep.Naps.FellAsleepAtLocal",  { val: napFellLocal, ack: true }),
-                      this.setStateAsync("sleep.Naps.WokeUpAt",           { val: napWokeIso,   ack: true }),
-                      this.setStateAsync("sleep.Naps.WokeUpAtLocal",      { val: napWokeLocal, ack: true }),
+      this.setStateAsync("sleep.Naps.FellAsleepAt", {
+        val: napFellIso,
+        ack: true,
+      }),
+      this.setStateAsync("sleep.Naps.FellAsleepAtLocal", {
+        val: napFellLocal,
+        ack: true,
+      }),
+      this.setStateAsync("sleep.Naps.WokeUpAt", { val: napWokeIso, ack: true }),
+      this.setStateAsync("sleep.Naps.WokeUpAtLocal", {
+        val: napWokeLocal,
+        ack: true,
+      }),
 
-                      this.setStateAsync("sleep.Naps.Asleep", { val: napsAsleep, ack: true }),
-                      this.setStateAsync("sleep.Naps.InBed",  { val: napsInBed,  ack: true }),
-                      this.setStateAsync("sleep.Naps.Count",  { val: napsCount,  ack: true }),
-                      this.setStateAsync("sleep.Naps.List",   { val: JSON.stringify(napsFormatted), ack: true })
+      this.setStateAsync("sleep.Naps.Asleep", { val: napsAsleep, ack: true }),
+      this.setStateAsync("sleep.Naps.InBed", { val: napsInBed, ack: true }),
+      this.setStateAsync("sleep.Naps.Count", { val: napsCount, ack: true }),
+      this.setStateAsync("sleep.Naps.List", {
+        val: JSON.stringify(napsFormatted),
+        ack: true,
+      }),
     ]);
 
     // -------------------------------------------------------------------------
@@ -2217,8 +2595,8 @@ class FitBit extends utils.Adapter {
       let napUsed = null;
       if (naps.length > 0) {
         napUsed = this.effectiveConfig.showLastOrFirstNap
-        ? naps[naps.length - 1]   // letztes Nap
-        : naps[0];                 // erstes Nap
+          ? naps[naps.length - 1] // letztes Nap
+          : naps[0]; // erstes Nap
       }
 
       // ---------------------------------------------------------------------
@@ -2239,15 +2617,27 @@ class FitBit extends utils.Adapter {
         inBedMinutes: inBedMin,
 
         // Herzfrequenz
-        hrBefore: await this.getStateAsync("sleep.HRBeforeSleep").then(s => s?.val ?? null),
-        hrAfter:  await this.getStateAsync("sleep.HRAfterSleep").then(s => s?.val ?? null),
-        hrDrop:   await this.getStateAsync("sleep.HRDropAtSleep").then(s => s?.val ?? null),
+        hrBefore: await this.getStateAsync("sleep.HRBeforeSleep").then(
+          (s) => s?.val ?? null,
+        ),
+        hrAfter: await this.getStateAsync("sleep.HRAfterSleep").then(
+          (s) => s?.val ?? null,
+        ),
+        hrDrop: await this.getStateAsync("sleep.HRDropAtSleep").then(
+          (s) => s?.val ?? null,
+        ),
 
         // Sleep Stages
-        deep:  await this.getStateAsync("sleep.Deep").then(s => s?.val ?? null),
-        light: await this.getStateAsync("sleep.Light").then(s => s?.val ?? null),
-        rem:   await this.getStateAsync("sleep.Rem").then(s => s?.val ?? null),
-        wake:  await this.getStateAsync("sleep.Wake").then(s => s?.val ?? null),
+        deep: await this.getStateAsync("sleep.Deep").then(
+          (s) => s?.val ?? null,
+        ),
+        light: await this.getStateAsync("sleep.Light").then(
+          (s) => s?.val ?? null,
+        ),
+        rem: await this.getStateAsync("sleep.Rem").then((s) => s?.val ?? null),
+        wake: await this.getStateAsync("sleep.Wake").then(
+          (s) => s?.val ?? null,
+        ),
 
         naps: napsCount,
         sleepSource: this._lastSleepSource || "fitbit",
@@ -2256,13 +2646,13 @@ class FitBit extends utils.Adapter {
         // Nap-Daten für die History
         // -----------------------------------------------------------------
         napUsedStart: napUsed ? napUsed.startTime : null,
-        napUsedEnd:   napUsed ? napUsed.endTime   : null,
+        napUsedEnd: napUsed ? napUsed.endTime : null,
         napUsedMinutesAsleep: napUsed ? napUsed.minutesAsleep : null,
-        napUsedTimeInBed:     napUsed ? napUsed.timeInBed     : null
+        napUsedTimeInBed: napUsed ? napUsed.timeInBed : null,
       };
 
       // Eintrag ersetzen oder anhängen
-      const idx = history.findIndex(h => h.date === entry.date);
+      const idx = history.findIndex((h) => h.date === entry.date);
       if (idx >= 0) history[idx] = entry;
       else history.push(entry);
 
@@ -2272,18 +2662,18 @@ class FitBit extends utils.Adapter {
       // Speichern
       await this.setStateAsync("sleep.History.JSON", {
         val: JSON.stringify(history, null, 2),
-                               ack: true
+        ack: true,
       });
 
       await this.setStateAsync("sleep.History.LastEntry", {
         val: JSON.stringify(entry, null, 2),
-                               ack: true
+        ack: true,
       });
 
-      this.dlog("info",
-                `[HISTORY] Saved sleep entry for ${entry.date} (History size: ${history.length})`
+      this.dlog(
+        "info",
+        `[HISTORY] Saved sleep entry for ${entry.date} (History size: ${history.length})`,
       );
-
     } catch (e) {
       this.log.warn(`History update failed: ${e.message}`);
     }
@@ -2302,7 +2692,6 @@ class FitBit extends utils.Adapter {
     const mi = String(dt.getMinutes()).padStart(2, "0");
     return `${dd}.${mm}.${yyyy} - ${hh}:${mi}`;
   }
-
 
   // =========================================================================
   // Token Introspect (optional)
@@ -2552,35 +2941,44 @@ class FitBit extends utils.Adapter {
 
     for (const nap of napBlocks) {
       const start = new Date(nap.startTime);
-      const end   = new Date(nap.endTime);
+      const end = new Date(nap.endTime);
       const duration = (end - start) / 60000;
 
       // Kurze Naps unter 15 Minuten ignorieren
       if (duration < 15) {
-        this.dlog("debug", `[NAP] Ignored (${start.toLocaleTimeString()} – ${end.toLocaleTimeString()}) too short (${duration} min)`);
+        this.dlog(
+          "debug",
+          `[NAP] Ignored (${start.toLocaleTimeString()} – ${end.toLocaleTimeString()}) too short (${duration} min)`,
+        );
         validated.push({ ...nap, isValid: false });
         continue;
       }
 
       // Falls Intraday-Daten vorhanden, prüfen auf Bewegung/Herzfrequenz
       const intraday = this.recentHeartData || [];
-      const segment = intraday.filter(p => {
+      const segment = intraday.filter((p) => {
         const t = new Date(p.ts);
         return t >= start && t <= end;
       });
 
       const avgHR = segment.length
-      ? (segment.reduce((a, b) => a + (b.value || 0), 0) / segment.length)
-      : 0;
+        ? segment.reduce((a, b) => a + (b.value || 0), 0) / segment.length
+        : 0;
 
       // Bewegung simulativ über Herzfrequenzunterschied bewerten
       if (avgHR > 65) {
-        this.dlog("debug", `[NAP] Ignored (${start.toLocaleTimeString()}) high HR avg ${avgHR}`);
+        this.dlog(
+          "debug",
+          `[NAP] Ignored (${start.toLocaleTimeString()}) high HR avg ${avgHR}`,
+        );
         validated.push({ ...nap, isValid: false });
         continue;
       }
 
-      this.dlog("debug", `[NAP] Accepted (${start.toLocaleTimeString()} – ${end.toLocaleTimeString()}) ${duration} min`);
+      this.dlog(
+        "debug",
+        `[NAP] Accepted (${start.toLocaleTimeString()} – ${end.toLocaleTimeString()}) ${duration} min`,
+      );
       validated.push({ ...nap, isValid: true });
     }
 
@@ -2606,18 +3004,18 @@ class FitBit extends utils.Adapter {
       if (ageMs > maxAgeMs) {
         this.log.warn(
           `[SLEEP] pendingMainSleep älter als ${PENDING_MAIN_SLEEP_MAX_AGE_HOURS}h → ` +
-          `Schlaf wird ohne weiteres HR-Warten verarbeitet (HR-Dichte zu dünn?).`
+            `Schlaf wird ohne weiteres HR-Warten verarbeitet (HR-Dichte zu dünn?).`,
         );
         try {
           // relaxed + forceMainProcess → keine erneute pendingMainSleep-Setzung,
           // aber vorhandene Daten trotzdem sauber durch die Pipeline jagen.
           await this.setSleepStates(
             { sleep: [pending.raw] },
-            { relaxed: true, forceMainProcess: true }
+            { relaxed: true, forceMainProcess: true },
           );
         } catch (e) {
           this.log.error(
-            `[SLEEP] Failsafe-Verarbeitung von pendingMainSleep fehlgeschlagen: ${e.message || e}`
+            `[SLEEP] Failsafe-Verarbeitung von pendingMainSleep fehlgeschlagen: ${e.message || e}`,
           );
         }
         this.pendingMainSleep = null;
@@ -2630,7 +3028,7 @@ class FitBit extends utils.Adapter {
 
     // Verbesserte HR-Erkennung: 6h vor Start bis 2h nach Start
     const windowStart = new Date(start.getTime() - 6 * 60 * 60 * 1000);
-    const windowEnd   = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+    const windowEnd = new Date(start.getTime() + 2 * 60 * 60 * 1000);
 
     // HeartRate-ts laden
     const tsState = await this.getStateAsync("activity.HeartRate-ts");
@@ -2640,9 +3038,11 @@ class FitBit extends utils.Adapter {
     }
 
     let ts = [];
-    try { ts = JSON.parse(tsState.val); } catch {}
+    try {
+      ts = JSON.parse(tsState.val);
+    } catch {}
 
-    const nightHR = ts.filter(e => {
+    const nightHR = ts.filter((e) => {
       const t = new Date(e.ts);
       return t >= windowStart && t <= windowEnd;
     });
@@ -2650,7 +3050,7 @@ class FitBit extends utils.Adapter {
     // Mindestanzahl HR Punkte
     if (nightHR.length < 5) {
       this.log.info(
-        `[WAIT] Nacht-HR unvollständig (${nightHR.length}) → später erneut prüfen`
+        `[WAIT] Nacht-HR unvollständig (${nightHR.length}) → später erneut prüfen`,
       );
       return;
     }
@@ -2658,7 +3058,7 @@ class FitBit extends utils.Adapter {
     this.log.info(`[OK] HR-Daten vollständig → starte Schlafanalyse`);
     await this.setSleepStates(
       { sleep: [pending.raw] },
-      { relaxed: false, forceMainProcess: true }
+      { relaxed: false, forceMainProcess: true },
     );
 
     this.pendingMainSleep = null;
@@ -2685,13 +3085,14 @@ class FitBit extends utils.Adapter {
         if (ts >= cutoff) {
           this.recentHeartData.push({
             ts,
-            value: entry.value
+            value: entry.value,
           });
         }
       }
 
-      this.log.info(`Puffer wiederhergestellt: ${this.recentHeartData.length} HR-Einträge (48h)`);
-
+      this.log.info(
+        `Puffer wiederhergestellt: ${this.recentHeartData.length} HR-Einträge (48h)`,
+      );
     } catch (e) {
       this.log.error("restoreRecentHeartDataFromTs: JSON Fehler");
     }
@@ -2742,6 +3143,9 @@ class FitBit extends utils.Adapter {
     }
 
     if (state.ack === false) {
+      // ----------------------------------------------------------
+      // Gewicht ändern
+      // ----------------------------------------------------------
       if (id.includes("body.weight")) {
         this.log.info(`weight changed → ${state.val}`);
         await this.setWeight(state.val);
@@ -2749,37 +3153,70 @@ class FitBit extends utils.Adapter {
         return;
       }
 
+      // ----------------------------------------------------------
+      // Manuelle Schlaf-Neuberechnung (Recalc) – jetzt mit voller HR-Korrektur!
+      // ----------------------------------------------------------
       if (id.endsWith("sleep.Recalculate") && state.val === true) {
         if (this._recalcInProgress) {
-          this.log.warn("Recalculation already in progress — skipping duplicate click.");
+          this.log.warn("Recalc bereits aktiv – bitte warten.");
+          await this.setStateAsync(id, { val: false, ack: true });
           return;
         }
+
         this._recalcInProgress = true;
+
         try {
           const raw = await this.getStateAsync("sleep.RawData");
-          if (raw && raw.val) {
-            const parsed = JSON.parse(raw.val);
-            this.log.info("Recalculating sleep data from stored RawData (relaxed mode)...");
-            await this.setSleepStates(parsed, { relaxed: true, forceMainProcess: true });
-            await this.setStateAsync("sleep.LastRecalculated", {
-              val: new Date().toISOString(),
-              ack: true,
-            });
-            this.log.info("Sleep recalculation completed successfully.");
-          } else {
-            this.log.warn("No stored RawData available — nothing to recalc.");
+          if (!raw?.val) {
+            this.log.warn(
+              "Kein sleep.RawData vorhanden → nichts zum Recalculaten",
+            );
+            return;
           }
+
+          const parsed = JSON.parse(raw.val);
+          const mainBlock = (parsed.sleep || []).find(
+            (b) => b.isMainSleep === true,
+          );
+
+          if (!mainBlock) {
+            this.log.warn(
+              "Kein Hauptschlaf im RawData → nichts zu recalculaten",
+            );
+            return;
+          }
+
+          this.log.info("Recalculate mit voller HR-Analyse gestartet...");
+
+          // ← Das ist der entscheidende Unterschied zu vorher:
+          this.pendingMainSleep = {
+            start: new Date(mainBlock.startTime),
+            end: new Date(mainBlock.endTime),
+            raw: mainBlock,
+          };
+
+          await this.checkNightHRAndProcess(); // ← nutzt alle HR-Logik!
+
+          await this.setStateAsync("sleep.LastRecalculated", {
+            val: new Date().toISOString(),
+            ack: true,
+          });
+
+          this.log.info(
+            "Recalculate mit HR-Korrektur erfolgreich abgeschlossen!",
+          );
         } catch (err) {
-          this.log.error(`Recalculation failed: ${err}`);
+          this.log.error(`Recalc fehlgeschlagen: ${err.message || err}`);
         } finally {
           this._recalcInProgress = false;
           await this.setStateAsync(id, { val: false, ack: true });
         }
-        return;
-      }
-    }
-  }
-}
+
+        return; // ← Ende des Recalc-Blocks
+      } // ← 1. schließende Klammer
+    } // ← 2. schließende Klammer (if state.ack === false)
+  } // ← 3. schließende Klammer (onStateChange)
+} // ← 4. schließende Klammer (Klasse oder äußeres if)
 
 // =========================================================================
 // Modul-Export / Start
