@@ -141,7 +141,7 @@
     "redirectUri": "https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html",
     "debugEnabled": false,
     "smartEarlySleepEnabled": true,
-    "minMainSleepHours": 3,
+    "minMainSleepHours": 4,
     "sleepStabilityMinutes": 20,
     "sleepLateWakeCorrectionMinutes": 0
   },
