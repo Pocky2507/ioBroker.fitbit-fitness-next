@@ -2111,7 +2111,7 @@ class FitBit extends utils.Adapter {
     const segs = this.getLevelSegments(block);
     if (!segs.length) return this._parseISO(block?.startTime);
 
-    const startDT = new Date(block.startTime);
+    const startDT = new Date(Date.parse(block.startTime));  // garantiert UTC
 
     // --- SMART PREFILTER ---
     const smart = this.preSleepSmartFilter(block, segs);
@@ -2139,10 +2139,10 @@ class FitBit extends utils.Adapter {
     const findStableFrom = (startIdx) => {
       for (let i = startIdx; i < segs.length; i++) {
         if (!candidate(segs[i])) continue;
-        const start = new Date(segs[i].dateTime);
+        const start = new Date(Date.parse(segs[i].dateTime));  // bleibt UTC → korrekt
         let dur = 0;
         for (let j = i; j < segs.length && candidate(segs[j]); j++) {
-          const cur = new Date(segs[j].dateTime);
+          const cur = new Date(Date.parse(segs[i].dateTime));
           const next = segs[j + 1] ? new Date(segs[j + 1].dateTime) : null;
           if (next) dur += (next - cur) / 60000;
         }
@@ -2154,7 +2154,7 @@ class FitBit extends utils.Adapter {
     const threeHours = 3 * 60 * 60 * 1000;
 
     // =================================================================
-    // 1. Cutoff + Startindex
+    // 1. Cutoff + Startindex  (ZEITFEHLERFREI)
     // =================================================================
     let cutoffDT = null;
     let searchStartIdx = 0;
@@ -2164,50 +2164,55 @@ class FitBit extends utils.Adapter {
       this.effectiveConfig.ignoreEarlyMainSleepTime
     ) {
       const [h, m] = this.effectiveConfig.ignoreEarlyMainSleepTime
-        .split(":")
-        .map(Number);
+      .split(":")
+      .map(Number);
 
       if (!isNaN(h) && !isNaN(m)) {
-        // Lokale Zeit → Cutoff berechnen
-        const localStart = new Date(
-          startDT.getTime() + startDT.getTimezoneOffset() * 60000,
-        );
-        const year = localStart.getFullYear();
+
+        // ------------------------------------------------------------
+        // Lokale Startzeit aus UTC erzeugen (sauber, einmalig)
+        // ------------------------------------------------------------
+        const localStart = new Date(startDT.getTime() - startDT.getTimezoneOffset() * 60000);
+
+        const year  = localStart.getFullYear();
         const month = localStart.getMonth();
-        let day = localStart.getDate();
+        let day     = localStart.getDate();
 
-        cutoffDT = new Date(year, month, day, h, m, 0);
+        // ------------------------------------------------------------
+        // Lokale Cutoff-Uhrzeit konstruieren
+        // ------------------------------------------------------------
+        let localCutoff = new Date(year, month, day, h, m, 0);
 
-        // Falls Block vor Cutoff → nächster Tag
-        if (localStart < cutoffDT) {
-          cutoffDT.setDate(cutoffDT.getDate() + 1);
+        // Falls Start < Cutoff → Cutoff gehört zum nächsten Tag
+        if (localStart < localCutoff) {
+          localCutoff.setDate(localCutoff.getDate() + 1);
         }
 
-        // Zurück nach UTC
-        cutoffDT = new Date(
-          cutoffDT.getTime() - cutoffDT.getTimezoneOffset() * 60000,
-        );
+        // ------------------------------------------------------------
+        // EINMALIGE Rückwandlung nach UTC (korrekt)
+        // ------------------------------------------------------------
+        cutoffDT = new Date(localCutoff.getTime() + localCutoff.getTimezoneOffset() * 60000);
 
         this.dlog(
           "debug",
-          `[START] Cutoff (UTC): ${cutoffDT.toISOString()} (from ${this.effectiveConfig.ignoreEarlyMainSleepTime})`,
+          `[START] Cutoff LOCAL: ${localCutoff.toISOString().replace("T"," ").substring(0,16)} → UTC: ${cutoffDT.toISOString()}`,
         );
       }
     }
 
-    // === Index ab Cutoff suchen ===
+    // =================================================================
+    // Suche Startindex ab Cutoff
+    // =================================================================
     if (cutoffDT && startDT < cutoffDT) {
       for (let i = 0; i < segs.length; i++) {
-        if (new Date(segs[i].dateTime) >= cutoffDT) {
+        const segDT = new Date(Date.parse(segs[i].dateTime));  // garantiert UTC
+        if (segDT >= cutoffDT) {
           searchStartIdx = i;
           break;
         }
       }
 
-      this.dlog(
-        "debug",
-        `[START] Searching stable segments from idx=${searchStartIdx}`,
-      );
+      this.dlog("debug", `[START] Searching stable segments from idx=${searchStartIdx}`);
     }
 
     // =================================================================
@@ -2215,7 +2220,7 @@ class FitBit extends utils.Adapter {
     // =================================================================
     const deepRemIdx = (() => {
       for (let i = searchStartIdx; i < segs.length; i++) {
-        const t = new Date(segs[i].dateTime);
+        const t = new Date(Date.parse(segs[i].dateTime));  // bleibt UTC → korrekt
         if (t - startDT > threeHours) break;
         if (segs[i].level === "deep" || segs[i].level === "rem") return i;
       }
@@ -2243,12 +2248,12 @@ class FitBit extends utils.Adapter {
           continue;
         }
 
-        const start = new Date(segs[i].dateTime);
+        const start = new Date(Date.parse(segs[i].dateTime));
         let dur = 0;
         let j = i;
 
         while (j < segs.length && candidate(segs[j])) {
-          const cur = new Date(segs[j].dateTime);
+          const cur = new Date(Date.parse(segs[i].dateTime));
           const next = segs[j + 1] ? new Date(segs[j + 1].dateTime) : null;
           if (next) dur += (next - cur) / 60000;
           j++;
@@ -2573,13 +2578,13 @@ class FitBit extends utils.Adapter {
     ]);
 
     // -------------------------------------------------------------------------
-    // Sleep History Update
+    // Sleep History Update (inkl. KI-Felder & Herzwerte)
     // -------------------------------------------------------------------------
     try {
       const historyState = await this.getStateAsync("sleep.History.JSON");
       let history = [];
 
-      // Vorherige History laden
+      // vorhandene History laden
       if (historyState && historyState.val) {
         try {
           history = JSON.parse(historyState.val);
@@ -2590,13 +2595,53 @@ class FitBit extends utils.Adapter {
       }
 
       // ---------------------------------------------------------------------
-      // Nap-Auswahl für die History (erster oder letzter Nap laut Config)
+      // Herzwerte laden (aus States)
       // ---------------------------------------------------------------------
+      const hrBefore = await this.getStateAsync("sleep.HRBeforeSleep").then(s => s?.val ?? null);
+      const hrAfter  = await this.getStateAsync("sleep.HRAfterSleep").then(s => s?.val ?? null);
+      const hrDrop   = await this.getStateAsync("sleep.HRDropAtSleep").then(s => s?.val ?? null);
+
+      // Sleep stages laden
+      const deep  = await this.getStateAsync("sleep.Deep").then(s => s?.val ?? null);
+      const light = await this.getStateAsync("sleep.Light").then(s => s?.val ?? null);
+      const rem   = await this.getStateAsync("sleep.Rem").then(s => s?.val ?? null);
+      const wake  = await this.getStateAsync("sleep.Wake").then(s => s?.val ?? null);
+
+      // ---------------------------------------------------------------------
+      // KI-Hilfsfunktionen
+      // ---------------------------------------------------------------------
+      const mean = arr => arr.reduce((a,b)=>a+b,0) / arr.length;
+
+      // letzte realen Nächte (mit echten HR-Werten)
+      const lastReal = history
+      .filter(h => h.hrBefore != null && h.hrAfter != null)
+      .slice(-10);
+
+      let baselineBefore = null;
+      let baselineAfter = null;
+      let baselineDrop = null;
+
+      if (lastReal.length >= 5) {
+        baselineBefore = Number(mean(lastReal.map(h => h.hrBefore)).toFixed(1));
+        baselineAfter  = Number(mean(lastReal.map(h => h.hrAfter)).toFixed(1));
+        baselineDrop   = Number(mean(lastReal.map(h => h.hrDrop)).toFixed(1));
+      }
+
+      // Trends
+      const trendDrop = lastReal.length >= 3
+      ? Number((lastReal[lastReal.length-1].hrDrop - lastReal[0].hrDrop).toFixed(1))
+      : null;
+
+      const trendAsleep = lastReal.length >= 3
+      ? Number((lastReal[lastReal.length-1].asleepMinutes - lastReal[0].asleepMinutes).toFixed(0))
+      : null;
+
+      // Nap-Daten
       let napUsed = null;
       if (naps.length > 0) {
         napUsed = this.effectiveConfig.showLastOrFirstNap
-          ? naps[naps.length - 1] // letztes Nap
-          : naps[0]; // erstes Nap
+        ? naps[naps.length - 1]
+        : naps[0];
       }
 
       // ---------------------------------------------------------------------
@@ -2605,75 +2650,78 @@ class FitBit extends utils.Adapter {
       const entry = {
         date: fellIso.substring(0, 10),
 
-        // Wochentag DE/EN
         weekday: weekdayDE,
         weekdayShort: weekdayShortDE,
-        weekdayEN: weekdayEN,
-        weekdayShortEN: weekdayShortEN,
+        weekdayEN,
+        weekdayShortEN,
 
         fellAsleepAt: fellIso,
         wokeUpAt: wokeIso,
         asleepMinutes: asleepMin,
         inBedMinutes: inBedMin,
 
-        // Herzfrequenz
-        hrBefore: await this.getStateAsync("sleep.HRBeforeSleep").then(
-          (s) => s?.val ?? null,
-        ),
-        hrAfter: await this.getStateAsync("sleep.HRAfterSleep").then(
-          (s) => s?.val ?? null,
-        ),
-        hrDrop: await this.getStateAsync("sleep.HRDropAtSleep").then(
-          (s) => s?.val ?? null,
-        ),
+        // Sleep stages
+        deep,
+        light,
+        rem,
+        wake,
 
-        // Sleep Stages
-        deep: await this.getStateAsync("sleep.Deep").then(
-          (s) => s?.val ?? null,
-        ),
-        light: await this.getStateAsync("sleep.Light").then(
-          (s) => s?.val ?? null,
-        ),
-        rem: await this.getStateAsync("sleep.Rem").then((s) => s?.val ?? null),
-        wake: await this.getStateAsync("sleep.Wake").then(
-          (s) => s?.val ?? null,
-        ),
+        // Herzwerte
+        hrBefore,
+        hrAfter,
+        hrDrop,
 
         naps: napsCount,
         sleepSource: this._lastSleepSource || "fitbit",
 
-        // -----------------------------------------------------------------
-        // Nap-Daten für die History
-        // -----------------------------------------------------------------
+        // Nap-Daten
         napUsedStart: napUsed ? napUsed.startTime : null,
-        napUsedEnd: napUsed ? napUsed.endTime : null,
+        napUsedEnd:   napUsed ? napUsed.endTime   : null,
         napUsedMinutesAsleep: napUsed ? napUsed.minutesAsleep : null,
-        napUsedTimeInBed: napUsed ? napUsed.timeInBed : null,
+        napUsedTimeInBed:     napUsed ? napUsed.timeInBed     : null,
+
+        // -----------------------------------------------------------------
+        // KI-Felder **(korrekt auf Basis der HR-Werte oben)**
+        // -----------------------------------------------------------------
+
+        baselineHrBefore: baselineBefore,
+        baselineHrAfter:  baselineAfter,
+        baselineHrDrop:   baselineDrop,
+
+        deltaHrBefore: baselineBefore != null ? Number((hrBefore - baselineBefore).toFixed(1)) : null,
+        deltaHrAfter:  baselineAfter  != null ? Number((hrAfter  - baselineAfter ).toFixed(1)) : null,
+        deltaHrDrop:   baselineDrop   != null ? Number((hrDrop   - baselineDrop  ).toFixed(1)) : null,
+
+        trendDrop,
+        trendAsleep,
+
+        isHrDropStrong: hrDrop != null ? hrDrop >= 10 : null,
+        isHrBeforeLow:  (hrBefore != null && baselineBefore != null) ? hrBefore < baselineBefore : null,
+        isHrAfterLow:   (hrAfter  != null && baselineAfter  != null) ? hrAfter  < baselineAfter  : null,
+
+        weekdayIndex: fell.getDay(),
+        isWeekend: fell.getDay() === 6 || fell.getDay() === 0,
       };
 
       // Eintrag ersetzen oder anhängen
-      const idx = history.findIndex((h) => h.date === entry.date);
+      const idx = history.findIndex(h => h.date === entry.date);
       if (idx >= 0) history[idx] = entry;
       else history.push(entry);
 
-      // Auf 90 Tage begrenzen
       history = history.slice(-90);
 
-      // Speichern
       await this.setStateAsync("sleep.History.JSON", {
         val: JSON.stringify(history, null, 2),
-        ack: true,
+                               ack: true,
       });
 
       await this.setStateAsync("sleep.History.LastEntry", {
         val: JSON.stringify(entry, null, 2),
-        ack: true,
+                               ack: true,
       });
 
-      this.dlog(
-        "info",
-        `[HISTORY] Saved sleep entry for ${entry.date} (History size: ${history.length})`,
-      );
+      this.dlog("info", `[HISTORY] Saved sleep entry for ${entry.date} (History size: ${history.length})`);
+
     } catch (e) {
       this.log.warn(`History update failed: ${e.message}`);
     }
