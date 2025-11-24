@@ -2491,9 +2491,12 @@ class FitBit extends utils.Adapter {
       ]);
     }
 
-    // ✳️ Lokale Formatierung
+    // ✳️ Lokale Formatierung — KORREKT
+    // Wichtig: writeSleepStates hat KEINEN Zugriff auf mainBlock!
+    // Es dürfen nur fellIso / wokeIso verwendet werden.
     const fellLocal = this.formatLocalShort(fellIso);
     const wokeLocal = this.formatLocalShort(wokeIso);
+
     // Wochentag in deutsch & englisch
     const weekdayDE = fell.toLocaleDateString("de-DE", { weekday: "long" });
     const weekdayShortDE = fell.toLocaleDateString("de-DE", {
@@ -2507,24 +2510,24 @@ class FitBit extends utils.Adapter {
 
     // Nap-Auswahl
     const napFellIso = naps.length
-      ? this.effectiveConfig.showLastOrFirstNap
-        ? naps[naps.length - 1].startTime
-        : naps[0].startTime
-      : null;
+    ? this.effectiveConfig.showLastOrFirstNap
+    ? naps[naps.length - 1].startTime
+    : naps[0].startTime
+    : null;
     const napWokeIso = naps.length
-      ? this.effectiveConfig.showLastOrFirstNap
-        ? naps[naps.length - 1].endTime
-        : naps[0].endTime
-      : null;
+    ? this.effectiveConfig.showLastOrFirstNap
+    ? naps[naps.length - 1].endTime
+    : naps[0].endTime
+    : null;
 
     const napFellLocal = napFellIso ? this.formatLocalShort(napFellIso) : "";
     const napWokeLocal = napWokeIso ? this.formatLocalShort(napWokeIso) : "";
 
     const napsFormatted = naps.map((n) => ({
       start: this.formatLocalShort(n.startTime),
-      end: this.formatLocalShort(n.endTime),
-      minutesAsleep: n.minutesAsleep,
-      timeInBed: n.timeInBed,
+                                           end: this.formatLocalShort(n.endTime),
+                                           minutesAsleep: n.minutesAsleep,
+                                           timeInBed: n.timeInBed,
     }));
 
     // -------------------------------------------------------------------------
@@ -2549,32 +2552,32 @@ class FitBit extends utils.Adapter {
         ack: true,
       }),
       this.setStateAsync("sleep.Main.WokeUpAt", { val: wokeIso, ack: true }),
-      this.setStateAsync("sleep.Main.WokeUpAtLocal", {
-        val: wokeLocal,
-        ack: true,
-      }),
+                      this.setStateAsync("sleep.Main.WokeUpAtLocal", {
+                        val: wokeLocal,
+                        ack: true,
+                      }),
 
-      this.setStateAsync("sleep.Naps.FellAsleepAt", {
-        val: napFellIso,
-        ack: true,
-      }),
-      this.setStateAsync("sleep.Naps.FellAsleepAtLocal", {
-        val: napFellLocal,
-        ack: true,
-      }),
-      this.setStateAsync("sleep.Naps.WokeUpAt", { val: napWokeIso, ack: true }),
-      this.setStateAsync("sleep.Naps.WokeUpAtLocal", {
-        val: napWokeLocal,
-        ack: true,
-      }),
+                      this.setStateAsync("sleep.Naps.FellAsleepAt", {
+                        val: napFellIso,
+                        ack: true,
+                      }),
+                      this.setStateAsync("sleep.Naps.FellAsleepAtLocal", {
+                        val: napFellLocal,
+                        ack: true,
+                      }),
+                      this.setStateAsync("sleep.Naps.WokeUpAt", { val: napWokeIso, ack: true }),
+                      this.setStateAsync("sleep.Naps.WokeUpAtLocal", {
+                        val: napWokeLocal,
+                        ack: true,
+                      }),
 
-      this.setStateAsync("sleep.Naps.Asleep", { val: napsAsleep, ack: true }),
-      this.setStateAsync("sleep.Naps.InBed", { val: napsInBed, ack: true }),
-      this.setStateAsync("sleep.Naps.Count", { val: napsCount, ack: true }),
-      this.setStateAsync("sleep.Naps.List", {
-        val: JSON.stringify(napsFormatted),
-        ack: true,
-      }),
+                      this.setStateAsync("sleep.Naps.Asleep", { val: napsAsleep, ack: true }),
+                      this.setStateAsync("sleep.Naps.InBed", { val: napsInBed, ack: true }),
+                      this.setStateAsync("sleep.Naps.Count", { val: napsCount, ack: true }),
+                      this.setStateAsync("sleep.Naps.List", {
+                        val: JSON.stringify(napsFormatted),
+                                         ack: true,
+                      }),
     ]);
 
     // -------------------------------------------------------------------------
