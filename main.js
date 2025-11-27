@@ -1688,8 +1688,8 @@ class FitBit extends utils.Adapter {
     // === Early Sleep Filter ===
     if (cfg.ignoreEarlyMainSleepEnabled && cfg.ignoreEarlyMainSleepTime) {
       const [h, m] = String(cfg.ignoreEarlyMainSleepTime)
-        .split(":")
-        .map(Number);
+      .split(":")
+      .map(Number);
       const cutoff = h * 60 + m;
       dbg(`[FILTER] Early sleep cutoff ${cfg.ignoreEarlyMainSleepTime}`);
 
@@ -1703,6 +1703,7 @@ class FitBit extends utils.Adapter {
         if (cfg.smartEarlySleepEnabled && b.endTime) {
           const durMs = new Date(b.endTime) - new Date(b.startTime);
           const minMs = (cfg.minMainSleepHours || 3) * 3600000;
+
           if (durMs >= minMs) {
             dbg(
               `[FILTER] Early block kept (${Math.round(durMs / 60000)} min ≥ ${minMs / 60000})`,
@@ -1710,6 +1711,7 @@ class FitBit extends utils.Adapter {
             return true;
           }
         }
+
         dbg(
           `[FILTER] Early main sleep ignored (${st.toTimeString().slice(0, 5)} < ${cfg.ignoreEarlyMainSleepTime})`,
         );
@@ -1718,9 +1720,11 @@ class FitBit extends utils.Adapter {
     }
 
     // === Mindestdauer für Hauptschlaf ===
-    if (cfg.smartEarlySleepEnabled && !cfg.ignoreEarlyMainSleepEnabled) {
+    // Läuft jetzt korrekt unabhängig davon, ob EarlySleep aktiviert ist
+    if (cfg.smartEarlySleepEnabled) {
       const minMs = (cfg.minMainSleepHours || 3) * 3600000;
       dbg(`[FILTER] SmartSleep min main duration ≥ ${minMs / 60000} min`);
+
       arr = arr.filter((b) => {
         if (!b?.isMainSleep || !b.endTime) return true;
         const dur = new Date(b.endTime) - new Date(b.startTime);
@@ -2027,7 +2031,9 @@ class FitBit extends utils.Adapter {
     return segs;
   }
 
+  //
   // --- SMART PREFILTER: verhindert Film-/Lese-Abende ---
+  //
   preSleepSmartFilter(block, segs) {
     try {
       if (!this.recentHeartData || this.recentHeartData.length < 6) return null;
@@ -2040,25 +2046,22 @@ class FitBit extends utils.Adapter {
 
       const sleepStart = new Date(firstSleepSeg.dateTime);
 
-      // 2. Cutoff respektieren
-      if (this.effectiveConfig.ignoreEarlyMainSleepEnabled) {
-        const cutoff = new Date(sleepStart);
-        const [h, m] = this.effectiveConfig.ignoreEarlyMainSleepTime.split(":");
-        cutoff.setHours(Number(h), Number(m), 0, 0);
-
-        if (sleepStart < cutoff) return null;
-      }
+      // 2. (KEIN zusätzlicher Cutoff mehr hier!)
+      //    Die Zeitgrenze wird bereits:
+      //    - im Block-Filter (filterSleepBlocks)
+      //    - und in computeFellAsleepAt beim Suchen der stabilen Phase
+      //    berücksichtigt.
 
       // 3. HR-Drop grob prüfen
       const before = this.recentHeartData
-        .filter((p) => p.ts < sleepStart)
-        .slice(-15)
-        .map((p) => p.value);
+      .filter((p) => p.ts < sleepStart)
+      .slice(-15)
+      .map((p) => p.value);
 
       const after = this.recentHeartData
-        .filter((p) => p.ts >= sleepStart)
-        .slice(0, 20)
-        .map((p) => p.value);
+      .filter((p) => p.ts >= sleepStart)
+      .slice(0, 20)
+      .map((p) => p.value);
 
       if (!before.length || !after.length) return null;
 
@@ -2508,21 +2511,28 @@ class FitBit extends utils.Adapter {
       weekday: "short",
     });
 
-    // Nap-Auswahl
-    const napFellIso = naps.length
-    ? this.effectiveConfig.showLastOrFirstNap
-    ? naps[naps.length - 1].startTime
-    : naps[0].startTime
-    : null;
-    const napWokeIso = naps.length
-    ? this.effectiveConfig.showLastOrFirstNap
-    ? naps[naps.length - 1].endTime
-    : naps[0].endTime
-    : null;
+    // Nap-Auswahl (korrekt sortiert + Config beachtet)
+    let selectedNap = null;
 
-    const napFellLocal = napFellIso ? this.formatLocalShort(napFellIso) : "";
-    const napWokeLocal = napWokeIso ? this.formatLocalShort(napWokeIso) : "";
+    if (naps.length > 0) {
+      // FITBIT liefert Naps oft unsortiert → immer zuerst sortieren
+      const sortedNaps = [...naps].sort(
+        (a, b) => new Date(a.startTime) - new Date(b.startTime)
+      );
 
+      // Auswahl: erstes oder letztes Nap
+      selectedNap = this.effectiveConfig.showLastOrFirstNap
+      ? sortedNaps[sortedNaps.length - 1]   // letztes Nap
+      : sortedNaps[0];                      // erstes Nap
+    }
+
+    const napFellIso = selectedNap ? selectedNap.startTime : null;
+    const napWokeIso = selectedNap ? selectedNap.endTime : null;
+
+    const napFellLocal = selectedNap ? this.formatLocalShort(napFellIso) : "";
+    const napWokeLocal = selectedNap ? this.formatLocalShort(napWokeIso) : "";
+
+    // Liste aller Naps
     const napsFormatted = naps.map((n) => ({
       start: this.formatLocalShort(n.startTime),
                                            end: this.formatLocalShort(n.endTime),
