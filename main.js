@@ -1720,15 +1720,21 @@ class FitBit extends utils.Adapter {
     }
 
     // === Mindestdauer für Hauptschlaf ===
-    // Läuft jetzt korrekt unabhängig davon, ob EarlySleep aktiviert ist
-    if (cfg.smartEarlySleepEnabled) {
+    if (cfg.minMainSleepHours && cfg.minMainSleepHours > 0) {
       const minMs = (cfg.minMainSleepHours || 3) * 3600000;
-      dbg(`[FILTER] SmartSleep min main duration ≥ ${minMs / 60000} min`);
+      dbg(`[FILTER] Min main sleep duration ≥ ${minMs / 60000} min`);
 
       arr = arr.filter((b) => {
         if (!b?.isMainSleep || !b.endTime) return true;
+
         const dur = new Date(b.endTime) - new Date(b.startTime);
-        return dur >= minMs;
+        const keep = dur >= minMs;
+        dbg(
+          `[FILTER] Block ${b.startTime} → ${b.endTime} = ${dur / 60000} min → ${
+            keep ? "OK" : "VERWORFEN (zu kurz)"
+          }`,
+        );
+        return keep;
       });
     }
 
@@ -2311,7 +2317,20 @@ class FitBit extends utils.Adapter {
     }
 
     // =================================================================
-    // 8. Sicherheitsgrenze
+    // 7a. HR darf nicht VOR Fitbit-Start liegen
+    //     → wenn candidateDT < startDT, nimm den Fitbit-Start
+    // =================================================================
+    if (candidateDT < startDT) {
+      this.dlog(
+        "debug",
+        `[START] HR-Kandidat ${candidateDT.toISOString()} liegt vor Fitbit-Start ${startDT.toISOString()} → Fitbit-Start wird verwendet`,
+      );
+      this._lastSleepSource = "fitbit-clamped";
+      return startDT;
+    }
+
+    // =================================================================
+    // 8. Sicherheitsgrenze (nur nach hinten begrenzen)
     // =================================================================
     const deltaMin = Math.round((candidateDT - startDT) / 60000);
     if (deltaMin > MAX_SLEEP_START_DELAY_MINUTES) {
