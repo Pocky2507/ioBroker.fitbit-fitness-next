@@ -49,7 +49,7 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 
 ---
 
-## 🩺 ioBroker Fitbit Adapter (v1.0.3)
+## 🩺 ioBroker Fitbit Adapter (v1.1.0)
 
 Dieser Adapter ruft **Fitbit-Daten** in ioBroker ab und stellt sie als strukturierte Datenpunkte bereit.
 Er basiert auf dem ursprünglichen Projekt von **@GermanBluefox** (*fitbit-api*)
@@ -77,11 +77,12 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 
 ---
 
-## ✨ Neue Funktionen in Version 1.0.3
+## ✨ Neue Funktionen in Version 1.1.0
 
+- Vorbereitung für persönliche KI Analyse über History
 - Intelligenter Vorfilter für Filmabende, Lesen, Fernsehen
 - Verwendet den HF-Abfall (vor/nach dem Schlafen), um echten Schlaf zu erkennen
-- Erfordert Herzfrequenzabfall ≥ 2 BPM + stabile Phase (Standard 20 Min.)
+- Erfordert Herzfrequenzabfall ≥ 2,5 BPM + stabile Phase (Standard 20 Min.)
 - Respektiert die IgnoreEarlyMainSleep-Grenze
 - Legt die Zustände HRDropAtSleep, HRBeforeSleep und HRAfterSleep fest
 - Vollständig abwärtskompatibel – keine Breaking Changes
@@ -89,7 +90,7 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 - Keine Fehlalarme durch abendliche Entspannung
 - Nickerchen werden auf Dauer und Herzfrequenz-Aktivität geprüft
 - Optionale Korrektur für zu früh erkannte Aufwachzeiten hinzugefügt (konfigurierbarer Minutenpuffer)
-- Code komplett aufgeräumt, sortiert und neu Verschachtelt.
+- Code komplett aufgeräumt, sortiert und neu Verschachtelt
 - Nochmaliges Feintuning der Schlaflogik.
 - Fertig für Finale Version auf 1.0.0
 - Neue Option **Schlaf-Stabilität (Minuten)** zur Definition, wie lange ein Schlaf stabil sein muss, bevor er als Hauptschlaf zählt
@@ -103,6 +104,7 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 
 ## ⚙️ Hauptfunktionen
 
+- **History** über 90 Tage wird für persönliche Schlafauswertungen heran gezogen
 - Liest Daten aus **Körper**, **Aktivitäten**, **Ernährung**, **Schlaf** und **Geräten**
 - Frei wählbares **Abrufintervall**
 - **Intraday-Modus** mit eingestellten Refresh Abruf der Herzfrequenzwerte
@@ -178,16 +180,21 @@ Der kombinierte Filter verbindet:
 | `clearNapListAtNight` | ✅ | Leert Nickerchenliste nach Mitternacht |
 | `enableDailyNapClear` | ❌ | Aktiviert tägliches Leeren |
 | `forceClearNapListTime` | 02:45 | Uhrzeit für Zwangsleerung |
+| `kiEnabled` | ❌ | KI  Aktivierung |
+| `kiMode` | ❌ | KI Modus |
 | `debugEnabled` | ❌ | Aktiviert detaillierte Debug-Ausgabe |
 
 ---
 
 ## 🧾 Changelog
 
+## **1.1.0 (2025-12-02)**
+- Intelligente KI implementiert, aber noch nicht Aktiviert
+
 ## **1.0.3 (2025-11-13)**
 - Intelligenter Vorfilter für Filmabende, Lesen, Fernsehen
 - Verwendet den HF-Abfall (vor/nach dem Schlafen), um echten Schlaf zu erkennen
-- Erfordert Herzfrequenzabfall ≥ 2 BPM + stabile Phase (Standard 20 Min.)
+- Erfordert Herzfrequenzabfall ≥ 2,5 BPM + stabile Phase (Standard 20 Min.)
 - Respektiert die IgnoreEarlyMainSleep-Grenze
 - Legt die Zustände HRDropAtSleep, HRBeforeSleep und HRAfterSleep fest
 - Vollständig abwärtskompatibel – keine Breaking Changes
@@ -285,7 +292,7 @@ to deliver Fitbit data more reliably, accurately, and in real-time within ioBrok
 
 ---
 
-## 🩺 Fitbit Adapter for ioBroker (v1.0.3)
+## 🩺 Fitbit Adapter for ioBroker (v1.1.0)
 
 This adapter retrieves **Fitbit data** into ioBroker and provides structured datapoints.
 Based on the original **fitbit-api** by *@GermanBluefox*,
@@ -310,11 +317,11 @@ To use this adapter, you need a **Fitbit Developer Account**.
 
 ---
 
-## ✨ New in Version 1.0.3
-
+## ✨ New in Version 1.1.0
+- Preparation for personal AI analysis via history
 - Smart pre-filter for movie nights, reading, TV
 - Uses HR drop (before/after sleep) to detect real sleep
-- Requires HR drop ≥ 2 BPM + stable phase (default 20 min)
+- Requires HR drop ≥ 2.5 BPM + stable phase (default 20 min)
 - Respects ignoreEarlyMainSleep cutoff
 - Sets HRDropAtSleep, HRBeforeSleep, HRAfterSleep states
 - Fully backward compatible – no breaking changes
@@ -322,8 +329,8 @@ To use this adapter, you need a **Fitbit Developer Account**.
 - No false positives from evening relaxation
 - Naps are checked for duration and heart-rate activity to exclude false naps (like resting or reading)
 - Added configurable late wake correction (optional time buffer for too-early wake detection)
-- Code completely cleaned up, sorted and re-nested.
-- Further fine-tuning of the sleep logic.
+- Code completely cleaned up, sorted and re-nested
+- Further fine-tuning of the sleep logic
 - Ready for final version to 1.0.0
 - Added **Sleep Stability (Minutes)** option for main sleep detection
 - Default set to **20 minutes**
@@ -336,6 +343,7 @@ To use this adapter, you need a **Fitbit Developer Account**.
 
 ## ⚙️ Main Features
 
+- **History** over 90 days is used for personal sleep evaluations
 - Retrieves **body**, **activity**, **nutrition**, **sleep**, and **device** data
 - Adjustable **refresh interval**
 - **Intraday mode** with set refresh retrieval of heart rate values
@@ -408,23 +416,28 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 | `clearNapListAtNight` | ✅ | Clears nap list after midnight |
 | `enableDailyNapClear` | ❌ | Enables additional daily clearing |
 | `forceClearNapListTime` | 02:45 | Fixed time for forced clearing |
+| `kiEnabled` | ❌ | KI  Activation |
+| `kiMode` | ❌ | KI Mode |
 | `debugEnabled` | ❌ | Enables detailed debug output |
 
 ---
 
 ## 🧾 Changelog
 
-## **1.0.3 (2025-11-13)**
+## **1.1.0 (2025-12-02)**
+- Intelligent AI implemented but not activated yet
+
+## **1.0.3 (2025-11-11)**
 - Smart pre-filter for movie nights, reading, TV
 - Uses HR drop (before/after sleep) to detect real sleep
-- Requires HR drop ≥ 2 BPM + stable phase (default 20 min)
+- Requires HR drop ≥ 2.5 BPM + stable phase (default 20 min)
 - Respects ignoreEarlyMainSleep cutoff
 - Sets HRDropAtSleep, HRBeforeSleep, HRAfterSleep states
 - Fully backward compatible – no breaking changes
 - Shift work supported
 - No false positives from evening relaxation
 
-## **1.0.2 (2025-11-12)**
+## **1.0.2 (2025-11-11)**
 - Naps are checked for duration and heart-rate activity to exclude false naps (like resting or reading)
 
 ## **1.0.1 (2025-11-10)**
