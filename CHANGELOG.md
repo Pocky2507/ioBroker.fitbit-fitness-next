@@ -1,9 +1,7 @@
 # 📜 Changelog
 
-<--
     ## **WORK IN PROGRESS**
     Preparation for History Log over 90 days. This ensures a very personal sleep evaluation.
--->
 
 ## **1.1.0 (2025-12-02)**
 - Preparation for personal AI analysis via history
