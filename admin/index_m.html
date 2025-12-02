@@ -23,6 +23,7 @@
           "width=850,height=850,menubar=no,toolbar=no,location=yes,status=no"
         );
       }
+
       function closeAuthPopup(hintWin) {
         try {
           if (hintWin && typeof hintWin.close === "function") hintWin.close();
@@ -32,24 +33,35 @@
         } catch (e) {}
         oauthPopup = null;
       }
+
       function valid(s) {
         return s && typeof s === "string" && s.trim() !== "";
       }
 
       function load(settings, onChange) {
         if (!settings) return;
+
         $(".value").each(function () {
-          var $el = $(this),
-            id = $el.attr("id");
-          if ($el.attr("type") === "checkbox") {
+          const $el = $(this);
+          const id = $el.attr("id");
+
+          if ($el.is("select")) {
+            // SELECT
+            $el.val(settings[id]).on("change", () => onChange());
+          } else if ($el.attr("type") === "checkbox") {
+            // CHECKBOX
             $el.prop("checked", settings[id]).on("change", () => onChange());
           } else {
-            $el
-              .val(settings[id])
-              .on("change", () => onChange())
-              .on("keyup", () => onChange());
+            // TEXT, NUMBER, ETC.
+            $el.val(settings[id]).on("change", () => onChange()).on("keyup", () => onChange());
           }
         });
+
+        // Materialize Select aktivieren
+        setTimeout(() => {
+          if (M && M.FormSelect) $("select").formSelect();
+        }, 50);
+
         $(".table-button-do").on("click", function () {
           var clientId = $("#clientId").val().trim();
           var clientSecret = $("#clientSecret").val().trim();
@@ -72,24 +84,32 @@
               "activity heartrate location nutrition profile settings sleep social weight"
             ) +
             "&expires_in=2592000000";
+
           openAuthPopup(url);
         });
-        onChange(false);
+
         if (M) M.updateTextFields();
+        onChange(false);
       }
 
       function save(callback) {
         var obj = {};
+
         $(".value").each(function () {
-          var $this = $(this);
-          if ($this.attr("type") === "checkbox") {
-            obj[$this.attr("id")] = $this.prop("checked");
-          } else if ($this.attr("type") === "number") {
-            obj[$this.attr("id")] = parseFloat($this.val());
+          const $el = $(this);
+          const id = $el.attr("id");
+
+          if ($el.is("select")) {
+            obj[id] = $el.val();
+          } else if ($el.attr("type") === "checkbox") {
+            obj[id] = $el.prop("checked");
+          } else if ($el.attr("type") === "number") {
+            obj[id] = parseFloat($el.val());
           } else {
-            obj[$this.attr("id")] = $this.val();
+            obj[id] = $el.val();
           }
         });
+
         callback(obj);
       }
     </script>
@@ -104,23 +124,26 @@
             <li class="tab col s2"><a href="#tab-services" class="translate">Dienste</a></li>
             <li class="tab col s2"><a href="#tab-mainsleep" class="translate">Hauptschlaf</a></li>
             <li class="tab col s2"><a href="#tab-naps" class="translate">Nickerchen</a></li>
-            <li class="tab col s2"><a href="#tab-debug" class="translate">Debug</a></li>
+            <li class="tab col s2"><a href="#tab-debug" class="translate">Debug & KI</a></li>
           </ul>
         </div>
 
         <!-- MAIN TAB -->
         <div id="tab-main" class="col s12 page">
           <div class="row"><div class="col s6"><img src="fitbit-fitness.png" class="logo" /></div></div>
+
           <div class="row">
             <div class="input-field col s12 m6">
               <input class="value" id="clientId" type="text" placeholder="Deine Client ID" />
               <label for="clientId">Client ID</label>
             </div>
+
             <div class="input-field col s12 m6">
               <input class="value" id="clientSecret" type="text" placeholder="Dein Client Secret" />
               <label for="clientSecret">Client Secret</label>
             </div>
           </div>
+
           <div class="row">
             <div class="input-field col s12">
               <input
@@ -132,6 +155,7 @@
               <label for="redirectUri">Redirect URL</label>
             </div>
           </div>
+
           <div class="row generate no-iframe">
             <a class="waves-effect waves-light btn blue table-button-do">
               <i class="material-icons">add</i><span class="translate">Authorize</span>
@@ -153,40 +177,11 @@
 
           <div class="row"><div class="col s12"><h6>💾 Datendienste</h6></div></div>
 
-          <div class="row">
-            <div class="input-field col s12 m6 l4">
-              <input class="value" id="bodyrecords" type="checkbox" />
-              <span for="bodyrecords" class="translate">Körperdaten abrufen (bodyrecords)</span>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="input-field col s12 m6 l4">
-              <input class="value" id="activityrecords" type="checkbox" />
-              <span for="activityrecords" class="translate">Aktivitätsdaten abrufen (activityrecords)</span>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="input-field col s12 m6 l4">
-              <input class="value" id="intraday" type="checkbox" />
-              <span for="intraday" class="translate">Intraday-Daten abrufen (mit dem eingestellten Intervall)</span>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="input-field col s12 m6 l4">
-              <input class="value" id="foodrecords" type="checkbox" />
-              <span for="foodrecords" class="translate">Ernährungsdaten abrufen (foodrecords)</span>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="input-field col s12 m6 l4">
-              <input class="value" id="devicerecords" type="checkbox" />
-              <span for="devicerecords" class="translate">Gerätedaten abrufen (devicerecords)</span>
-            </div>
-          </div>
+          <div class="row"><div class="input-field col s12 m6 l4"><input class="value" id="bodyrecords" type="checkbox" /><span class="translate">Körperdaten abrufen (bodyrecords)</span></div></div>
+          <div class="row"><div class="input-field col s12 m6 l4"><input class="value" id="activityrecords" type="checkbox" /><span class="translate">Aktivitätsdaten abrufen (activityrecords)</span></div></div>
+          <div class="row"><div class="input-field col s12 m6 l4"><input class="value" id="intraday" type="checkbox" /><span class="translate">Intraday-Daten abrufen</span></div></div>
+          <div class="row"><div class="input-field col s12 m6 l4"><input class="value" id="foodrecords" type="checkbox" /><span class="translate">Ernährungsdaten abrufen (foodrecords)</span></div></div>
+          <div class="row"><div class="input-field col s12 m6 l4"><input class="value" id="devicerecords" type="checkbox" /><span class="translate">Gerätedaten abrufen (devicerecords)</span></div></div>
         </div>
 
         <!-- MAIN SLEEP TAB -->
@@ -198,11 +193,12 @@
           <div class="row">
             <div class="input-field col s12 m6 l4">
               <input class="value" id="sleeprecords" type="checkbox" />
-              <span for="sleeprecords" class="translate">Schlafdaten regelmäßig per Intervall abrufen</span>
+              <span class="translate">Schlafdaten regelmäßig abrufen</span>
             </div>
-            <div class="input-field sleepschedule col s6">
+
+            <div class="input-field col s6">
               <input class="value" id="sleeprecordsschedule" type="checkbox" />
-              <span for="sleeprecordsschedule" class="translate">Nur einmaligen Schlafabruf durchführen</span>
+              <span class="translate">Nur einmaligen Schlafabruf durchführen</span>
             </div>
           </div>
 
@@ -211,7 +207,7 @@
           <div class="row">
             <div class="input-field col s12 m6 l4">
               <input class="value" id="ignoreEarlyMainSleepEnabled" type="checkbox" />
-              <span for="ignoreEarlyMainSleepEnabled" class="translate">Frühen Hauptschlaf ignorieren</span>
+              <span class="translate">Frühen Hauptschlaf ignorieren</span>
             </div>
           </div>
 
@@ -219,24 +215,19 @@
             <div class="input-field col s12 m6 l4">
               <i class="material-icons prefix">schedule</i>
               <input class="value" id="ignoreEarlyMainSleepTime" type="text" placeholder="23:00" />
-              <label for="ignoreEarlyMainSleepTime" class="translate">Grenzzeit für Frühschlaf</label>
+              <label class="translate">Grenzzeit für Frühschlaf</label>
             </div>
           </div>
 
           <div class="row"><div class="col s12"><h6>🧠 Erweiterte Schlaflogik</h6></div></div>
 
-          <div class="row">
-            <div class="input-field col s12 m6 l4">
-              <input class="value" id="smartEarlySleepEnabled" type="checkbox" />
-              <span for="smartEarlySleepEnabled" class="translate">Intelligente Frühschlaf-Erkennung aktivieren</span>
-            </div>
-          </div>
+          <div class="row"><div class="input-field col s12 m6 l4"><input class="value" id="smartEarlySleepEnabled" type="checkbox" /><span class="translate">Intelligente Frühschlaf-Erkennung aktivieren</span></div></div>
 
           <div class="row">
             <div class="input-field col s12 m6 l4">
               <i class="material-icons prefix">access_time</i>
               <input class="value" id="minMainSleepHours" type="number" min="1" max="6" step="0.5" placeholder="3" />
-              <label for="minMainSleepHours" class="translate">Minimale Hauptschlafdauer (Stunden)</label>
+              <label class="translate">Minimale Hauptschlafdauer (Stunden)</label>
             </div>
           </div>
 
@@ -244,95 +235,82 @@
             <div class="input-field col s12 m6 l4">
               <i class="material-icons prefix">timelapse</i>
               <input class="value" id="sleepStabilityMinutes" type="number" min="5" max="60" step="1" placeholder="20" />
-              <label for="sleepStabilityMinutes" class="translate">Schlaf-Stabilität (Minuten)</label>
+              <label class="translate">Schlaf-Stabilität (Minuten)</label>
             </div>
           </div>
 
-          <!-- Late Wake Correction -->
           <div class="row">
             <div class="input-field col s12 m6 l4">
               <i class="material-icons prefix">alarm_on</i>
-              <input
-                class="value"
-                id="sleepLateWakeCorrectionMinutes"
-                type="number"
-                min="0"
-                max="120"
-                step="5"
-                placeholder="0"
-              />
-              <label for="sleepLateWakeCorrectionMinutes" class="translate"
-                >Korrektur verspäteter Aufwachzeit (Minuten)</label>
+              <input class="value" id="sleepLateWakeCorrectionMinutes" type="number" min="0" max="120" step="5" placeholder="0" />
+              <label class="translate">Korrektur verspäteter Aufwachzeit (Minuten)</label>
             </div>
           </div>
-          <p class="col s12 grey-text text-darken-1 translate">
-            Optional: Fitbit erkennt manchmal das Aufwachen zu früh. Hier kannst du einstellen, um wie viele Minuten das
-            korrigiert werden darf (0 = aus).
-          </p>
         </div>
 
         <!-- NAPS TAB -->
         <div id="tab-naps" class="col s12 page">
           <div class="row"><div class="col s6"><img src="fitbit-fitness.png" class="logo" /></div></div>
+
           <div class="row"><div class="col s12"><h6>🕒 Nickerchen-Einstellungen</h6></div></div>
 
-          <div class="row">
-            <div class="input-field col s12 m6 l4">
-              <input class="value" id="showLastOrFirstNap" type="checkbox" />
-              <span for="showLastOrFirstNap" class="translate">Letztes oder erstes Nickerchen anzeigen</span>
-            </div>
-          </div>
+          <div class="row"><div class="input-field col s12 m6 l4"><input class="value" id="showLastOrFirstNap" type="checkbox" /><span class="translate">Letztes oder erstes Nickerchen anzeigen</span></div></div>
 
-          <div class="row">
-            <div class="input-field col s12 m6 l4">
-              <input class="value" id="clearNapListAtNight" type="checkbox" />
-              <span for="clearNapListAtNight" class="translate">Nickerchen-Liste nachts löschen</span>
-            </div>
-          </div>
+          <div class="row"><div class="input-field col s12 m6 l4"><input class="value" id="clearNapListAtNight" type="checkbox" /><span class="translate">Nickerchen-Liste nachts löschen</span></div></div>
 
-          <div class="row">
-            <div class="input-field col s12 m6 l4">
-              <input class="value" id="enableDailyNapClear" type="checkbox" />
-              <span for="enableDailyNapClear" class="translate">Tägliches automatisches Löschen aktivieren</span>
-            </div>
-          </div>
+          <div class="row"><div class="input-field col s12 m6 l4"><input class="value" id="enableDailyNapClear" type="checkbox" /><span class="translate">Tägliches automatisches Löschen aktivieren</span></div></div>
 
           <div class="row">
             <div class="input-field col s12 m6 l4">
               <i class="material-icons prefix">access_time</i>
               <input class="value" id="forceClearNapListTime" type="text" placeholder="02:45" />
-              <label for="forceClearNapListTime" class="translate">Zeitpunkt zum Löschen der Nap-Liste</label>
+              <label class="translate">Zeitpunkt zum Löschen der Nap-Liste</label>
             </div>
           </div>
 
-          <!-- SMART NAP VALIDATION -->
+          <div class="row"><div class="col s12"><h6>🧠 Erweiterte Nickerchen-Erkennung</h6></div></div>
+
+          <div class="row"><div class="input-field col s12 m6 l4"><input class="value" id="smartNapValidationEnabled" type="checkbox" /><span class="translate">Intelligente Nickerchen-Erkennung aktivieren</span></div></div>
+        </div>
+
+        <!-- DEBUG & KI TAB -->
+        <div id="tab-debug" class="col s12 page">
+          <div class="row"><div class="col s6"><img src="fitbit-fitness.png" class="logo" /></div></div>
+
+          <div class="row"><div class="col s12"><h6>🐞 Debug & 🧠 KI-Analyse</h6></div></div>
+
           <div class="row">
-            <div class="col s12"><h6>🧠 Erweiterte Nickerchen-Erkennung</h6></div>
+            <div class="input-field col s12 m6 l4">
+              <input class="value" id="debugEnabled" type="checkbox" />
+              <span class="translate">Debug-Ausgabe aktivieren</span>
+            </div>
+          </div>
+
+          <div class="row"><div class="col s12"><h6>🧠 KI-Analyse (Beta)</h6></div></div>
+
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <input class="value" id="kiEnabled" type="checkbox" />
+              <span class="translate">KI-Analyse aktivieren</span>
+            </div>
           </div>
 
           <div class="row">
             <div class="input-field col s12 m6 l4">
-              <input class="value" id="smartNapValidationEnabled" type="checkbox" />
-              <span for="smartNapValidationEnabled" class="translate">Intelligente Nickerchen-Erkennung aktivieren</span>
+              <select class="value" id="kiMode">
+                <option value="disabled">Aus (Standard)</option>
+                <option value="soft">Soft – nur Hinweise</option>
+                <option value="adaptive">Adaptiv – Korrekturen mit History</option>
+                <option value="strict">Strict – KI hat Vorrang</option>
+              </select>
+              <label class="translate" for="kiMode">KI-Betriebsmodus</label>
             </div>
           </div>
 
           <p class="col s12 grey-text text-darken-1 translate">
-            Optional: Nickerchen werden auf Dauer und Herzfrequenz-Aktivität geprüft, um Fehlinterpretationen (z. B.
-            Lesen oder Ruhen) auszuschließen.
+            Die KI-Analyse ist eine fortgeschrittene Funktion, die persönliche Schlafmuster automatisch
+            aus der History erkennt. Standardmäßig deaktiviert.
           </p>
-        </div>
-
-        <!-- DEBUG TAB -->
-        <div id="tab-debug" class="col s12 page">
-          <div class="row"><div class="col s6"><img src="fitbit-fitness.png" class="logo" /></div></div>
-          <div class="row"><div class="col s12"><h6>🐞 Debug-Optionen</h6></div></div>
-          <div class="row">
-            <div class="input-field col s12 m6 l4">
-              <input class="value" id="debugEnabled" type="checkbox" />
-              <span for="debugEnabled" class="translate">Debug-Ausgabe aktivieren</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
