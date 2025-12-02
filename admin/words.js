@@ -31,6 +31,12 @@ systemDictionary = {
     "de": "Debug"
   },
 
+  /* ===== NEW TAB TITLE (Debug & KI) ===== */
+  "Debug & KI": {
+    "en": "Debug & AI",
+    "de": "Debug & KI"
+  },
+
   /* ===== Buttons ===== */
   "Authorize": {
     "en": "Authorize",
@@ -147,11 +153,12 @@ systemDictionary = {
     "de": "Optional: Nickerchen werden auf Dauer und Herzfrequenz-Aktivität geprüft, um Fehlinterpretationen (z. B. Lesen oder Ruhen) auszuschließen."
   },
 
-  /* ===== Debug & Optionen ===== */
+  /* ===== Debug ===== */
   "debugEnabled": {
     "en": "Enable debug output",
     "de": "Debug-Ausgabe aktivieren"
   },
+
   "Intelligente Frühschlaf-Erkennung": {
     "en": "Smart early sleep detection",
     "de": "Intelligente Frühschlaf-Erkennung"
@@ -167,5 +174,47 @@ systemDictionary = {
   "Schlaf-Stabilität (Minuten) Tooltip": {
     "en": "Minimum duration (in minutes) a sleep phase must last to be considered stable.",
     "de": "Minimale Dauer (in Minuten), die eine Schlafphase andauern muss, um als stabil zu gelten."
+  },
+
+  /* ===== KI (AI) — New Section ===== */
+
+  "🐞 Debug & 🧠 KI-Analyse": {
+    "en": "🐞 Debug & 🧠 AI Analysis",
+    "de": "🐞 Debug & 🧠 KI-Analyse"
+  },
+
+  "KI-Analyse aktivieren": {
+    "en": "Enable AI analysis",
+    "de": "KI-Analyse aktivieren"
+  },
+
+  "KI-Betriebsmodus": {
+    "en": "AI mode",
+    "de": "KI-Betriebsmodus"
+  },
+
+  "Aus (Standard)": {
+    "en": "Off (default)",
+    "de": "Aus (Standard)"
+  },
+
+  "Soft – nur Hinweise": {
+    "en": "Soft – suggestions only",
+    "de": "Soft – nur Hinweise"
+  },
+
+  "Adaptiv – Korrekturen mit History": {
+    "en": "Adaptive – corrections using history",
+    "de": "Adaptiv – Korrekturen mit History"
+  },
+
+  "Strict – KI hat Vorrang": {
+    "en": "Strict – AI has priority",
+    "de": "Strict – KI hat Vorrang"
+  },
+
+  "Die KI-Analyse ist eine fortgeschrittene Funktion, die persönliche Schlafmuster automatisch aus der History erkennt. Standardmäßig deaktiviert.": {
+    "en": "AI analysis is an advanced feature that automatically learns sleep patterns from your history. Disabled by default.",
+    "de": "Die KI-Analyse ist eine fortgeschrittene Funktion, die persönliche Schlafmuster automatisch aus der History erkennt. Standardmäßig deaktiviert."
   }
 };
