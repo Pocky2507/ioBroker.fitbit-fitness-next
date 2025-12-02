@@ -19,6 +19,16 @@ let DEBUG_SLEEP_LOG = false; // Wird in onReady() aus this.effectiveConfig.debug
 // Wenn true, werden pro Schlafdurchlauf kompakte Zusammenfassungen geloggt.
 const DEBUG_TEST_MODE = false; // <— bei Bedarf auf false setzen
 
+// -----------------------------------------------------------
+// Optionales KI-Modul – wird erst aktiv, wenn vorhanden
+// -----------------------------------------------------------
+let KIEngine = null;
+try {
+  KIEngine = require("./main-ki.js");
+} catch (err) {
+  // Optional – kein Fehler
+}
+
 // -----------------------------------------------------------------------------
 // Timeouts und API-Basen
 // -----------------------------------------------------------------------------
@@ -54,6 +64,10 @@ const DEFAULTS = {
 class FitBit extends utils.Adapter {
   constructor(options) {
     super({ ...options, name: "fitbit-fitness" });
+
+    // KI-Engine an Adapter-Instanz anhängen (optional)
+    this.KIEngine = KIEngine;
+
 
     // --- Neuer Speicher für wartenden Hauptschlaf ---
     this.pendingMainSleep = null;
@@ -1981,8 +1995,51 @@ class FitBit extends utils.Adapter {
       this.log.warn(`Sleep phase update failed: ${err.message}`);
     }
 
-    // Danach die bisherigen States schreiben
-    await this.writeSleepStates({
+    // ============================================================
+    // 🧠 KI-HOOK: Möglichkeit zur KI-Nachbearbeitung des Ergebnisses
+    // ============================================================
+    let kiResult = null;
+
+    try {
+      // Prüfen ob KI aktiviert ist und Modul existiert
+      if (
+        this.effectiveConfig.kiEnabled &&
+        this.KIEngine &&
+        typeof this.KIEngine.reviewSleep === "function"
+      ) {
+        this.log.info("[KI] KI-Analyse aktiviert – starte Auswertung.");
+
+        const baseResult = {
+          fell,
+          woke,
+          asleepMin,
+          inBedMin,
+          napsAsleep,
+          napsInBed,
+          napsCount: napBlocks.length,
+          naps: napBlocks,
+        };
+
+        kiResult = this.KIEngine.reviewSleep(
+          baseResult,
+          this.sleepHistory || [],     // komplette History
+          this.lastHRSeries || [],      // Intraday HR Daten
+          this.effectiveConfig,         // gesamte Config inkl. KI-Mode
+          this.log                      // Logger für KI
+        );
+
+        if (kiResult) {
+          this.log.info("[KI] KI hat Änderungen vorgenommen.");
+        } else {
+          this.log.info("[KI] KI hat nichts angepasst.");
+        }
+      }
+    } catch (err) {
+      this.log.warn("[KI] Fehler während der KI-Auswertung: " + err);
+    }
+
+    // Falls KI ein Ergebnis zurückgab – dieses verwenden:
+    const finalResult = kiResult || {
       fell,
       woke,
       asleepMin,
@@ -1991,7 +2048,10 @@ class FitBit extends utils.Adapter {
       napsInBed,
       napsCount: napBlocks.length,
       naps: napBlocks,
-    });
+    };
+
+    // Danach die bisherigen States schreiben
+    await this.writeSleepStates(finalResult);
 
     this.dlog(
       "info",
