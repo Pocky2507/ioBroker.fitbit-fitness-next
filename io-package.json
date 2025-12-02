@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "fitbit-fitness",
-    "version": "1.0.3",
+    "version": "1.1.0",
     "nonNpm": false,
     "installedFrom": "https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main",
     "desc": {
@@ -18,6 +18,10 @@
       "url": "https://github.com/Pocky2507/ioBroker.fitbit-fitness"
     },
     "news": {
+      "1.1.0": {
+        "en": "Preparation for personal AI analysis via history",
+        "de": "Vorbereitung für persönliche KI Analyse über History."
+      },
       "1.0.3": {
         "en": "Smart pre-filter for movie nights, reading, TV",
         "de": "Intelligenter Vorfilter für Filmabende, Lesen, Fernsehen."
@@ -141,9 +145,11 @@
     "redirectUri": "https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html",
     "debugEnabled": false,
     "smartEarlySleepEnabled": true,
-    "minMainSleepHours": 4,
+    "minMainSleepHours": 3,
     "sleepStabilityMinutes": 20,
-    "sleepLateWakeCorrectionMinutes": 0
+    "sleepLateWakeCorrectionMinutes": 0,
+    "kiEnabled": false,
+    "kiMode": "disabled"
   },
   "objects": [],
   "instanceObjects": [
