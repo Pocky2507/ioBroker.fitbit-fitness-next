@@ -1,4 +1,4 @@
-![Logo](admin/fitbit-fitness.png)
+![Logo](admin/fitbit-fitness-next.png)
 
 # ioBroker.fitbit-fitness
 
