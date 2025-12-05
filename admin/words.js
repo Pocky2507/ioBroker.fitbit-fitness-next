@@ -4,7 +4,7 @@
 
 systemDictionary = {
   /* ===== Adapter Info ===== */
-  "fitbit-fitness adapter settings": {
+  "fitbit-fitness-next adapter settings": {
     "en": "Adapter settings for Fitbit",
     "de": "Adaptereinstellungen für Fitbit"
   },
