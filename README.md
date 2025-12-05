@@ -78,7 +78,7 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 3. Erstelle eine **neue App**:
    - Beliebiger Name (z. B. *ioBroker Fitbit Adapter*)
    - **Redirect URL:**
-     `https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html`
+     `https://pocky2507.github.io/ioBroker.fitbit-fitness-next/getCode.html`
    - Berechtigungen aktivieren: *activity, heartrate, nutrition, profile, settings, sleep, weight*
 4. Nach dem Speichern findest du:
    - **Client ID**
