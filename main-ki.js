@@ -1,7 +1,7 @@
 /**
  * main-ki.js
  * ---------------------------------------
- * KI-Logik für den Fitbit-Fitness-Adapter
+ * KI-Logik für den Fitbit-Fitness-Next-Adapter
  * (Vorbereitungsstruktur – noch keine KI-Regeln!)
  *
  * ACHTUNG: Diese Datei beeinflusst die main.js NICHT,
