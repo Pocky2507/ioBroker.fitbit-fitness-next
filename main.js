@@ -1,7 +1,7 @@
 "use strict";
 
 /*
- * ioBroker Adapter: fitbit-fitness
+ * ioBroker Adapter: fitbit-fitness-next
  * Vollständige Version, rückwärtskompatibel und über Admin-Config steuerbar
  */
 
@@ -63,7 +63,7 @@ const DEFAULTS = {
 
 class FitBit extends utils.Adapter {
   constructor(options) {
-    super({ ...options, name: "fitbit-fitness" });
+    super({ ...options, name: "fitbit-fitness-next" });
 
     // KI-Engine an Adapter-Instanz anhängen (optional)
     this.KIEngine = KIEngine;
