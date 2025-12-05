@@ -1,6 +1,6 @@
 ![Logo](admin/fitbit-fitness-next.png)
 
-# ioBroker.fitbit-fitness
+# ioBroker.fitbit-fitness-next
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/Pocky2507/ioBroker.fitbit-fitness-next?logo=github)](https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/releases/latest)
 [![ioBroker stable installs](https://img.shields.io/badge/ioBroker-stable%20release-blue?logo=iobroker&logoColor=white)](https://iobroker.live/badges/fitbit-fitness-next.svg)
