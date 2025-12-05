@@ -1,12 +1,12 @@
-![Logo](admin/fitbit-fitness.png)
+![Logo](admin/fitbit-fitness-next.png)
 
 # ioBroker.fitbit-fitness
 
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/Pocky2507/ioBroker.fitbit-fitness?logo=github)](https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/Pocky2507/ioBroker.fitbit-fitness-next?logo=github)](https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main)
 [![ioBroker stable installs](https://img.shields.io/badge/ioBroker-stable%20release-blue?logo=iobroker&logoColor=white)](https://iobroker.live/badges/fitbit-fitness.svg)
 [![ioBroker installs (latest)](https://img.shields.io/badge/ioBroker-latest%20installed-blueviolet?logo=iobroker&logoColor=white)](https://iobroker.live/badges/fitbit-fitness-installed.svg)
-[![GitHub issues](https://img.shields.io/github/issues/Pocky2507/ioBroker.fitbit-fitness?logo=github)](https://github.com/Pocky2507/ioBroker.fitbit-fitness/issues)
-[![Known Vulnerabilities](https://snyk.io/test/github/Pocky2507/ioBroker.fitbit-fitness/badge.svg)](https://app.snyk.io/org/Pocky2507/ioBroker.fitbit-fitness)
+[![GitHub issues](https://img.shields.io/github/issues/Pocky2507/ioBroker.fitbit-fitness?logo=github)](https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/issues)
+[![Known Vulnerabilities](https://snyk.io/test/github/Pocky2507/ioBroker.fitbit-fitness/badge.svg)](https://app.snyk.io/org/Pocky2507/ioBroker.fitbit-fitness-next)
 
 ---
 
@@ -14,10 +14,10 @@
 
 ---
 
-## 🧠 Über diesen Fork
+## 🧠 Über diesen neuen Adapter
 
 Dieser Adapter ist **eine erweiterte und modernisierte Version** des ursprünglichen ioBroker-Fitbit-Adapters von *besterquester*.
-Der Fork von **Pocky2507** enthält zahlreiche neue Funktionen, Stabilitätsverbesserungen und Debug-Optionen,
+Der neue Adapter von **Pocky2507** enthält zahlreiche neue Funktionen, Stabilitätsverbesserungen und Debug-Optionen,
 um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereitzustellen.
 
 **Neue Schwerpunkte dieses Forks:**
@@ -32,21 +32,33 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 
 ---
 
-> ⚠️ **Wichtiger Installationshinweis**
-> Bitte installiere diesen Adapter **direkt von GitHub**, um korrekte Updates zu erhalten:
->
-> Dieser Adapter muss neu installliert werden falls der alte Adapter von Chris-656 schon installiert ist
-> ```
-> iobroker del fitbit-fitness
-> ```
-> Um diesen Fork zu installieren nutze dafür genau diesen Befehl!
->
-> ```
-> iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main"
-> ```
->
-> **Nicht** über npm installieren – dies ist ein geschützter *nonNpm*-Build.
+## 🚀 Installation
 
+### 1. Alten Adapter entfernen (falls vorhanden)
+
+Falls der ursprüngliche Adapter `fitbit-fitness` installiert ist:
+
+```bash
+iobroker del fitbit-fitness
+```
+
+### 2. Neuen Adapter installieren (npm)
+
+Dieser Adapter wird offiziell über **npm** verteilt:
+
+```bash
+iobroker install iobroker.fitbit-fitness-next
+```
+
+Oder im ioBroker Admin unter *Adapter → Expertenmodus → aus npm installieren*.
+
+### 3. GitHub-Installation (nur für Entwickler)
+
+Du möchtest die neueste Entwickler-Version installieren?
+
+```bash
+iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/tarball/main"
+```
 ---
 
 ## 🩺 ioBroker Fitbit Adapter (v1.1.0)
