@@ -8,7 +8,6 @@
 [![GitHub issues](https://img.shields.io/github/issues/Pocky2507/ioBroker.fitbit-fitness-next?logo=github)](https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/issues)
 [![Known Vulnerabilities](https://snyk.io/test/github/Pocky2507/ioBroker.fitbit-fitness-next/badge.svg)](https://app.snyk.io/org/Pocky2507/project/ioBroker.fitbit-fitness-next)
 
-
 ---
 
 📖 **Sprachen / Languages:** [Deutsch](#-über-diesen-fork) | [English](#-about-this-fork-english)
