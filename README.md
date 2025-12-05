@@ -257,8 +257,8 @@ Der kombinierte Filter verbindet:
 ## 📜 Lizenz
 
 MIT License
-© 2025  Pocky2507 & Chris-656
-Software wird „wie besehen“ bereitgestellt, ohne Garantie.
+© 2025  Pocky2507 & Chris-656  
+Software wird „wie besehen“ bereitgestellt, ohne Garantie.  
 Verwendung auf eigene Verantwortung.
 
 ---
@@ -506,6 +506,6 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 ## 📜 License
 
 MIT License
-© 2025  Pocky2507 & Chris-656
-Software provided *as is*, without warranty.
+© 2025  Pocky2507 & Chris-656  
+Software provided *as is*, without warranty.  
 Use at your own risk.
