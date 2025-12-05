@@ -20,7 +20,7 @@ Dieser Adapter ist **eine erweiterte und modernisierte Version** des ursprüngli
 Der neue Adapter von **Pocky2507** enthält zahlreiche neue Funktionen, Stabilitätsverbesserungen und Debug-Optionen,
 um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereitzustellen.
 
-**Neue Schwerpunkte dieses Forks:**
+**Neue Schwerpunkte dieses Adapters:**
 - Erweiterte **Schlafanalyse** mit *SmartSleep*, *EarlySleep* und *Nap-Erkennung*
 - **Intraday-Modus** mit eingestellten Refresh Abruf der Herzfrequenzwerte
 - **Stabilitäts- und Fehler-Filter** zur Datenvalidierung
@@ -267,13 +267,13 @@ Verwendung auf eigene Verantwortung.
 
 ---
 
-## 🧠 About this fork (English)
+## 🧠 About this new Adapter (English)
 
 This adapter is an **enhanced and modernized version** of the original ioBroker Fitbit adapter by *besterquester*.
 The **Pocky2507** fork introduces new features, improved stability, and advanced debug options
 to deliver Fitbit data more reliably, accurately, and in real-time within ioBroker.
 
-**Key improvements in this fork:**
+**Key improvements in this Adapter:**
 - Advanced **sleep analysis** with *SmartSleep*, *EarlySleep*, and *nap detection*
 - **Intraday mode** with set refresh retrieval of heart rate values
 - **Stability filters** and smarter error handling
