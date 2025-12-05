@@ -1,21 +1,19 @@
 {
   "common": {
-    "name": "fitbit-fitness",
+    "name": "fitbit-fitness-next",
     "version": "1.1.0",
     "nonNpm": false,
-    "installedFrom": "https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main",
     "desc": {
-      "en": "Fork of the original ioBroker Fitbit adapter by Chris (besterquester). Extended and maintained by Pocky2507 — includes advanced sleep detection, nap handling, stability threshold, and heart-rate zone metrics. Retrieves Fitbit health, activity and sleep data with nap and early-sleep filtering.",
-      "de": "Fork des ursprünglichen ioBroker Fitbit-Adapters von Chris (besterquester). Erweiterung und Pflege durch Pocky2507 – enthält erweiterte Schlaferkennung, Nickerchen-Verarbeitung, Stabilitätsschwelle und Herzfrequenzzonen. Ruft Fitbit-Gesundheits-, Aktivitäts- und Schlafdaten ab (mit Nickerchen- und Frühschlaf-Filter)."
+      "en": "Many thanks to the creator of the adapter by Chris (besterquester). Extended and maintained by Pocky2507 — includes advanced sleep detection, nap handling, stability threshold, and heart-rate zone metrics. Retrieves Fitbit health, activity and sleep data with nap and early-sleep filtering.",
+      "de": "Vielen Dank an den Ersteller des Adapters von Chris-656(besterquester). Erweiterung und Pflege durch Pocky2507 – enthält erweiterte Schlaferkennung, Nickerchen-Verarbeitung, Stabilitätsschwelle und Herzfrequenzzonen. Ruft Fitbit-Gesundheits-, Aktivitäts- und Schlafdaten ab (mit Nickerchen- und Frühschlaf-Filter)."
     },
     "authors": [
-      "Chris-656 <besterquester@live.at> (original author)",
-      "Pocky2507 <pocky@united-websites.org> (fork and maintenance)"
+      "Pocky2507 <pocky@united-websites.org> (maintenance)",
+      "Chris-656 <besterquester@live.at> (original author)"
     ],
-    "forkOf": "iobroker-community-adapters/ioBroker.fitbit-fitness",
     "repository": {
       "type": "git",
-      "url": "https://github.com/Pocky2507/ioBroker.fitbit-fitness"
+      "url": "https://github.com/Pocky2507/ioBroker.fitbit-fitness-next"
     },
     "news": {
       "1.1.0": {
@@ -88,26 +86,26 @@
       }
     },
     "titleLang": {
-      "en": "fitbit-fitness",
-      "de": "fitbit-fitness",
+      "en": "fitbit-fitness-next",
+      "de": "fitbit-fitness-next",
       "ru": "Фитбит",
-      "pt": "fitbit-fitness",
-      "nl": "fitbit-fitness",
-      "fr": "fitbit-fitness",
-      "it": "fitbit-fitness",
-      "es": "fitbit-fitness",
-      "pl": "fitbit-fitness",
-      "uk": "fitbit-fitness",
-      "zh-cn": "fitbit-fitness"
+      "pt": "fitbit-fitness-next",
+      "nl": "fitbit-fitness-next",
+      "fr": "fitbit-fitness-next",
+      "it": "fitbit-fitness-next",
+      "es": "fitbit-fitness-next",
+      "pl": "fitbit-fitness-next",
+      "uk": "fitbit-fitness-next",
+      "zh-cn": "fitbit-fitness-next"
     },
     "keywords": ["Fitbit", "Health", "Fitness", "Sleep", "ioBroker"],
     "license": "MIT",
     "platform": "Javascript/Node.js",
     "main": "main.js",
-    "icon": "fitbit-fitness.png",
+    "icon": "fitbit-fitness-next.png",
     "enabled": true,
-    "extIcon": "https://raw.githubusercontent.com/Pocky2507/ioBroker.fitbit-fitness/main/admin/fitbit-fitness.png",
-    "readme": "https://github.com/Pocky2507/ioBroker.fitbit-fitness/blob/main/README.md",
+    "extIcon": "https://raw.githubusercontent.com/Pocky2507/ioBroker.fitbit-fitness-next/main/admin/fitbit-fitness-next.png",
+    "readme": "https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/blob/main/README.md",
     "loglevel": "info",
     "mode": "daemon",
     "type": "health",
@@ -142,7 +140,7 @@
     "ignoreEarlyMainSleepTime": "23:00",
     "clientId": "",
     "clientSecret": "",
-    "redirectUri": "https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html",
+    "redirectUri": "https://pocky2507.github.io/ioBroker.fitbit-fitness-next/getCode.html",
     "debugEnabled": false,
     "smartEarlySleepEnabled": true,
     "minMainSleepHours": 3,
