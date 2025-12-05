@@ -498,7 +498,7 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 
 ## 👨‍💻 Authors
 
-- **Pocky2507** (<pocky@united-websites.org>) – New Adapter extensions (SmartSleep, EarlySleep, Realtime, Debug, Naps, Intraday, Sleep Stability)
+- **Pocky2507** (<pocky@united-websites.org>) – new Adapter extensions (SmartSleep, EarlySleep, Realtime, Debug, Naps, Intraday, Sleep Stability)
 - **Chris-656** (<besterquester@live.at>) – original developer
 
 ---
