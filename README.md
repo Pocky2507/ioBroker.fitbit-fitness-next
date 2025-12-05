@@ -1,4 +1,4 @@
-![Logo](admin/fitbit-fitness-next.png)
+![Logo](admin/fitbit-fitness.png)
 
 # ioBroker.fitbit-fitness
 
@@ -27,7 +27,7 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 - Überarbeitete **Admin-Oberfläche** mit Debug- und Entwickler-Tab
 - Verbesserte **Token-Verwaltung** (automatischer Refresh, Introspect-Prüfung)
 
-> 💡 Ziel dieses Forks ist es, Fitbit-Daten nicht nur periodisch,
+> 💡 Ziel dieses neuen Adapters ist es, Fitbit-Daten nicht nur periodisch,
 > sondern *intelligent und kontextbasiert* zu analysieren — insbesondere Schlaf- und Herzfrequenzmuster in Echtzeit.
 
 ---
@@ -249,15 +249,15 @@ Der kombinierte Filter verbindet:
 
 ## 👨‍💻 Autoren
 
+- **Pocky2507** (<pocky@united-websites.org>) – neuer Adapter & Erweiterungen (SmartSleep, Frühschlaf, Nickerchen, Intraday, Realtime, Debug, Sleep Stability)
 - **Chris-656** (<besterquester@live.at>) – ursprünglicher Entwickler
-- **Pocky2507** (<pocky@united-websites.org>) – Fork & Erweiterungen (SmartSleep, Frühschlaf, Nickerchen, Intraday, Realtime, Debug, Sleep Stability)
 
 ---
 
 ## 📜 Lizenz
 
 MIT License
-© 2025 Chris-656 & Pocky2507
+© 2025  Pocky2507 & Chris-656
 Software wird „wie besehen“ bereitgestellt, ohne Garantie.
 Verwendung auf eigene Verantwortung.
 
@@ -285,23 +285,36 @@ to deliver Fitbit data more reliably, accurately, and in real-time within ioBrok
 
 ---
 
-## 🧾 Installation Note
+## 🚀 Installation
 
-> ⚠️ **Important:**
-> Install this adapter **only from GitHub** to ensure the correct version and updates.
->
-> This adapter must be reinstalled if the old adapter from Chris-656 is already installed
-> ```
-> iobroker del fitbit-fitness
-> ```
-> Use this exact command for that!
->
-> ```
-> iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness/tarball/main"
-> ```
->
-> Do **not** install from npm – this is a protected nonNpm build.
+### 1. Remove the old adapter (if installed)
 
+If the original adapter `fitbit-fitness` is still installed, remove it first:
+
+```bash
+iobroker del fitbit-fitness
+```
+
+### 2. Install the new adapter (via npm)
+
+This adapter is officially distributed through npm:
+
+```bash
+iobroker install iobroker.fitbit-fitness-next
+```
+
+Alternatively in ioBroker Admin: Adapters → Expert mode → Install from npm
+
+
+### 3. GitHub-Installation (nur für Entwickler)
+
+3. Install from GitHub (development version only)
+
+If you want the latest development version directly from GitHub, use:
+
+```bash
+iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/tarball/main"
+```
 ---
 
 ## 🩺 Fitbit Adapter for ioBroker (v1.1.0)
@@ -320,7 +333,7 @@ To use this adapter, you need a **Fitbit Developer Account**.
 2. Log in with your **regular Fitbit account**
 3. Create a **new app**:
    - Any name (e.g. *ioBroker Fitbit Adapter*)
-   - **Redirect URL:** `https://pocky2507.github.io/ioBroker.fitbit-fitness/getCode.html`
+   - **Redirect URL:** `https://pocky2507.github.io/ioBroker.fitbit-fitness-next/getCode.html`
    - Enable permissions: *activity, heartrate, nutrition, profile, settings, sleep, weight*
 4. Copy the **Client ID** and **Client Secret** after saving.
 5. Enter both in the adapter configuration within ioBroker.
@@ -485,14 +498,14 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 
 ## 👨‍💻 Authors
 
+- **Pocky2507** (<pocky@united-websites.org>) – New Adapter extensions (SmartSleep, EarlySleep, Realtime, Debug, Naps, Intraday, Sleep Stability)
 - **Chris-656** (<besterquester@live.at>) – original developer
-- **Pocky2507** (<pocky@united-websites.org>) – extensions (SmartSleep, EarlySleep, Realtime, Debug, Naps, Intraday, Sleep Stability)
 
 ---
 
 ## 📜 License
 
 MIT License
-© 2025 Chris-656 & Pocky2507
+© 2025  Pocky2507 & Chris-656
 Software provided *as is*, without warranty.
 Use at your own risk.
