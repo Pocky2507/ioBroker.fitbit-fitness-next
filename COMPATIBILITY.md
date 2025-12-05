@@ -1,4 +1,4 @@
-# Compatibility Report – ioBroker.fitbit-fitness
+# Compatibility Report – ioBroker.fitbit-fitness-next
 
 ## ✅ Supported Environments
 
