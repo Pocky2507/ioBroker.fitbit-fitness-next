@@ -234,6 +234,15 @@ class FitBit extends utils.Adapter {
       // ⭐ Restore 48h-Puffer aus TS (MUSS VOR login passieren!)
       await this.restoreRecentHeartDataFromTs();
 
+      // 🕒 Refresh robust parsen (NEU)
+      let refreshParsed = parseInt(this.config.refresh, 10);
+      if (!Number.isFinite(refreshParsed) || refreshParsed <= 0) {
+        this.log.warn(
+          `[Config] Ungültiger Refresh-Wert "${this.config.refresh}" → setze Default 5 Minuten.`,
+        );
+        refreshParsed = 5;
+      }
+
       this.effectiveConfig = {
         intraday: this._coalesceBool(this.config.intraday, DEFAULTS.intraday),
         showLastOrFirstNap: this._coalesceBool(
@@ -251,8 +260,8 @@ class FitBit extends utils.Adapter {
         dailyNapClearTime: this._validTime(
           this.config.forceClearNapListTime || this.config.dailyNapClearTime,
         )
-          ? this.config.forceClearNapListTime || this.config.dailyNapClearTime
-          : DEFAULTS.dailyNapClearTime,
+        ? this.config.forceClearNapListTime || this.config.dailyNapClearTime
+        : DEFAULTS.dailyNapClearTime,
         ignoreEarlyMainSleepEnabled: this._coalesceBool(
           this.config.ignoreEarlyMainSleepEnabled,
           DEFAULTS.ignoreEarlyMainSleepEnabled,
@@ -260,32 +269,34 @@ class FitBit extends utils.Adapter {
         ignoreEarlyMainSleepTime: this._validTime(
           this.config.ignoreEarlyMainSleepTime,
         )
-          ? this.config.ignoreEarlyMainSleepTime
-          : DEFAULTS.ignoreEarlyMainSleepTime,
+        ? this.config.ignoreEarlyMainSleepTime
+        : DEFAULTS.ignoreEarlyMainSleepTime,
         smartEarlySleepEnabled: this._coalesceBool(
           this.config.smartEarlySleepEnabled,
           DEFAULTS.smartEarlySleepEnabled,
         ),
         minMainSleepHours: Number.isFinite(this.config.minMainSleepHours)
-          ? Number(this.config.minMainSleepHours)
-          : DEFAULTS.minMainSleepHours,
+        ? Number(this.config.minMainSleepHours)
+        : DEFAULTS.minMainSleepHours,
         debugEnabled: this._coalesceBool(
           this.config.debugEnabled,
           DEFAULTS.debugEnabled,
         ),
+
         // 🧠 Smart Nap Validation (optional)
         smartNapValidationEnabled: this._coalesceBool(
           this.config.smartNapValidationEnabled,
           false,
         ),
-        refresh: Number.isFinite(this.config.refresh)
-          ? Number(this.config.refresh)
-          : 5,
+
+        // 🕒 Refresh nun robust (NEU)
+        refresh: refreshParsed,
+
         sleepStabilityMinutes: Number.isFinite(
           this.config.sleepStabilityMinutes,
         )
-          ? Number(this.config.sleepStabilityMinutes)
-          : DEFAULTS.sleepStabilityMinutes,
+        ? Number(this.config.sleepStabilityMinutes)
+        : DEFAULTS.sleepStabilityMinutes,
         bodyrecords: !!this.config.bodyrecords,
         activityrecords: !!this.config.activityrecords,
         sleeprecords: !!this.config.sleeprecords,
