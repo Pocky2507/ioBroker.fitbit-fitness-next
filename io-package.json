@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "fitbit-fitness-next",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "nonNpm": false,
     "desc": {
       "en": "Many thanks to the creator of the adapter by Chris (besterquester). Extended and maintained by Pocky2507 — includes advanced sleep detection, nap handling, stability threshold, and heart-rate zone metrics. Retrieves Fitbit health, activity and sleep data with nap and early-sleep filtering.",
