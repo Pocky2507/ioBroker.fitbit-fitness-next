@@ -18,3 +18,7 @@ admin/i18n/*/flat.txt
 
 # devserver
 .dev-server
+
+# local helper scripts (nicht ins repo!)
+setup.sh
+upload.sh
