@@ -11,8 +11,13 @@
     <link rel="stylesheet" type="text/css" href="style.css" />
     <script type="text/javascript" src="words.js"></script>
 
-    <script type="text/javascript">
+        <script type="text/javascript">
       var oauthPopup = null;
+      var currentClientId = null;
+      var currentClientSecret = null;
+      var currentRedirectUri = null;
+      var tokenListenerInitialized = false;
+
       function openAuthPopup(url) {
         try {
           if (oauthPopup && !oauthPopup.closed) oauthPopup.close();
@@ -38,6 +43,69 @@
         return s && typeof s === "string" && s.trim() !== "";
       }
 
+      function initTokenListener() {
+        if (tokenListenerInitialized) return;
+
+        var eventMethod = window.addEventListener ? "addEventListener" : "attachEvent";
+        var eventer = window[eventMethod];
+        var messageEvent = eventMethod === "attachEvent" ? "onmessage" : "message";
+
+        eventer(messageEvent, function (e) {
+          if (!e.data || !e.data.code) return;
+
+          if (!currentClientId || !currentClientSecret || !currentRedirectUri) {
+            alert("Client ID / Secret / Redirect URL nicht gesetzt. Bitte erneut auf 'Authorize' klicken.");
+            return;
+          }
+
+          var authCode = e.data.code;
+
+          var urlEncoded =
+            "grant_type=authorization_code" +
+            "&clientId=" + encodeURIComponent(currentClientId) +
+            "&redirect_uri=" + encodeURIComponent(currentRedirectUri) +
+            "&code=" + encodeURIComponent(authCode);
+
+          $.ajax({
+            url: "https://api.fitbit.com/oauth2/token",
+            type: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "Authorization": "Basic " + btoa(currentClientId + ":" + currentClientSecret),
+            },
+            data: urlEncoded
+          })
+            .done(function (data) {
+              var time = new Date();
+              if (data && data.expires_in) {
+                time.setSeconds(time.getSeconds() + data.expires_in);
+              }
+
+              // Tokens im ioBroker-Objektbaum speichern (Instanz 0)
+              socket.emit("setState", "fitbit-fitness-next.0.tokens.access", data.access_token, true);
+              socket.emit("setState", "fitbit-fitness-next.0.tokens.refresh", data.refresh_token, true);
+              socket.emit("setState", "fitbit-fitness-next.0.tokens.expire", time.toISOString(), true);
+
+              $("#accessToken").val(data.access_token || "");
+              $("#refreshToken").val(data.refresh_token || "");
+              $("#expireOn").val(time.toISOString());
+
+              if (M) M.updateTextFields();
+              closeAuthPopup();
+              alert("Token erfolgreich aktualisiert.");
+            })
+            .fail(function (err) {
+              var msg = "Fehler beim Abrufen des Tokens.";
+              if (err && err.responseText) {
+                msg += " " + err.responseText;
+              }
+              alert(msg);
+            });
+        }, false);
+
+        tokenListenerInitialized = true;
+      }
+
       function load(settings, onChange) {
         if (!settings) return;
 
@@ -59,8 +127,18 @@
 
         // Materialize Select aktivieren
         setTimeout(() => {
-          if (M && M.FormSelect) $("select").formSelect();
+          if (typeof M !== "undefined" && M && M.FormSelect) $("select").formSelect();
         }, 50);
+
+        // Collapsible (Akkordeon) für Token-Verwaltung aktivieren
+        setTimeout(() => {
+          if (typeof M !== "undefined" && M && M.Collapsible && $(".collapsible").length) {
+            $(".collapsible").collapsible();
+          }
+        }, 100);
+
+        // Token-Listener initialisieren
+        initTokenListener();
 
         $(".table-button-do").on("click", function () {
           var clientId = $("#clientId").val().trim();
@@ -71,6 +149,11 @@
             alert("Bitte Client ID, Client Secret und Redirect URL zuerst speichern.");
             return;
           }
+
+          // aktuelle Werte für den Token-Austausch merken
+          currentClientId = clientId;
+          currentClientSecret = clientSecret;
+          currentRedirectUri = redirectUri;
 
           var url =
             "https://www.fitbit.com/oauth2/authorize" +
@@ -88,7 +171,18 @@
           openAuthPopup(url);
         });
 
-        if (M) M.updateTextFields();
+        // Vorhandene Tokens aus ioBroker laden und anzeigen
+        socket.emit("getState", "fitbit-fitness-next.0.tokens.access", function (err, state) {
+          $("#accessToken").val(state && state.val ? state.val : "");
+        });
+        socket.emit("getState", "fitbit-fitness-next.0.tokens.refresh", function (err, state) {
+          $("#refreshToken").val(state && state.val ? state.val : "");
+        });
+        socket.emit("getState", "fitbit-fitness-next.0.tokens.expire", function (err, state) {
+          $("#expireOn").val(state && state.val ? state.val : "");
+        });
+
+        if (typeof M !== "undefined" && M) M.updateTextFields();
         onChange(false);
       }
 
@@ -161,7 +255,33 @@
               <i class="material-icons">add</i><span class="translate">Authorize</span>
             </a>
           </div>
-        </div>
+        
+          <ul class="collapsible">
+            <li>
+              <div class="collapsible-header">
+                <i class="material-icons">vpn_key</i>
+                <span class="translate">Token-Verwaltung</span>
+              </div>
+              <div class="collapsible-body">
+                <div class="row no-iframe">
+                  <div class="input-field col s12 m6">
+                    <input id="accessToken" type="text" readonly />
+                    <label for="accessToken" class="translate">Access Token</label>
+                  </div>
+                  <div class="input-field col s12 m6">
+                    <input id="refreshToken" type="text" readonly />
+                    <label for="refreshToken" class="translate">Refresh Token</label>
+                  </div>
+                </div>
+                <div class="row no-iframe">
+                  <div class="input-field col s12 m6">
+                    <input id="expireOn" type="text" readonly />
+                    <label for="expireOn" class="translate">Token läuft ab am</label>
+                  </div>
+                </div>
+              </div>
+            </li>
+          </ul></div>
 
         <!-- SERVICES TAB -->
         <div id="tab-services" class="col s12 page">
