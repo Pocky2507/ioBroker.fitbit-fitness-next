@@ -1,11 +1,11 @@
 {
   "common": {
     "name": "fitbit-fitness-next",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "nonNpm": false,
     "desc": {
-      "en": "Many thanks to the creator of the adapter by Chris (besterquester). Extended and maintained by Pocky2507 — includes advanced sleep detection, nap handling, stability threshold, and heart-rate zone metrics. Retrieves Fitbit health, activity and sleep data with nap and early-sleep filtering.",
-      "de": "Vielen Dank an den Ersteller des Adapters von Chris-656(besterquester). Erweiterung und Pflege durch Pocky2507 – enthält erweiterte Schlaferkennung, Nickerchen-Verarbeitung, Stabilitätsschwelle und Herzfrequenzzonen. Ruft Fitbit-Gesundheits-, Aktivitäts- und Schlafdaten ab (mit Nickerchen- und Frühschlaf-Filter)."
+      "en": "Includes advanced sleep detection, nap handling, stability threshold, and heart-rate zone metrics. Retrieves Fitbit health, activity and sleep data with nap and early-sleep filtering. Many thanks to the creator of the adapter by Chris (besterquester). Extended and maintained by Pocky2507",
+      "de": " Erweiterte Schlaferkennung, Nickerchen-Verarbeitung, Stabilitätsschwelle und Herzfrequenzzonen. Ruft Fitbit-Gesundheits-, Aktivitäts- und Schlafdaten ab (mit Nickerchen- und Frühschlaf-Filter). Vielen Dank an den Ersteller des Adapters von Chris-656(besterquester). Erweiterung und Pflege durch Pocky2507"
     },
     "authors": [
       "Pocky2507 <pocky@united-websites.org> (maintenance)",
