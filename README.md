@@ -61,7 +61,7 @@ iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/tarball/
 ```
 ---
 
-## 🩺 ioBroker Fitbit Adapter (v1.1.0)
+## 🩺 ioBroker Fitbit Adapter (v1.1.2)
 
 Dieser Adapter ruft **Fitbit-Daten** in ioBroker ab und stellt sie als strukturierte Datenpunkte bereit.
 Er basiert auf dem ursprünglichen Projekt von **@GermanBluefox** (*fitbit-api*)
@@ -89,7 +89,7 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 
 ---
 
-## ✨ Neue Funktionen in Version 1.1.0
+## ✨ Neue Funktionen in Version 1.1.2
 
 - Vorbereitung für persönliche KI Analyse über History
 - Intelligenter Vorfilter für Filmabende, Lesen, Fernsehen
@@ -200,7 +200,7 @@ Der kombinierte Filter verbindet:
 
 ## 🧾 Changelog
 
-## **1.1.0 (2025-12-02)**
+## **1.1.2 (2025-12-12)**
 - Intelligente KI implementiert, aber noch nicht Aktiviert
 
 ## **1.0.3 (2025-11-13)**
@@ -317,7 +317,7 @@ iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/tarball/
 ```
 ---
 
-## 🩺 Fitbit Adapter for ioBroker (v1.1.0)
+## 🩺 Fitbit Adapter for ioBroker (v1.1.2)
 
 This adapter retrieves **Fitbit data** into ioBroker and provides structured datapoints.
 Based on the original **fitbit-api** by *@GermanBluefox*,
@@ -342,7 +342,7 @@ To use this adapter, you need a **Fitbit Developer Account**.
 
 ---
 
-## ✨ New in Version 1.1.0
+## ✨ New in Version 1.1.2
 - Preparation for personal AI analysis via history
 - Smart pre-filter for movie nights, reading, TV
 - Uses HR drop (before/after sleep) to detect real sleep
@@ -449,7 +449,7 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 
 ## 🧾 Changelog
 
-## **1.1.0 (2025-12-02)**
+## **1.1.2 (2025-12-12)**
 - Intelligent AI implemented but not activated yet
 
 ## **1.0.3 (2025-11-11)**
