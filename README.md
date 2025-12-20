@@ -39,6 +39,7 @@ um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereit
 Falls der ursprüngliche Adapter `fitbit-fitness` installiert ist:
 
 ```bash
+cd /opt/ipbroker
 iobroker del fitbit-fitness
 ```
 
@@ -47,7 +48,8 @@ iobroker del fitbit-fitness
 Dieser Adapter wird offiziell über **npm** verteilt:
 
 ```bash
-iobroker install iobroker.fitbit-fitness-next
+cd /opt/iobroker
+npm install iobroker.fitbit-fitness-next
 ```
 
 Oder im ioBroker Admin unter *Adapter → Expertenmodus → aus npm installieren*.
@@ -57,6 +59,7 @@ Oder im ioBroker Admin unter *Adapter → Expertenmodus → aus npm installieren
 Du möchtest die neueste Entwickler-Version installieren?
 
 ```bash
+cd /opt/iobroker
 iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/tarball/main"
 ```
 ---
@@ -292,6 +295,7 @@ to deliver Fitbit data more reliably, accurately, and in real-time within ioBrok
 If the original adapter `fitbit-fitness` is still installed, remove it first:
 
 ```bash
+cd /opt/iobroker
 iobroker del fitbit-fitness
 ```
 
@@ -300,7 +304,8 @@ iobroker del fitbit-fitness
 This adapter is officially distributed through npm:
 
 ```bash
-iobroker install iobroker.fitbit-fitness-next
+cd /opt/iobroker
+npm install iobroker.fitbit-fitness-next
 ```
 
 Alternatively in ioBroker Admin: Adapters → Expert mode → Install from npm
@@ -313,6 +318,7 @@ Alternatively in ioBroker Admin: Adapters → Expert mode → Install from npm
 If you want the latest development version directly from GitHub, use:
 
 ```bash
+cd /opt/iobroker
 iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/tarball/main"
 ```
 ---
