@@ -5,6 +5,9 @@
     Preparation for History Log over 90 days. This ensures a very personal sleep evaluation.
 -->
 
+## **1.1.3 (2026-05-11)**
+- Cleaned up, sorted, and re-nested the entire code once again
+
 ## **1.1.2 (2025-12-12)**
 - Preparation for personal AI analysis via history
 

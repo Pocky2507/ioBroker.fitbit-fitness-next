@@ -64,7 +64,7 @@ iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/tarball/
 ```
 ---
 
-## 🩺 ioBroker Fitbit Adapter (v1.1.2)
+## 🩺 ioBroker Fitbit Adapter (v1.1.3)
 
 Dieser Adapter ruft **Fitbit-Daten** in ioBroker ab und stellt sie als strukturierte Datenpunkte bereit.
 Er basiert auf dem ursprünglichen Projekt von **@GermanBluefox** (*fitbit-api*)
@@ -92,8 +92,9 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 
 ---
 
-## ✨ Neue Funktionen in Version 1.1.2
+## ✨ Neue Funktionen in Version 1.1.3
 
+- Noch einmal den Code komplett aufgeräumt, sortiert und neu Verschachtelt
 - Vorbereitung für persönliche KI Analyse über History
 - Intelligenter Vorfilter für Filmabende, Lesen, Fernsehen
 - Verwendet den HF-Abfall (vor/nach dem Schlafen), um echten Schlaf zu erkennen
@@ -203,6 +204,9 @@ Der kombinierte Filter verbindet:
 
 ## 🧾 Changelog
 
+## **1.1.3 (2026-05-11)**
+- Code komplett aufgeräumt, sortiert und neu Verschachtelt
+
 ## **1.1.2 (2025-12-12)**
 - Intelligente KI implementiert, aber noch nicht Aktiviert
 
@@ -260,7 +264,7 @@ Der kombinierte Filter verbindet:
 ## 📜 Lizenz
 
 MIT License
-© 2025  Pocky2507 & Chris-656  
+© 2026  Pocky2507 & Chris-656
 Software wird „wie besehen“ bereitgestellt, ohne Garantie.  
 Verwendung auf eigene Verantwortung.
 
@@ -323,7 +327,7 @@ iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/tarball/
 ```
 ---
 
-## 🩺 Fitbit Adapter for ioBroker (v1.1.2)
+## 🩺 Fitbit Adapter for ioBroker (v1.1.3)
 
 This adapter retrieves **Fitbit data** into ioBroker and provides structured datapoints.
 Based on the original **fitbit-api** by *@GermanBluefox*,
@@ -348,7 +352,8 @@ To use this adapter, you need a **Fitbit Developer Account**.
 
 ---
 
-## ✨ New in Version 1.1.2
+## ✨ New in Version 1.1.3
+- Cleaned up, sorted, and re-nested the entire code once again.
 - Preparation for personal AI analysis via history
 - Smart pre-filter for movie nights, reading, TV
 - Uses HR drop (before/after sleep) to detect real sleep
@@ -455,6 +460,9 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 
 ## 🧾 Changelog
 
+## **1.1.3 (2026-05-11)**
+- Cleaned up, sorted, and re-nested the entire code once again.
+
 ## **1.1.2 (2025-12-12)**
 - Intelligent AI implemented but not activated yet
 
@@ -512,6 +520,6 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 ## 📜 License
 
 MIT License
-© 2025  Pocky2507 & Chris-656  
+© 2026  Pocky2507 & Chris-656
 Software provided *as is*, without warranty.  
 Use at your own risk.
