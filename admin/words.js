@@ -217,4 +217,25 @@ systemDictionary = {
     "en": "AI analysis is an advanced feature that automatically learns sleep patterns from your history. Disabled by default.",
     "de": "Die KI-Analyse ist eine fortgeschrittene Funktion, die persönliche Schlafmuster automatisch aus der History erkennt. Standardmäßig deaktiviert."
   }
+  ,
+  "Observe – nur Analyse ohne Eingriff": {
+    "en": "Observe – analysis only without intervention",
+    "de": "Observe – nur Analyse ohne Eingriff"
+  },
+
+  "Minimale Trainingstage für KI": {
+    "en": "Minimum AI training days",
+    "de": "Minimale Trainingstage für KI"
+  },
+
+  "KI-Vertrauensschwelle (%)": {
+    "en": "AI confidence threshold (%)",
+    "de": "KI-Vertrauensschwelle (%)"
+  },
+
+  "🧠 KI-Analyse (Beta)": {
+    "en": "🧠 AI Analysis (Beta)",
+    "de": "🧠 KI-Analyse (Beta)"
+  }
+
 };

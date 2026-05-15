@@ -255,7 +255,7 @@
               <i class="material-icons">add</i><span class="translate">Authorize</span>
             </a>
           </div>
-        
+
           <ul class="collapsible">
             <li>
               <div class="collapsible-header">
@@ -397,7 +397,7 @@
         <div id="tab-debug" class="col s12 page">
           <div class="row"><div class="col s6"><img src="fitbit-fitness-next.png" class="logo" /></div></div>
 
-          <div class="row"><div class="col s12"><h6>🐞 Debug & 🧠 KI-Analyse</h6></div></div>
+          <div class="row"><div class="col s12"><h6 class="translate">🐞 Debug & 🧠 KI-Analyse</h6></div></div>
 
           <div class="row">
             <div class="input-field col s12 m6 l4">
@@ -406,7 +406,7 @@
             </div>
           </div>
 
-          <div class="row"><div class="col s12"><h6>🧠 KI-Analyse (Beta)</h6></div></div>
+          <div class="row"><div class="col s12"><h6 class="translate">🧠 KI-Analyse (Beta)</h6></div></div>
 
           <div class="row">
             <div class="input-field col s12 m6 l4">
@@ -419,11 +419,49 @@
             <div class="input-field col s12 m6 l4">
               <select class="value" id="kiMode">
                 <option value="disabled">Aus (Standard)</option>
+                <option value="observe">Observe – nur Analyse ohne Eingriff</option>
                 <option value="soft">Soft – nur Hinweise</option>
                 <option value="adaptive">Adaptiv – Korrekturen mit History</option>
                 <option value="strict">Strict – KI hat Vorrang</option>
               </select>
               <label class="translate" for="kiMode">KI-Betriebsmodus</label>
+            </div>
+          </div>
+
+
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <i class="material-icons prefix">history</i>
+              <input
+                class="value"
+                id="kiMinTrainingDays"
+                type="number"
+                min="3"
+                max="60"
+                step="1"
+                placeholder="14"
+              />
+              <label class="translate" for="kiMinTrainingDays">
+                Minimale Trainingstage für KI
+              </label>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="input-field col s12 m6 l4">
+              <i class="material-icons prefix">verified</i>
+              <input
+                class="value"
+                id="kiConfidenceThreshold"
+                type="number"
+                min="50"
+                max="100"
+                step="1"
+                placeholder="75"
+              />
+              <label class="translate" for="kiConfidenceThreshold">
+                KI-Vertrauensschwelle (%)
+              </label>
             </div>
           </div>
 
