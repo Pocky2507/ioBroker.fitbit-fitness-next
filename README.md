@@ -64,7 +64,7 @@ iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/tarball/
 ```
 ---
 
-## 🩺 ioBroker Fitbit Adapter (v2.0.0)
+## 🩺 ioBroker Fitbit Adapter (v2.0.1)
 
 Dieser Adapter ruft **Fitbit-Daten** in ioBroker ab und stellt sie als strukturierte Datenpunkte bereit.
 Er basiert auf dem ursprünglichen Projekt von **@GermanBluefox** (*fitbit-api*)
@@ -92,7 +92,7 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 
 ---
 
-## ✨ Neue Funktionen in Version 2.0.0
+## ✨ Neue Funktionen in Version 2.0.1
 
 - KI Datenpunkte hinzugefügt. KI wird jetzt vorbereitet
 - Noch einmal den Code komplett aufgeräumt, sortiert und neu Verschachtelt
@@ -205,7 +205,7 @@ Der kombinierte Filter verbindet:
 
 ## 🧾 Changelog
 
-## **2.0.0 (2026-05-15)**
+## **2.0.1 (2026-05-15)**
 - KI Datenpunkte hinzugefügt. KI wird jetzt vorbereitet
 
 ## **1.1.3 (2026-05-11)**
@@ -331,7 +331,7 @@ iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/tarball/
 ```
 ---
 
-## 🩺 Fitbit Adapter for ioBroker (v2.0.0)
+## 🩺 Fitbit Adapter for ioBroker (v2.0.1)
 
 This adapter retrieves **Fitbit data** into ioBroker and provides structured datapoints.
 Based on the original **fitbit-api** by *@GermanBluefox*,
@@ -356,7 +356,7 @@ To use this adapter, you need a **Fitbit Developer Account**.
 
 ---
 
-## ✨ New in Version 2.0.0
+## ✨ New in Version 2.0.1
 
 - Added AI data points. AI is now being prepared
 - Cleaned up, sorted, and re-nested the entire code once again
@@ -466,7 +466,7 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 
 ## 🧾 Changelog
 
-## **2.0.0 (2026-05-15)**
+## **2.0.1 (2026-05-15)**
 - Added AI data points. AI is now being prepared
 
 ## **1.1.3 (2026-05-11)**

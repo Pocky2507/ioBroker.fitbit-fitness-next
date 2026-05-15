@@ -5,7 +5,7 @@
     KI Modus
 -->
 
-## **2.0.0 (2026-05-15)**
+## **2.0.1 (2026-05-15)**
 - Added AI data points. AI is now being prepared
 
 ## **1.1.3 (2026-05-11)**
