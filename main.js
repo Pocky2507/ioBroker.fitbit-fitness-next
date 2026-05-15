@@ -644,6 +644,450 @@ class FitBit extends utils.Adapter {
       },
       native: {},
     });
+
+    // ---------------------------------------------------------------------------
+    // KI Channels
+    // ---------------------------------------------------------------------------
+
+    await this.setObjectNotExistsAsync("sleep.KI", {
+      type: "channel",
+      common: { name: "KI" },
+      native: {},
+    });
+
+    await this.setObjectNotExistsAsync("sleep.KI.profile", {
+      type: "channel",
+      common: { name: "KI Profile" },
+      native: {},
+    });
+
+    await this.setObjectNotExistsAsync("sleep.KI.score", {
+      type: "channel",
+      common: { name: "KI Scores" },
+      native: {},
+    });
+
+    await this.setObjectNotExistsAsync("sleep.KI.flags", {
+      type: "channel",
+      common: { name: "KI Flags" },
+      native: {},
+    });
+
+    await this.setObjectNotExistsAsync("sleep.KI.pattern", {
+      type: "channel",
+      common: { name: "KI Pattern" },
+      native: {},
+    });
+
+    await this.setObjectNotExistsAsync("sleep.KI.recommendation", {
+      type: "channel",
+      common: { name: "KI Recommendations" },
+      native: {},
+    });
+
+    // ---------------------------------------------------------------------------
+    // KI States
+    // ---------------------------------------------------------------------------
+
+    const kiStates = [
+      // =========================================================
+      // KI Status / Runtime
+      // =========================================================
+      {
+        id: "sleep.KI.active",
+        name: "KI active",
+        type: "boolean",
+        role: "indicator",
+        def: false,
+      },
+      {
+        id: "sleep.KI.trainingComplete",
+        name: "KI training complete",
+        type: "boolean",
+        role: "indicator",
+        def: false,
+      },
+      {
+        id: "sleep.KI.mode",
+        name: "KI mode",
+        type: "string",
+        role: "text",
+        def: "disabled",
+      },
+      {
+        id: "sleep.KI.profileConfidence",
+        name: "KI profile confidence",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.dataQuality",
+        name: "KI data quality",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.lastRun",
+        name: "KI last run",
+        type: "number",
+        role: "date",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.lastDecision",
+        name: "KI last decision",
+        type: "string",
+        role: "text",
+        def: "",
+      },
+      {
+        id: "sleep.KI.lastReason",
+        name: "KI last reason",
+        type: "string",
+        role: "text",
+        def: "",
+      },
+      {
+        id: "sleep.KI.lastConfidence",
+        name: "KI last confidence",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.lastModel",
+        name: "KI last model",
+        type: "string",
+        role: "text",
+        def: "",
+      },
+      {
+        id: "sleep.KI.lastUpdate",
+        name: "KI last update",
+        type: "number",
+        role: "date",
+        def: 0,
+      },
+
+      // =========================================================
+      // KI Profile
+      // =========================================================
+      {
+        id: "sleep.KI.profile.sleepStartMean",
+        name: "Average sleep start",
+        type: "number",
+        role: "value",
+        unit: "min",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.profile.sleepStartDeviation",
+        name: "Sleep start deviation",
+        type: "number",
+        role: "value",
+        unit: "min",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.profile.sleepDurationMean",
+        name: "Average sleep duration",
+        type: "number",
+        role: "value",
+        unit: "min",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.profile.sleepDurationDeviation",
+        name: "Sleep duration deviation",
+        type: "number",
+        role: "value",
+        unit: "min",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.profile.hrDropMean",
+        name: "Average HR drop",
+        type: "number",
+        role: "value",
+        unit: "bpm",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.profile.hrDropDeviation",
+        name: "HR drop deviation",
+        type: "number",
+        role: "value",
+        unit: "bpm",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.profile.deepMean",
+        name: "Average deep sleep",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.profile.remMean",
+        name: "Average REM sleep",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.profile.wakeMean",
+        name: "Average wake time",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.profile.regularityScore",
+        name: "Sleep regularity score",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.profile.napProbability",
+        name: "Nap probability",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.profile.weekendShift",
+        name: "Weekend sleep shift",
+        type: "number",
+        role: "value",
+        unit: "min",
+        def: 0,
+      },
+
+      // =========================================================
+      // KI Scores
+      // =========================================================
+      {
+        id: "sleep.KI.score.recovery",
+        name: "Recovery score",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.score.fragmentation",
+        name: "Fragmentation score",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.score.restfulness",
+        name: "Restfulness score",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.score.stability",
+        name: "Sleep stability score",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.score.sleepQuality",
+        name: "Sleep quality score",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.score.sleepEfficiency",
+        name: "Sleep efficiency score",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.score.stressRecovery",
+        name: "Stress recovery score",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.score.regularity",
+        name: "Sleep regularity score",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+
+      // =========================================================
+      // KI Flags
+      // =========================================================
+      {
+        id: "sleep.KI.flags.unusualNight",
+        name: "Unusual night detected",
+        type: "boolean",
+        role: "indicator",
+        def: false,
+      },
+      {
+        id: "sleep.KI.flags.fragmentedSleep",
+        name: "Fragmented sleep detected",
+        type: "boolean",
+        role: "indicator",
+        def: false,
+      },
+      {
+        id: "sleep.KI.flags.lowRecovery",
+        name: "Low recovery detected",
+        type: "boolean",
+        role: "indicator",
+        def: false,
+      },
+      {
+        id: "sleep.KI.flags.highStress",
+        name: "High stress detected",
+        type: "boolean",
+        role: "indicator",
+        def: false,
+      },
+      {
+        id: "sleep.KI.flags.lateSleep",
+        name: "Late sleep detected",
+        type: "boolean",
+        role: "indicator",
+        def: false,
+      },
+      {
+        id: "sleep.KI.flags.possibleIllness",
+        name: "Possible illness detected",
+        type: "boolean",
+        role: "indicator",
+        def: false,
+      },
+      {
+        id: "sleep.KI.flags.possibleOvertraining",
+        name: "Possible overtraining detected",
+        type: "boolean",
+        role: "indicator",
+        def: false,
+      },
+      {
+        id: "sleep.KI.flags.irregularPattern",
+        name: "Irregular sleep pattern detected",
+        type: "boolean",
+        role: "indicator",
+        def: false,
+      },
+
+      // =========================================================
+      // KI Recommendations
+      // =========================================================
+      {
+        id: "sleep.KI.recommendation.primary",
+        name: "Primary recommendation",
+        type: "string",
+        role: "text",
+        def: "",
+      },
+      {
+        id: "sleep.KI.recommendation.secondary",
+        name: "Secondary recommendation",
+        type: "string",
+        role: "text",
+        def: "",
+      },
+      {
+        id: "sleep.KI.recommendation.confidence",
+        name: "Recommendation confidence",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+
+      // =========================================================
+      // KI Pattern / Trends
+      // =========================================================
+      {
+        id: "sleep.KI.pattern.sleepDebt",
+        name: "Sleep debt",
+        type: "number",
+        role: "value",
+        unit: "min",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.pattern.sleepTrend",
+        name: "Sleep trend",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.pattern.recoveryTrend",
+        name: "Recovery trend",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.pattern.stressTrend",
+        name: "Stress trend",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+      {
+        id: "sleep.KI.pattern.napTrend",
+        name: "Nap trend",
+        type: "number",
+        role: "value",
+        unit: "%",
+        def: 0,
+      },
+    ];
+
+    for (const s of kiStates) {
+      await this.setObjectNotExistsAsync(s.id, {
+        type: "state",
+        common: {
+          name: s.name,
+          type: s.type,
+          role: s.role,
+          unit: s.unit,
+          read: true,
+          write: false,
+          def: s.def,
+        },
+        native: {},
+      });
+    }
   } // <<< END of initCustomSleepStates()
 
   // =========================================================================
