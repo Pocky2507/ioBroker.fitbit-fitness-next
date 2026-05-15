@@ -2,8 +2,11 @@
 
 <--
     ## **WORK IN PROGRESS**
-    Preparation for History Log over 90 days. This ensures a very personal sleep evaluation.
+    KI Modus
 -->
+
+## **2.0.0 (2026-05-15)**
+- Added AI data points. AI is now being prepared
 
 ## **1.1.3 (2026-05-11)**
 - Cleaned up, sorted, and re-nested the entire code once again
