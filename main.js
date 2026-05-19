@@ -2,7 +2,7 @@
 
 /*
  * ioBroker Adapter: fitbit-fitness-next
- * Version 1.1.3 - 10.05.2026
+ * Version 2.0.1 - 19.05.2026
  * Vollständige Version, rückwärtskompatibel und über Admin-Config steuerbar
  */
 
@@ -68,9 +68,6 @@ class FitBit extends utils.Adapter {
 
     // KI-Engine an Adapter-Instanz anhängen (optional)
     this.KIEngine = KIEngine;
-
-    // KI Prozess Lock
-    this._kiProcessLock = false;
 
 
     // --- Neuer Speicher für wartenden Hauptschlaf ---
@@ -1092,87 +1089,6 @@ class FitBit extends utils.Adapter {
       });
     }
   } // <<< END of initCustomSleepStates()
-
-  // =========================================================================
-  // KI Runner
-  // =========================================================================
-
-  async runKIAnalysis(result, history, hrTs) {
-
-    try {
-
-      if (!this.config.kiEnabled) {
-        return result;
-      }
-
-      if (!this.KIEngine) {
-        return result;
-      }
-
-      if (typeof this.KIEngine.reviewSleep !== "function") {
-        return result;
-      }
-
-      if (this._kiProcessLock) {
-        this.dlog("debug", "[KI] Analysis already running");
-        return result;
-      }
-
-      this._kiProcessLock = true;
-
-      await this.setStateAsync("sleep.KI.active", {
-        val: true,
-        ack: true,
-      });
-
-      await this.setStateAsync("sleep.KI.lastRun", {
-        val: Date.now(),
-                               ack: true,
-      });
-
-      const kiResult = await this.KIEngine.reviewSleep(
-        result,
-        history,
-        hrTs,
-        this.config,
-        this.log,
-      );
-
-      if (!kiResult) {
-
-        await this.setStateAsync("sleep.KI.lastDecision", {
-          val: "observe",
-          ack: true,
-        });
-
-        return result;
-      }
-
-      await this.setStateAsync("sleep.KI.lastDecision", {
-        val: "modified",
-        ack: true,
-      });
-
-      return kiResult;
-
-    } catch (err) {
-
-      this.log.error("[KI] " + err);
-
-      return result;
-
-    } finally {
-
-      this._kiProcessLock = false;
-
-      await this.setStateAsync("sleep.KI.active", {
-        val: false,
-        ack: true,
-      });
-    }
-  }
-
-
 
   // =========================================================================
   // Login + Tokenprüfung
@@ -2566,50 +2482,10 @@ class FitBit extends utils.Adapter {
       }
 
       // ============================================================
-      // 🧠 KI-HOOK: Möglichkeit zur KI-Nachbearbeitung des Ergebnisses
+      // 🧠 KI-HOOK (Observe Mode)
       // ============================================================
-      let kiResult = null;
 
-      try {
-        // Prüfen ob KI aktiviert ist und Modul existiert
-        if (
-          this.effectiveConfig.kiEnabled &&
-          this.KIEngine &&
-          typeof this.KIEngine.reviewSleep === "function"
-        ) {
-          this.log.info("[KI] KI-Analyse aktiviert – starte Auswertung.");
-
-          const baseResult = {
-            fell,
-            woke,
-            asleepMin,
-            inBedMin,
-            napsAsleep,
-            napsInBed,
-            napsCount: napBlocks.length,
-            naps: napBlocks,
-          };
-
-          kiResult = this.KIEngine.reviewSleep(
-            baseResult,
-            this.sleepHistory || [],     // komplette History
-            this.lastHRSeries || [],      // Intraday HR Daten
-            this.effectiveConfig,         // gesamte Config inkl. KI-Mode
-            this.log                      // Logger für KI
-          );
-
-          if (kiResult) {
-            this.log.info("[KI] KI hat Änderungen vorgenommen.");
-          } else {
-            this.log.info("[KI] KI hat nichts angepasst.");
-          }
-        }
-      } catch (err) {
-        this.log.warn("[KI] Fehler während der KI-Auswertung: " + err);
-      }
-
-      // Falls KI ein Ergebnis zurückgab – dieses verwenden:
-      const finalResult = kiResult || {
+      const finalResult = {
         fell,
         woke,
         asleepMin,
@@ -2620,7 +2496,38 @@ class FitBit extends utils.Adapter {
         naps: napBlocks,
       };
 
-      // Danach die bisherigen States schreiben
+      try {
+
+        if (
+          this.effectiveConfig.kiEnabled &&
+          this.KIEngine &&
+          typeof this.KIEngine.reviewSleep === "function"
+        ) {
+
+          this.log.info("[KI] Observe-Analyse gestartet.");
+
+          const analysis = await this.KIEngine.reviewSleep(
+            finalResult,
+            this.sleepHistory || [],
+            this.lastHRSeries || [],
+            this.effectiveConfig,
+            this.log
+          );
+
+          if (analysis) {
+
+            await this.saveKIStates(analysis);
+
+            this.log.info("[KI] Observe-Analyse abgeschlossen.");
+          }
+        }
+
+      } catch (err) {
+
+        this.log.warn("[KI] Fehler während der KI-Auswertung: " + err);
+      }
+
+      // Danach die bisherigen Sleepstates schreiben
       await this.writeSleepStates(finalResult);
 
       this.dlog(
@@ -2649,6 +2556,116 @@ class FitBit extends utils.Adapter {
       return true;
     });
   }
+
+
+
+  // =========================================================================
+  // KI States speichern
+  // =========================================================================
+  async saveKIStates(analysis) {
+
+    try {
+
+      if (!analysis) {
+        return;
+      }
+
+      // =============================================================
+      // Scores
+      // =============================================================
+
+      if (analysis.scores) {
+
+        await this.setStateAsync("sleep.KI.score.recovery", {
+          val: Math.round(analysis.scores.recovery || 0),
+                                 ack: true,
+        });
+
+        await this.setStateAsync("sleep.KI.score.fragmentation", {
+          val: Math.round(analysis.scores.fragmentation || 0),
+                                 ack: true,
+        });
+
+        await this.setStateAsync("sleep.KI.score.restfulness", {
+          val: Math.round(analysis.scores.restfulness || 0),
+                                 ack: true,
+        });
+
+        await this.setStateAsync("sleep.KI.score.stability", {
+          val: Math.round(analysis.scores.stability || 0),
+                                 ack: true,
+        });
+
+        await this.setStateAsync("sleep.KI.score.sleepQuality", {
+          val: Math.round(analysis.scores.sleepQuality || 0),
+                                 ack: true,
+        });
+      }
+
+      // =============================================================
+      // Flags
+      // =============================================================
+
+      if (analysis.flags) {
+
+        await this.setStateAsync("sleep.KI.flags.unusualNight", {
+          val: !!analysis.flags.unusualNight,
+          ack: true,
+        });
+
+        await this.setStateAsync("sleep.KI.flags.fragmentedSleep", {
+          val: !!analysis.flags.fragmentedSleep,
+          ack: true,
+        });
+
+        await this.setStateAsync("sleep.KI.flags.lowRecovery", {
+          val: !!analysis.flags.lowRecovery,
+          ack: true,
+        });
+
+        await this.setStateAsync("sleep.KI.flags.irregularPattern", {
+          val: !!analysis.flags.irregularPattern,
+          ack: true,
+        });
+      }
+
+      // =============================================================
+      // Empfehlungen
+      // =============================================================
+
+      if (analysis.recommendation) {
+
+        await this.setStateAsync("sleep.KI.recommendation.primary", {
+          val: analysis.recommendation.primary || "",
+          ack: true,
+        });
+
+        await this.setStateAsync("sleep.KI.recommendation.secondary", {
+          val: analysis.recommendation.secondary || "",
+          ack: true,
+        });
+      }
+
+      // =============================================================
+      // Runtime
+      // =============================================================
+
+      await this.setStateAsync("sleep.KI.lastUpdate", {
+        val: Date.now(),
+                               ack: true,
+      });
+
+      await this.setStateAsync("sleep.KI.lastModel", {
+        val: analysis.meta?.model || "observe-v1",
+        ack: true,
+      });
+
+    } catch (err) {
+
+      this.log.warn("[KI] saveKIStates failed: " + err);
+    }
+  }
+
 
   // -------------------------------------------------------------------------
   // Segment-Tools für Sleep

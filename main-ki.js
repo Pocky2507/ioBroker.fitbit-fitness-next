@@ -1,52 +1,203 @@
 /**
  * main-ki.js
  * ---------------------------------------
- * KI-Logik für den Fitbit-Fitness-Next-Adapter
- * (Vorbereitungsstruktur – noch keine KI-Regeln!)
+ * Observe-KI für Fitbit-Fitness-Next
  *
- * ACHTUNG: Diese Datei beeinflusst die main.js NICHT,
- * solange kiEnabled = false ist.
+ * Phase 1:
+ * - analysiert History
+ * - berechnet Scores
+ * - erkennt Muster
+ * - schreibt KI-States
  *
- * Die KI arbeitet NACH der normalen Logik der main.js
- * und kann das Ergebnis optional anpassen.
+ * Die KI verändert KEINE produktiven Sleepdaten.
  */
 
 "use strict";
 
 module.exports = {
-  /**
-   * reviewSleep()
-   * -------------------------
-   * KI-Analyse des fertigen Adapter-Ergebnisses.
-   *
-   * @param {Object} result            -> Ergebnis aus main.js
-   * @param {Array}  history           -> komplette History (objekte)
-   * @param {Array}  hrTs              -> Herzfrequenz-Zeitreihen (Minutenwerte)
-   * @param {Object} config            -> Adapter-Konfiguration (inkl. KI)
-   * @param {Object} log               -> ioBroker-Logger
-   *
-   * @returns Entweder modifiziertes Ergebnis oder null (keine Änderung)
-   */
-  reviewSleep(result, history, hrTs, config, log) {
 
-    log.info("[KI] --- KI-Modul wurde aufgerufen (Vorbereitungsmodus) ---");
-    log.debug("[KI] Eingehender Schlafblock: " + JSON.stringify(result));
+  async reviewSleep(result, history, hrTs, config, log) {
 
-    // -------------------------------------------
-    // Hier kommen später:
-    //  - History-Brain
-    //  - HR-Musteranalyse
-    //  - Stabilitätslogik
-    //  - persönliche Lernfunktionen
-    // -------------------------------------------
+    try {
 
-    // KI ist derzeit im "Dummy"-Modus = keine Änderungen vornehmen
-    if (!config.kiMode || config.kiMode === "disabled") {
-      log.info("[KI] KI ist deaktiviert oder im Dummy-Modus.");
+      if (!result) {
+        return null;
+      }
+
+      if (!Array.isArray(history)) {
+        return null;
+      }
+
+      const recent = history
+      .filter((d) => d && typeof d === "object")
+      .slice(-14);
+
+      if (!recent.length) {
+        return null;
+      }
+
+      // ============================================================
+      // Durchschnittswerte
+      // ============================================================
+
+      const avgHrDrop = average(
+        recent.map((d) => Number(d.hrDrop || 0))
+      );
+
+      const avgWake = average(
+        recent.map((d) => Number(d.wake || 0))
+      );
+
+      const avgDeep = average(
+        recent.map((d) => Number(d.deep || 0))
+      );
+
+      // ============================================================
+      // Aktuelle Nacht
+      // ============================================================
+
+      const currentHrDrop = Number(result.hrDrop || 0);
+      const currentWake = Number(result.wake || 0);
+      const currentDeep = Number(result.deep || 0);
+
+      // ============================================================
+      // Scores
+      // ============================================================
+
+      const recoveryScore = normalize(
+        currentHrDrop,
+        avgHrDrop * 0.5,
+        avgHrDrop * 1.8
+      );
+
+      const fragmentationScore = normalizeInverse(
+        currentWake,
+        avgWake,
+        avgWake * 2
+      );
+
+      const sleepQualityScore = normalize(
+        currentDeep,
+        avgDeep * 0.7,
+        avgDeep * 1.8
+      );
+
+      const restfulnessScore = Math.round(
+        (sleepQualityScore + fragmentationScore) / 2
+      );
+
+      // ============================================================
+      // Flags
+      // ============================================================
+
+      const fragmentedSleep = currentWake > avgWake * 1.7;
+
+      const lowRecovery =
+      currentHrDrop < avgHrDrop * 0.55;
+
+      // ============================================================
+      // Empfehlungen
+      // ============================================================
+
+      let primaryRecommendation = "";
+      let secondaryRecommendation = "";
+
+      if (lowRecovery) {
+
+        primaryRecommendation =
+        "Niedrige nächtliche Erholung erkannt";
+      }
+
+      if (fragmentedSleep) {
+
+        secondaryRecommendation =
+        "Fragmentierter Schlaf erkannt";
+      }
+
+      // ============================================================
+      // Logging
+      // ============================================================
+
+      log.info(
+        `[KI] Recovery=${Math.round(recoveryScore)} ` +
+        `Fragmentation=${Math.round(fragmentationScore)} ` +
+        `SleepQuality=${Math.round(sleepQualityScore)}`
+      );
+
+      // ============================================================
+      // NUR ANALYSEDATEN RETURNEN
+      // ============================================================
+
+      return {
+
+        scores: {
+          recovery: recoveryScore,
+          fragmentation: fragmentationScore,
+          restfulness: restfulnessScore,
+          stability: 100,
+          sleepQuality: sleepQualityScore,
+        },
+
+        flags: {
+          unusualNight: false,
+          fragmentedSleep,
+          lowRecovery,
+          irregularPattern: false,
+        },
+
+        recommendation: {
+          primary: primaryRecommendation,
+          secondary: secondaryRecommendation,
+        },
+
+        meta: {
+          model: "observe-v1",
+          timestamp: Date.now(),
+        },
+      };
+
+    } catch (err) {
+
+      log.warn("[KI] reviewSleep failed: " + err);
+
       return null;
     }
-
-    log.info("[KI] KI-Analyse aktuell noch deaktiviert (Struktur vorhanden).");
-    return null;
-  }
+  },
 };
+
+// ======================================================================
+// Utils
+// ======================================================================
+
+function average(arr) {
+
+  const values = arr.filter((v) => Number.isFinite(v));
+
+  if (!values.length) {
+    return 0;
+  }
+
+  return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+function normalize(value, min, max) {
+
+  if (max <= min) {
+    return 50;
+  }
+
+  const n = ((value - min) / (max - min)) * 100;
+
+  return Math.max(0, Math.min(100, n));
+}
+
+function normalizeInverse(value, min, max) {
+
+  if (max <= min) {
+    return 50;
+  }
+
+  const n = 100 - (((value - min) / (max - min)) * 100);
+
+  return Math.max(0, Math.min(100, n));
+}
