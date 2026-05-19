@@ -69,6 +69,9 @@ class FitBit extends utils.Adapter {
     // KI-Engine an Adapter-Instanz anhängen (optional)
     this.KIEngine = KIEngine;
 
+    // KI Prozess Lock
+    this._kiProcessLock = false;
+
 
     // --- Neuer Speicher für wartenden Hauptschlaf ---
     this.pendingMainSleep = null;
@@ -1089,6 +1092,87 @@ class FitBit extends utils.Adapter {
       });
     }
   } // <<< END of initCustomSleepStates()
+
+  // =========================================================================
+  // KI Runner
+  // =========================================================================
+
+  async runKIAnalysis(result, history, hrTs) {
+
+    try {
+
+      if (!this.config.kiEnabled) {
+        return result;
+      }
+
+      if (!this.KIEngine) {
+        return result;
+      }
+
+      if (typeof this.KIEngine.reviewSleep !== "function") {
+        return result;
+      }
+
+      if (this._kiProcessLock) {
+        this.dlog("debug", "[KI] Analysis already running");
+        return result;
+      }
+
+      this._kiProcessLock = true;
+
+      await this.setStateAsync("sleep.KI.active", {
+        val: true,
+        ack: true,
+      });
+
+      await this.setStateAsync("sleep.KI.lastRun", {
+        val: Date.now(),
+                               ack: true,
+      });
+
+      const kiResult = await this.KIEngine.reviewSleep(
+        result,
+        history,
+        hrTs,
+        this.config,
+        this.log,
+      );
+
+      if (!kiResult) {
+
+        await this.setStateAsync("sleep.KI.lastDecision", {
+          val: "observe",
+          ack: true,
+        });
+
+        return result;
+      }
+
+      await this.setStateAsync("sleep.KI.lastDecision", {
+        val: "modified",
+        ack: true,
+      });
+
+      return kiResult;
+
+    } catch (err) {
+
+      this.log.error("[KI] " + err);
+
+      return result;
+
+    } finally {
+
+      this._kiProcessLock = false;
+
+      await this.setStateAsync("sleep.KI.active", {
+        val: false,
+        ack: true,
+      });
+    }
+  }
+
+
 
   // =========================================================================
   // Login + Tokenprüfung
