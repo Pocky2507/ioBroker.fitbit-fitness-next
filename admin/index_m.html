@@ -81,7 +81,7 @@
                 time.setSeconds(time.getSeconds() + data.expires_in);
               }
 
-              // Tokens im ioBroker-Objektbaum speichern (Instanz 0)
+              // Tokens im ioBroker-Objektbaum speichern (Instanz 0)-
               socket.emit("setState", "fitbit-fitness-next.0.tokens.access", data.access_token, true);
               socket.emit("setState", "fitbit-fitness-next.0.tokens.refresh", data.refresh_token, true);
               socket.emit("setState", "fitbit-fitness-next.0.tokens.expire", time.toISOString(), true);
