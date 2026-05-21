@@ -64,7 +64,7 @@ iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/tarball/
 ```
 ---
 
-## 🩺 ioBroker Fitbit Adapter (v2.0.1)
+## 🩺 ioBroker Fitbit Adapter (v2.0.6)
 
 Dieser Adapter ruft **Fitbit-Daten** in ioBroker ab und stellt sie als strukturierte Datenpunkte bereit.
 Er basiert auf dem ursprünglichen Projekt von **@GermanBluefox** (*fitbit-api*)
@@ -92,8 +92,9 @@ Um den Adapter zu verwenden, benötigst du einen **Fitbit Developer Account**.
 
 ---
 
-## ✨ Neue Funktionen in Version 2.0.1
+## ✨ Neue Funktionen in Version 2.0.6
 
+- KI Observe Architektur repariert und KI Datenpunkte stabilisiert.
 - KI Datenpunkte hinzugefügt. KI wird jetzt vorbereitet
 - Noch einmal den Code komplett aufgeräumt, sortiert und neu Verschachtelt
 - Vorbereitung für persönliche KI Analyse über History
@@ -204,6 +205,9 @@ Der kombinierte Filter verbindet:
 ---
 
 ## 🧾 Changelog
+
+## **2.0.6 (2026-05-21)**
+- KI Observe Architektur repariert und KI Datenpunkte stabilisiert
 
 ## **2.0.1 (2026-05-15)**
 - KI Datenpunkte hinzugefügt. KI wird jetzt vorbereitet
@@ -331,7 +335,7 @@ iobroker url "https://github.com/Pocky2507/ioBroker.fitbit-fitness-next/tarball/
 ```
 ---
 
-## 🩺 Fitbit Adapter for ioBroker (v2.0.1)
+## 🩺 Fitbit Adapter for ioBroker (v2.0.6)
 
 This adapter retrieves **Fitbit data** into ioBroker and provides structured datapoints.
 Based on the original **fitbit-api** by *@GermanBluefox*,
@@ -356,8 +360,9 @@ To use this adapter, you need a **Fitbit Developer Account**.
 
 ---
 
-## ✨ New in Version 2.0.1
+## ✨ New in Version 2.0.6
 
+- Fixed KI observe architecture and stabilized KI states
 - Added AI data points. AI is now being prepared
 - Cleaned up, sorted, and re-nested the entire code once again
 - Preparation for personal AI analysis via history
@@ -465,6 +470,9 @@ This logic combines **time-based filtering** and **SmartSleep duration analysis*
 ---
 
 ## 🧾 Changelog
+
+## **2.0.6 (2026-05-21)**
+- Fixed KI observe architecture and stabilized KI states
 
 ## **2.0.1 (2026-05-15)**
 - Added AI data points. AI is now being prepared

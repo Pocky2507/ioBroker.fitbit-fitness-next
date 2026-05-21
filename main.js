@@ -2,7 +2,7 @@
 
 /*
  * ioBroker Adapter: fitbit-fitness-next
- * Version 2.0.1 - 21.05.2026
+ * Version 2.0.1 - 21.05.2026 - 12 Uhr 52
  * Vollständige Version, rückwärtskompatibel und über Admin-Config steuerbar
  */
 

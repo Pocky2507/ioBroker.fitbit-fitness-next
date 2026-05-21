@@ -3,7 +3,7 @@
 "use strict";
 
 systemDictionary = {
-  /* ===== Adapter Info ===== */-
+  /* ===== Adapter Info ===== */
   "fitbit-fitness-next adapter settings": {
     "en": "Adapter settings for Fitbit",
     "de": "Adaptereinstellungen für Fitbit"
