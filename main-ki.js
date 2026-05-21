@@ -90,7 +90,8 @@ module.exports = {
       // Flags
       // ============================================================
 
-      const fragmentedSleep = currentWake > avgWake * 1.7;
+      const fragmentedSleep =
+      currentWake > avgWake * 1.7;
 
       const lowRecovery =
       currentHrDrop < avgHrDrop * 0.55;
@@ -103,13 +104,11 @@ module.exports = {
       let secondaryRecommendation = "";
 
       if (lowRecovery) {
-
         primaryRecommendation =
         "Niedrige nächtliche Erholung erkannt";
       }
 
       if (fragmentedSleep) {
-
         secondaryRecommendation =
         "Fragmentierter Schlaf erkannt";
       }
@@ -125,34 +124,45 @@ module.exports = {
       );
 
       // ============================================================
-      // NUR ANALYSEDATEN RETURNEN
+      // Observe-only Rückgabe
       // ============================================================
 
       return {
 
-        scores: {
-          recovery: recoveryScore,
-          fragmentation: fragmentationScore,
-          restfulness: restfulnessScore,
+        score: {
+          recovery: Math.round(recoveryScore),
+          fragmentation: Math.round(fragmentationScore),
+          restfulness: Math.round(restfulnessScore),
           stability: 100,
-          sleepQuality: sleepQualityScore,
+          sleepQuality: Math.round(sleepQualityScore),
+          sleepEfficiency: 0,
+          stressRecovery: 0,
+          regularity: 0,
         },
 
         flags: {
           unusualNight: false,
           fragmentedSleep,
           lowRecovery,
+          highStress: false,
+          lateSleep: false,
+          possibleIllness: false,
+          possibleOvertraining: false,
           irregularPattern: false,
         },
 
         recommendation: {
           primary: primaryRecommendation,
           secondary: secondaryRecommendation,
+          confidence: 75,
         },
 
-        meta: {
-          model: "observe-v1",
-          timestamp: Date.now(),
+        pattern: {
+          sleepDebt: 0,
+          sleepTrend: 0,
+          recoveryTrend: 0,
+          stressTrend: 0,
+          napTrend: 0,
         },
       };
 
