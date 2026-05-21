@@ -5,6 +5,9 @@
     KI Modus
 -->
 
+## **2.0.7 (2026-05-21)**
+- Fixed KI observe architecture and stabilized KI states
+
 ## **2.0.1 (2026-05-15)**
 - Added AI data points. AI is now being prepared
 
