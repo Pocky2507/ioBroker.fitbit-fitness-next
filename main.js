@@ -310,6 +310,12 @@ class FitBit extends utils.Adapter {
         clientId: this.config.clientId || "",
         clientSecret: this.config.clientSecret || "",
         redirectUri: this.config.redirectUri || "",
+        kiEnabled: this._coalesceBool(
+          this.config.kiEnabled,
+          false,
+        ),
+
+        kiMode: this.config.kiMode || "disabled",
       };
 
       DEBUG_SLEEP_LOG = !!this.effectiveConfig.debugEnabled;

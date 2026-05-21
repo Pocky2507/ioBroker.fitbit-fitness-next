@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "fitbit-fitness-next",
-    "version": "2.0.3",
+    "version": "2.0.4",
     "nonNpm": false,
     "desc": {
       "en": "Includes advanced sleep detection, nap handling, stability threshold, and heart-rate zone metrics. Retrieves Fitbit health, activity and sleep data with nap and early-sleep filtering. Many thanks to the creator of the adapter by Chris (besterquester). Extended and maintained by Pocky2507",
@@ -16,7 +16,7 @@
       "url": "https://github.com/Pocky2507/ioBroker.fitbit-fitness-next"
     },
     "news": {
-      "2.0.3": {
+      "2.0.4": {
         "en": "Fixed KI observe architecture and stabilized KI states",
         "de": "KI Observe Architektur repariert und KI Datenpunkte stabilisiert."
       },
