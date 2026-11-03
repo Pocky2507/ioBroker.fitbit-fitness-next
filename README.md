@@ -18,7 +18,7 @@
 
 > [!WARNING]
 > **ACHTUNG: Dieser Adapter funktioniert derzeit nicht!**
-
+> [!WARNING]
 > **ACHTUNG: Die API wurde zum 02.11.2026 von Google abgeschaltet**
 
 Dieser Adapter ist **eine erweiterte und modernisierte Version** des ursprünglichen ioBroker-Fitbit-Adapters von *besterquester*.
