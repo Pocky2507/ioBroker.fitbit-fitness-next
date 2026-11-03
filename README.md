@@ -16,6 +16,8 @@
 
 ## 🧠 Über diesen neuen Adapter
 
+DIE API WURDE zZU 02.11.2026 abgeschaltet!
+
 Dieser Adapter ist **eine erweiterte und modernisierte Version** des ursprünglichen ioBroker-Fitbit-Adapters von *besterquester*.
 Der neue Adapter von **Pocky2507** enthält zahlreiche neue Funktionen, Stabilitätsverbesserungen und Debug-Optionen,
 um Fitbit-Daten zuverlässiger, detaillierter und in Echtzeit in ioBroker bereitzustellen.
