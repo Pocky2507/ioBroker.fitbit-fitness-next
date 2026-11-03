@@ -297,6 +297,19 @@ Verwendung auf eigene Verantwortung.
 
 ## 🧠 About this new Adapter (English)
 
+> [!WARNING]
+> **IMPORTANT!**
+>
+> The Fitbit adapter is currently no longer working.
+>
+> The Fitbit Web API was discontinued on November 2, 2026.
+>
+> - Login is currently no longer possible.
+> - Data is no longer being updated.
+> - A migration to the Google Health API is being investigated.
+>
+> Please do not reinstall the adapter for the time being.
+
 This adapter is an **enhanced and modernized version** of the original ioBroker Fitbit adapter by *besterquester*.
 The **Pocky2507** fork introduces new features, improved stability, and advanced debug options
 to deliver Fitbit data more reliably, accurately, and in real-time within ioBroker.
