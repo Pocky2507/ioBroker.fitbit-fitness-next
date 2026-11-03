@@ -17,9 +17,17 @@
 ## 🧠 Über diesen neuen Adapter
 
 > [!WARNING]
-> **ACHTUNG: Dieser Adapter funktioniert derzeit nicht!**
-> [!WARNING]
-> **ACHTUNG: Die API wurde zum 02.11.2026 von Google abgeschaltet**
+> **ACHTUNG!**
+>
+> Der Fitbit-Adapter funktioniert derzeit nicht mehr.
+>
+> Die Fitbit Web API wurde am 02.11.2026 abgeschaltet.
+>
+> - Eine Anmeldung ist derzeit nicht möglich.
+> - Die Daten werden nicht mehr aktualisiert.
+> - Eine Umstellung auf die Google Health API wird geprüft.
+>
+> Bitte den Adapter vorerst nicht neu installieren.
 
 Dieser Adapter ist **eine erweiterte und modernisierte Version** des ursprünglichen ioBroker-Fitbit-Adapters von *besterquester*.
 Der neue Adapter von **Pocky2507** enthält zahlreiche neue Funktionen, Stabilitätsverbesserungen und Debug-Optionen,
